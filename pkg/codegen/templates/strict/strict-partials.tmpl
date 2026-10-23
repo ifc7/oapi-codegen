@@ -8,8 +8,7 @@ expression is passed as .Setter (e.g. "w.Header().Set"); .Headers is the
 response's []HeaderDefinition. Build the argument with the dict helper:
 {{`{{template "strict.responseHeaders" (dict "Headers" $headers "Setter" "w.Header().Set")}}`}}
 
-Values are serialized by the header's Codec, or for types it doesn't know through
-runtime.StyleParamWithOptions, rather than fmt.Sprint, so that format-carrying
+Values are serialized by the header's Codec, rather than fmt.Sprint, so that format-carrying
 types (date-time, date, uuid, ...) go on the wire in the representation the spec
 calls for, matching how the generated client parses them back out. Every emitted write is wrapped in its own block so that the `v`/`err`
 pair cannot collide with declarations in the surrounding Visit*Response body.
@@ -46,14 +45,6 @@ the already-dereferenced Go expression holding the header value.
         return fmt.Errorf("error styling response header {{$.Header.Name}}: %w", err)
     }
     {{$.Setter}}("{{$.Header.Name}}", v)
-}
-{{- else -}}
-{
-    v, err := runtime.StyleParamWithOptions("{{.Header.Style}}", {{.Header.Explode}}, "{{.Header.Name}}", {{.Value}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "{{.Header.SchemaType}}", Format: "{{.Header.SchemaFormat}}"})
-    if err != nil {
-        return fmt.Errorf("error styling response header {{.Header.Name}}: %w", err)
-    }
-    {{.Setter}}("{{.Header.Name}}", v)
 }
 {{- end -}}
 {{- end -}}

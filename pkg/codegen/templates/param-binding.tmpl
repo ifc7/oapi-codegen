@@ -4,8 +4,7 @@ Shared server-side parameter binding partials, used by the server wrappers
 (receiver-stdlib.tmpl). Both call them with a dict: .Param is the
 ParameterDefinition and .Handler the expression of the error handler to call.
 
-A parameter with a Codec is bound by the code it generates; any other styled
-parameter is bound by the runtime library.
+A styled parameter is bound by the code its Codec generates.
 */}}
 
 {{/*
@@ -25,8 +24,6 @@ if {{$.Src}} == "" {
 {{- else -}}
 {{.BindStyled $.Src $.Dst}}
 {{- end}}
-{{- else -}}
-err = runtime.BindStyledParameterWithOptions("{{if eq $p.In "cookie"}}simple{{else}}{{$p.Style}}{{end}}", "{{$p.ParamName}}", {{.Src}}, &{{.Dst}}, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocation{{if eq $p.In "path"}}Path{{else if eq $p.In "header"}}Header{{else}}Cookie{{end}}, Explode: {{$p.Explode}}, Required: {{$p.Required}}, Type: "{{$p.SchemaType}}", Format: "{{$p.SchemaFormat}}"{{unionTypes $p.SchemaTypes}}{{if eq $p.In "path"}}, ValueIsUnescaped: true{{end}}})
 {{- end}}
 {{- end}}
 
@@ -70,16 +67,5 @@ if values_, found_ := r.URL.Query()["{{$p.ParamName}}"]; found_ {
     return
 }{{end}}
 {{- end}}
-{{- else -}}
-err = runtime.BindQueryParameterWithOptions("{{$p.Style}}", {{$p.Explode}}, {{$p.Required}}, "{{$p.ParamName}}", r.URL.Query(), &params.{{$p.GoName}}, runtime.BindQueryParameterOptions{Type: "{{$p.SchemaType}}", Format: "{{$p.SchemaFormat}}"{{unionTypes $p.SchemaTypes}}})
-if err != nil {
-    var requiredError *runtime.RequiredParameterError
-    if errors.As(err, &requiredError) {
-        {{$.Handler}}(w, r, &RequiredParamError{ParamName: "{{$p.ParamName}}"})
-    } else {
-        {{$.Handler}}(w, r, &InvalidParamFormatError{ParamName: "{{$p.ParamName}}", Err: err})
-    }
-    return
-}
 {{- end}}
 {{- end}}

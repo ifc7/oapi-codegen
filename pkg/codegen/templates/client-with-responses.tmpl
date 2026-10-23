@@ -170,10 +170,6 @@ func Parse{{genResponseTypeName $opid | ucFirst}}(rsp *http.Response) (*{{genRes
             if err != nil {
                 return nil, err
             }
-            {{- else -}}
-            if err := runtime.BindStyledParameterWithOptions("simple", {{.Name | toGoString}}, values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: {{.Required}}, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"{{unionTypes .SchemaTypes}}}); err != nil {
-                return nil, err
-            }
             {{- end}}
             {{- if .IsNullable}}
             headers.{{.GoName}}.Set(value)

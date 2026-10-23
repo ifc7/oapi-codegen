@@ -16,7 +16,6 @@ import (
 	clientAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/client"
 	stdhttpAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/stdhttp"
 
-	"github.com/oapi-codegen/runtime"
 	"github.com/oapi-codegen/testutil"
 )
 
@@ -52,18 +51,13 @@ func testImpl(t *testing.T, handler http.Handler) {
 	})
 	t.Run("URLEncodedExample", func(t *testing.T) {
 		value := "456"
-		requestBody := clientAPI.Example{Value: &value}
-		requestBodyEncoded, err := runtime.MarshalForm(&requestBody, nil)
-		assert.NoError(t, err)
+		requestBodyEncoded := url.Values{"value": {value}}
 		rr := testutil.NewRequest().Post("/urlencoded").WithContentType("application/x-www-form-urlencoded").WithBody([]byte(requestBodyEncoded.Encode())).GoWithHTTPHandler(t, handler).Recorder
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, "application/x-www-form-urlencoded", rr.Header().Get("Content-Type"))
 		values, err := url.ParseQuery(rr.Body.String())
 		assert.NoError(t, err)
-		var responseBody clientAPI.Example
-		err = runtime.BindForm(&responseBody, values, nil, nil)
-		assert.NoError(t, err)
-		assert.Equal(t, requestBody, responseBody)
+		assert.Equal(t, url.Values{"value": {value}}, values)
 	})
 	t.Run("MultipartExample", func(t *testing.T) {
 		value := "789"
@@ -140,18 +134,13 @@ func testImpl(t *testing.T, handler http.Handler) {
 	})
 	t.Run("MultipleRequestAndResponseTypesFormdata", func(t *testing.T) {
 		value := "456"
-		requestBody := clientAPI.Example{Value: &value}
-		requestBodyEncoded, err := runtime.MarshalForm(&requestBody, nil)
-		assert.NoError(t, err)
+		requestBodyEncoded := url.Values{"value": {value}}
 		rr := testutil.NewRequest().Post("/multiple").WithContentType("application/x-www-form-urlencoded").WithBody([]byte(requestBodyEncoded.Encode())).GoWithHTTPHandler(t, handler).Recorder
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, "application/x-www-form-urlencoded", rr.Header().Get("Content-Type"))
 		values, err := url.ParseQuery(rr.Body.String())
 		assert.NoError(t, err)
-		var responseBody clientAPI.Example
-		err = runtime.BindForm(&responseBody, values, nil, nil)
-		assert.NoError(t, err)
-		assert.Equal(t, requestBody, responseBody)
+		assert.Equal(t, url.Values{"value": {value}}, values)
 	})
 	t.Run("MultipleRequestAndResponseTypesMultipart", func(t *testing.T) {
 		value := "789"
@@ -235,9 +224,7 @@ func testImpl(t *testing.T, handler http.Handler) {
 		// The operation embeds the reusable form envelope, which must be
 		// encoded itself rather than as a field of the operation's struct.
 		value := "zxcv"
-		requestBody := clientAPI.Example{Value: &value}
-		requestBodyEncoded, err := runtime.MarshalForm(&requestBody, nil)
-		assert.NoError(t, err)
+		requestBodyEncoded := url.Values{"value": {value}}
 		rr := testutil.NewRequest().Post("/reusable-urlencoded-response").WithContentType("application/x-www-form-urlencoded").WithBody([]byte(requestBodyEncoded.Encode())).GoWithHTTPHandler(t, handler).Recorder
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, "application/x-www-form-urlencoded", rr.Header().Get("Content-Type"))

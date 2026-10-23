@@ -477,8 +477,6 @@ func TestParameterBinding(t *testing.T) {
 
 	// -------------------- Test Delimited Query Parameters --------------------
 	//  (GET /queryDelimited)
-	// These styles are not yet supported by the runtime binding layer.
-	// See https://github.com/oapi-codegen/runtime/issues/116
 
 	t.Run("spaceDelimited array", func(t *testing.T) {
 		result = testutil.NewRequest().Get("/queryDelimited?sa=3%204%205").GoWithHTTPHandler(t, e)

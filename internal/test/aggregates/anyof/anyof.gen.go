@@ -11,10 +11,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"net/url"
-	"slices"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -1071,7 +1070,12 @@ func NewGetParamTestRequest(server string, params *GetParamTestParams) (*http.Re
 				}
 				if err == nil {
 					var parts_ []string
-					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+					keys_ := make([]string, 0, len(kv_))
+					for k_ := range kv_ {
+						keys_ = append(keys_, k_)
+					}
+					sort.Strings(keys_)
+					for _, k_ := range keys_ {
 						parts_ = append(parts_, k_+"="+url.QueryEscape(kv_[k_]))
 					}
 					rawQueryFragments = append(rawQueryFragments, parts_...)

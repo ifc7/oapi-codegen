@@ -444,7 +444,7 @@ We can see that this provides the best means to focus on the implementation of t
 
 `oapi-codegen` shines by making it fairly straightforward (note that this is a purposeful choice of wording here - we want to avoid words like "easy") to generate the server-side boilerplate for a backend API.
 
-The generated server is built on the standard library's [`net/http`](https://pkg.go.dev/net/http): set `std-http-server: true`, and see the [`net/http` documentation](docs/stdhttp-server.md) for how to implement and run it. The generated `Handler` is an ordinary `http.Handler`, so it works with any router or middleware that accepts one. The generated code needs Go 1.24+.
+The generated server is built on the standard library's [`net/http`](https://pkg.go.dev/net/http): set `std-http-server: true`, and see the [`net/http` documentation](docs/stdhttp-server.md) for how to implement and run it. The generated `Handler` is an ordinary `http.Handler`, so it works with any router or middleware that accepts one. The generated server needs Go 1.22+, for the `net/http` routing patterns.
 
 To provide you a fully Test Driven Development style test harness to confirm you are following the specification, you could use a tool such as [openapi.tanna.dev/go/validator](https://openapi.tanna.dev/go/validator/), or craft your own.
 
@@ -852,7 +852,7 @@ There is no currently planned work to change this behaviour.
 If you're looking to only generate the models for interacting with a remote service, for instance if you need to hand-roll the API client for whatever reason, you can do this as-is.
 
 > [!NOTE]
-> Generated models need Go 1.20+. Models that use the `date` format declare an `OpenAPIDate` type built on `time.DateOnly`, and generated code that still imports `github.com/oapi-codegen/runtime` (for form bodies, and parameters in styles or of types the generated code doesn't bind itself) needs Go 1.24+, as described in [Generating server-side boilerplate](#generating-server-side-boilerplate).
+> Generated models and clients need Go 1.20+, and the generated server Go 1.22+, for the `net/http` routing patterns. Generated code depends only on the standard library, plus `github.com/google/uuid` when the spec uses the `uuid` format, `github.com/oapi-codegen/nullable` with `nullable-type`, and `github.com/getkin/kin-openapi` with `embedded-spec`.
 
 > [!TIP]
 > Try to define as much as possible within the `#/components/schemas` object, as `oapi-codegen` will generate all the types here.

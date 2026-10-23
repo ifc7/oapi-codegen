@@ -11,9 +11,10 @@ import (
 )
 
 // This file generates the code that binds request parameters on the server,
-// and styles them on the client, without the runtime library: scalars, arrays
-// of scalars, and their styles. The generated code follows what the runtime
-// library did for the same parameter, including which parse method it picks
+// and styles them on the client, for every style and type of value, and
+// encodes and decodes form bodies. It replaced the reflection-based runtime
+// library (github.com/oapi-codegen/runtime) that generated code used to call,
+// and follows what that library did, including which parse method it picked
 // for each position, except where noted.
 
 // scalarKind is how a scalar parameter's value is parsed and formatted.
@@ -374,22 +375,20 @@ type ParamCodec struct {
 }
 
 // newParamCodec returns the codec for a value of the generated schema s,
-// whose OpenAPI schema is spec, or nil when the generated code can't bind it
-// without the runtime library.
+// whose OpenAPI schema is ref.
 func newParamCodec(s Schema, ref *openapi3.SchemaRef) *ParamCodec {
 	if ref == nil || ref.Value == nil {
-		return nil
+		return &ParamCodec{Scalar: &ScalarCodec{goType: s.TypeDecl(), kind: kindJSON}, goType: s.TypeDecl()}
 	}
 	spec := ref.Value
 	if types := schemaPrimaryType(spec.Type).Slice(); len(types) == 1 && types[0] == "array" && spec.Extensions[extPropGoType] == nil {
 		if spec.Items == nil || spec.Items.Value == nil || s.ArrayType == nil {
-			return nil
+			return &ParamCodec{Scalar: &ScalarCodec{goType: s.TypeDecl(), kind: kindJSON}, goType: s.TypeDecl()}
 		}
 		elem := newScalarCodec(*s.ArrayType, spec.Items.Value)
 		if elem == nil {
-			// Neither the runtime library nor the OpenAPI styles say how to
-			// lay out an array of objects or arrays; each element is its
-			// JSON text.
+			// The OpenAPI styles don't say how to lay out an array of objects
+			// or arrays; each element is its JSON text.
 			elem = &ScalarCodec{goType: s.ArrayType.TypeDecl(), kind: kindJSON}
 		}
 		return &ParamCodec{Scalar: elem, IsArray: true, goType: s.TypeDecl()}
@@ -400,7 +399,9 @@ func newParamCodec(s Schema, ref *openapi3.SchemaRef) *ParamCodec {
 	if object := newObjectCodec(s, ref); object != nil {
 		return &ParamCodec{Object: object, goType: s.TypeDecl()}
 	}
-	return nil
+	// A value the codec knows no way to lay out, such as binary content, is
+	// its JSON text.
+	return &ParamCodec{Scalar: &ScalarCodec{goType: s.TypeDecl(), kind: kindJSON}, goType: s.TypeDecl()}
 }
 
 // escape returns the function that escapes the parameter's names and values
@@ -653,9 +654,9 @@ func (c *ParamCodec) objectParts() string {
 		value = esc + "(" + value + ")"
 	}
 	if c.explode {
-		return fmt.Sprintf("var parts_ []string\nfor _, k_ := range slices.Sorted(maps.Keys(kv_)) {\nparts_ = append(parts_, k_+\"=\"+%s)\n}", value)
+		return fmt.Sprintf("var parts_ []string\nkeys_ := make([]string, 0, len(kv_))\nfor k_ := range kv_ {\nkeys_ = append(keys_, k_)\n}\nsort.Strings(keys_)\nfor _, k_ := range keys_ {\nparts_ = append(parts_, k_+\"=\"+%s)\n}", value)
 	}
-	return fmt.Sprintf("var parts_ []string\nfor _, k_ := range slices.Sorted(maps.Keys(kv_)) {\nparts_ = append(parts_, k_, %s)\n}", value)
+	return fmt.Sprintf("var parts_ []string\nkeys_ := make([]string, 0, len(kv_))\nfor k_ := range kv_ {\nkeys_ = append(keys_, k_)\n}\nsort.Strings(keys_)\nfor _, k_ := range keys_ {\nparts_ = append(parts_, k_, %s)\n}", value)
 }
 
 // ExplodedQueryObject reports whether the parameter is an exploded object in
@@ -688,21 +689,18 @@ func (c *ParamCodec) BindQueryObject(query, dst string) string {
 	return b.String()
 }
 
-// Codec returns the codec that binds and styles the parameter without the
-// runtime library, or nil when the runtime library does that.
+// Codec returns the codec that binds and styles the parameter, or nil when the
+// parameter isn't styled: its value is in a content type, such as JSON.
 func (pd ParameterDefinition) Codec() *ParamCodec {
 	if !pd.IsStyled() {
 		return nil
 	}
+	// A style the location doesn't allow is read as the location's default.
 	style := pd.Style()
 	switch pd.In {
 	case "path":
 		if style != "simple" && style != "label" && style != "matrix" {
-			return nil
-		}
-	case "header":
-		if style != "simple" {
-			return nil
+			style = "simple"
 		}
 	case "query":
 		if style == "deepObject" {
@@ -711,32 +709,21 @@ func (pd ParameterDefinition) Codec() *ParamCodec {
 			return c
 		}
 		if style != "form" && style != "spaceDelimited" && style != "pipeDelimited" {
-			return nil
+			style = "form"
 		}
-	case "cookie":
-		// Cookies are always `simple` style.
-		style = "simple"
 	default:
-		return nil
+		// Headers are always `simple` style, and cookies are bound like
+		// them.
+		style = "simple"
 	}
 	c := newParamCodec(pd.Schema, pd.Spec.Schema)
-	if c == nil {
-		return nil
-	}
 	c.name, c.in, c.style, c.explode = pd.ParamName, pd.In, style, pd.Explode()
 	return c
 }
 
-// Codec returns the codec that binds and styles the response header without
-// the runtime library, or nil when the runtime library does that.
+// Codec returns the codec that binds and styles the response header.
 func (h ResponseHeaderDefinition) Codec() *ParamCodec {
-	if h.Style != "simple" {
-		return nil
-	}
 	c := newParamCodec(h.Schema, &openapi3.SchemaRef{Value: h.Schema.OAPISchema})
-	if c == nil {
-		return nil
-	}
 	c.name, c.in, c.style, c.explode = h.Name, "header", "simple", h.Explode
 	return c
 }
@@ -1388,7 +1375,12 @@ for i, e := range node {
 walk_(prefix+"["+strconv.Itoa(i)+"]", e)
 }
 case map[string]any:
-for _, k := range slices.Sorted(maps.Keys(node)) {
+keys := make([]string, 0, len(node))
+for k := range node {
+keys = append(keys, k)
+}
+sort.Strings(keys)
+for _, k := range keys {
 walk_(prefix+"["+url.QueryEscape(k)+"]", node[k])
 }
 case nil:

@@ -9,10 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"net/url"
-	"slices"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -826,7 +825,12 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 
 				if err == nil {
 					var parts_ []string
-					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+					keys_ := make([]string, 0, len(kv_))
+					for k_ := range kv_ {
+						keys_ = append(keys_, k_)
+					}
+					sort.Strings(keys_)
+					for _, k_ := range keys_ {
 						parts_ = append(parts_, k_+"="+kv_[k_])
 					}
 					cookieParam4 = "" + strings.Join(parts_, ",")
@@ -853,7 +857,12 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 
 				if err == nil {
 					var parts_ []string
-					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+					keys_ := make([]string, 0, len(kv_))
+					for k_ := range kv_ {
+						keys_ = append(keys_, k_)
+					}
+					sort.Strings(keys_)
+					for _, k_ := range keys_ {
 						parts_ = append(parts_, k_, kv_[k_])
 					}
 					cookieParam5 = "" + strings.Join(parts_, ",")
@@ -1052,7 +1061,12 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 
 				if err == nil {
 					var parts_ []string
-					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+					keys_ := make([]string, 0, len(kv_))
+					for k_ := range kv_ {
+						keys_ = append(keys_, k_)
+					}
+					sort.Strings(keys_)
+					for _, k_ := range keys_ {
 						parts_ = append(parts_, k_+"="+kv_[k_])
 					}
 					headerParam4 = "" + strings.Join(parts_, ",")
@@ -1075,7 +1089,12 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 
 				if err == nil {
 					var parts_ []string
-					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+					keys_ := make([]string, 0, len(kv_))
+					for k_ := range kv_ {
+						keys_ = append(keys_, k_)
+					}
+					sort.Strings(keys_)
+					for _, k_ := range keys_ {
 						parts_ = append(parts_, k_, kv_[k_])
 					}
 					headerParam5 = "" + strings.Join(parts_, ",")
@@ -1178,7 +1197,12 @@ func NewGetLabelExplodeObjectRequest(server string, param Object) (*http.Request
 
 		if err == nil {
 			var parts_ []string
-			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+			keys_ := make([]string, 0, len(kv_))
+			for k_ := range kv_ {
+				keys_ = append(keys_, k_)
+			}
+			sort.Strings(keys_)
+			for _, k_ := range keys_ {
 				parts_ = append(parts_, k_+"="+url.PathEscape(kv_[k_]))
 			}
 			pathParam0 = "." + strings.Join(parts_, ".")
@@ -1299,7 +1323,12 @@ func NewGetLabelNoExplodeObjectRequest(server string, param Object) (*http.Reque
 
 		if err == nil {
 			var parts_ []string
-			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+			keys_ := make([]string, 0, len(kv_))
+			for k_ := range kv_ {
+				keys_ = append(keys_, k_)
+			}
+			sort.Strings(keys_)
+			for _, k_ := range keys_ {
 				parts_ = append(parts_, k_, url.PathEscape(kv_[k_]))
 			}
 			pathParam0 = "." + strings.Join(parts_, ",")
@@ -1420,7 +1449,12 @@ func NewGetMatrixExplodeObjectRequest(server string, id Object) (*http.Request, 
 
 		if err == nil {
 			var parts_ []string
-			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+			keys_ := make([]string, 0, len(kv_))
+			for k_ := range kv_ {
+				keys_ = append(keys_, k_)
+			}
+			sort.Strings(keys_)
+			for _, k_ := range keys_ {
 				parts_ = append(parts_, k_+"="+url.PathEscape(kv_[k_]))
 			}
 			pathParam0 = ";" + strings.Join(parts_, ";")
@@ -1541,7 +1575,12 @@ func NewGetMatrixNoExplodeObjectRequest(server string, id Object) (*http.Request
 
 		if err == nil {
 			var parts_ []string
-			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+			keys_ := make([]string, 0, len(kv_))
+			for k_ := range kv_ {
+				keys_ = append(keys_, k_)
+			}
+			sort.Strings(keys_)
+			for _, k_ := range keys_ {
 				parts_ = append(parts_, k_, url.PathEscape(kv_[k_]))
 			}
 			pathParam0 = ";id=" + strings.Join(parts_, ",")
@@ -1683,7 +1722,12 @@ func NewGetDeepObjectRequest(server string, params *GetDeepObjectParams) (*http.
 							walk_(prefix+"["+strconv.Itoa(i)+"]", e)
 						}
 					case map[string]any:
-						for _, k := range slices.Sorted(maps.Keys(node)) {
+						keys := make([]string, 0, len(node))
+						for k := range node {
+							keys = append(keys, k)
+						}
+						sort.Strings(keys)
+						for _, k := range keys {
 							walk_(prefix+"["+url.QueryEscape(k)+"]", node[k])
 						}
 					case nil:
@@ -1859,7 +1903,12 @@ func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Re
 
 				if err == nil {
 					var parts_ []string
-					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+					keys_ := make([]string, 0, len(kv_))
+					for k_ := range kv_ {
+						keys_ = append(keys_, k_)
+					}
+					sort.Strings(keys_)
+					for _, k_ := range keys_ {
 						parts_ = append(parts_, k_+"="+url.QueryEscape(kv_[k_]))
 					}
 					rawQueryFragments = append(rawQueryFragments, parts_...)
@@ -1880,7 +1929,12 @@ func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Re
 
 				if err == nil {
 					var parts_ []string
-					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+					keys_ := make([]string, 0, len(kv_))
+					for k_ := range kv_ {
+						keys_ = append(keys_, k_)
+					}
+					sort.Strings(keys_)
+					for _, k_ := range keys_ {
 						parts_ = append(parts_, k_, url.QueryEscape(kv_[k_]))
 					}
 					rawQueryFragments = append(rawQueryFragments, "o="+strings.Join(parts_, ","))
@@ -2021,7 +2075,12 @@ func NewGetSimpleExplodeObjectRequest(server string, param Object) (*http.Reques
 
 		if err == nil {
 			var parts_ []string
-			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+			keys_ := make([]string, 0, len(kv_))
+			for k_ := range kv_ {
+				keys_ = append(keys_, k_)
+			}
+			sort.Strings(keys_)
+			for _, k_ := range keys_ {
 				parts_ = append(parts_, k_+"="+url.PathEscape(kv_[k_]))
 			}
 			pathParam0 = "" + strings.Join(parts_, ",")
@@ -2141,7 +2200,12 @@ func NewGetSimpleNoExplodeObjectRequest(server string, param Object) (*http.Requ
 
 		if err == nil {
 			var parts_ []string
-			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+			keys_ := make([]string, 0, len(kv_))
+			for k_ := range kv_ {
+				keys_ = append(keys_, k_)
+			}
+			sort.Strings(keys_)
+			for _, k_ := range keys_ {
 				parts_ = append(parts_, k_, url.PathEscape(kv_[k_]))
 			}
 			pathParam0 = "" + strings.Join(parts_, ",")

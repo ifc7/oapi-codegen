@@ -9,10 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"net/url"
-	"slices"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -393,7 +392,12 @@ func NewListThingsRequest(server string, params *ListThingsParams) (*http.Reques
 								walk_(prefix+"["+strconv.Itoa(i)+"]", e)
 							}
 						case map[string]any:
-							for _, k := range slices.Sorted(maps.Keys(node)) {
+							keys := make([]string, 0, len(node))
+							for k := range node {
+								keys = append(keys, k)
+							}
+							sort.Strings(keys)
+							for _, k := range keys {
 								walk_(prefix+"["+url.QueryEscape(k)+"]", node[k])
 							}
 						case nil:

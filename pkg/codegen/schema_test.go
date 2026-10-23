@@ -958,32 +958,6 @@ func TestSchemaUnionTypes(t *testing.T) {
 	}
 }
 
-// SchemaType feeds the Type bind option: the single declared type with the
-// 3.1 "null" marker stripped, or "" for unions (carried by SchemaTypes) and
-// typeless schemas. The previous first-entry behavior emitted "null" for
-// ["null", "string"] and a lone member for unions.
-func TestParameterDefinitionSchemaType(t *testing.T) {
-	prev := globalState
-	t.Cleanup(func() { globalState = prev })
-	globalState.is31 = true
-
-	paramWithTypes := func(types *openapi3.Types) *ParameterDefinition {
-		return &ParameterDefinition{
-			Spec: &openapi3.Parameter{
-				Schema: &openapi3.SchemaRef{Value: &openapi3.Schema{Type: types}},
-			},
-		}
-	}
-
-	assert.Equal(t, "string", paramWithTypes(&openapi3.Types{"string"}).SchemaType())
-	assert.Equal(t, "string", paramWithTypes(&openapi3.Types{"null", "string"}).SchemaType(),
-		"null is the nullability marker, not the parameter's type")
-	assert.Equal(t, "", paramWithTypes(&openapi3.Types{"string", "integer"}).SchemaType(),
-		"unions carry no single Type; SchemaTypes has the members")
-	assert.Equal(t, []string{"string", "integer"}, paramWithTypes(&openapi3.Types{"string", "integer", "null"}).SchemaTypes())
-	assert.Nil(t, paramWithTypes(&openapi3.Types{"string"}).SchemaTypes())
-}
-
 // TestStrictResponseDelegatesCustomMarshalJSON pins which strict-server
 // response envelopes get a delegating MarshalJSON/UnmarshalJSON pair.
 // See https://github.com/oapi-codegen/oapi-codegen/issues/2549.

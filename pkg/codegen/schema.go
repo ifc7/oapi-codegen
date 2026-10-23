@@ -1219,10 +1219,9 @@ func isMultiTypeUnion(t *openapi3.Types) bool {
 
 // schemaUnionTypes returns t's member types as a string slice when t is an
 // OpenAPI 3.1 multi-type union after the "null" nullability marker is
-// stripped, or nil otherwise. Generated code passes the list to the
-// runtime's union-aware parameter binding (the Types option added in
-// runtime v1.7.0); it is nil for single-type schemas, which keep binding
-// through their concrete Go type.
+// stripped, or nil otherwise. Generated parameter binding tries the members
+// in turn (see ScalarCodec.bindAny); it is nil for single-type schemas, which
+// bind through their concrete Go type.
 //
 // Precondition: globalState.is31 must be set (see schemaIsNullable for
 // context).

@@ -14,11 +14,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"net/url"
 	"path"
-	"slices"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -262,7 +261,12 @@ func NewIssue41Request(server string, n1param N5StartsWithNumber) (*http.Request
 		}
 		if err == nil {
 			var parts_ []string
-			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+			keys_ := make([]string, 0, len(kv_))
+			for k_ := range kv_ {
+				keys_ = append(keys_, k_)
+			}
+			sort.Strings(keys_)
+			for _, k_ := range keys_ {
 				parts_ = append(parts_, k_, url.PathEscape(kv_[k_]))
 			}
 			pathParam0 = "" + strings.Join(parts_, ",")

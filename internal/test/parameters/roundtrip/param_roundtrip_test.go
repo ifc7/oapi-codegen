@@ -326,7 +326,7 @@ func testImpl(t *testing.T, handler http.Handler) {
 		})
 
 		// Regression for oapi-codegen/runtime#131: with the v2.7.0 client
-		// no longer re-encoding query fragments, the runtime marshaller must
+		// no longer re-encoding query fragments, the deepObject encoder must
 		// percent-encode reserved URI characters and non-ASCII bytes inside
 		// deepObject values. Without the fix, '&' splits the value into two
 		// query params (silent corruption) and non-ASCII bytes produce
@@ -490,9 +490,8 @@ func testImpl(t *testing.T, handler http.Handler) {
 // testStringEscaping verifies that string path parameter values survive the
 // round trip byte-for-byte, including values containing literal percent
 // signs and characters that require percent-encoding on the wire
-// (issue-2455 / runtime issue-35). The client escapes the value; the
-// generated wrapper must tell the runtime whether this framework's router
-// delivers the raw or the decoded form, or the value gets decoded twice.
+// (issue-2455). The client escapes the value; the server must read the
+// decoded value ServeMux delivers without decoding it again.
 func testStringEscaping(t *testing.T, handler http.Handler) {
 	t.Helper()
 

@@ -37,11 +37,6 @@ locals, which both call sites declare.
         if err != nil {
             return nil, err
         }
-        {{- else -}}
-        headerParam{{$paramIdx}}, err = runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"})
-        if err != nil {
-            return nil, err
-        }
         {{- end}}
         {{end}}
         req.Header.Set("{{.ParamName}}", headerParam{{$paramIdx}})
@@ -62,14 +57,6 @@ enclosing builder's params.
 {{.StyleQuery (printf "%sparams.%s" (or (and $p.RequiresNilCheck $p.HasOptionalPointer "*") "") $p.GoName) "rawQueryFragments"}}
 if err != nil {
     return nil, err
-}
-{{- else -}}
-if queryFrag, err := runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if and .RequiresNilCheck .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"}); err != nil {
-    return nil, err
-} else {
-    for _, qp := range strings.Split(queryFrag, "&") {
-        rawQueryFragments = append(rawQueryFragments, qp)
-    }
 }
 {{- end}}
 {{- end}}

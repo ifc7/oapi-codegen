@@ -169,11 +169,6 @@ func New{{$opid}}Request{{$generic.Suffix}}(server string{{$generic.ArgsDecl}}) 
     if err != nil {
         return nil, err
     }
-    {{- else -}}
-    pathParam{{$paramIdx}}, err = runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{.GoVariableName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"})
-    if err != nil {
-        return nil, err
-    }
     {{- end}}
     {{end}}
 {{end}}
@@ -252,11 +247,6 @@ func New{{$opid}}Request{{$generic.Suffix}}(server string{{$generic.ArgsDecl}}) 
         {{if .IsStyled}}
         {{with .Codec -}}
         {{.Style (printf "%sparams.%s" (or (and $param.HasOptionalPointer "*") "") $param.GoName) (printf "cookieParam%d" $paramIdx)}}
-        if err != nil {
-            return nil, err
-        }
-        {{- else -}}
-        cookieParam{{$paramIdx}}, err = runtime.StyleParamWithOptions("simple", {{.Explode}}, "{{.ParamName}}", {{if .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"})
         if err != nil {
             return nil, err
         }
