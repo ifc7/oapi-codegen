@@ -598,17 +598,17 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"xFRBb9s8DP0rBL8P2MVI0nbYwbcU7YAUAzZsAXpoClS1mFibQ6kS3Swo/N8HSXHiNV23nXaxRYl6JB8f",
-	"9YSVXTvLxBKwfMJQ1bRWaXnpvfVx4bx15MVQ2q6spvjXFCpvnBjLWGZnSGcFLq1fK8ESDcvZKRYoW0fZ",
-	"pBV57ApcUwhq9Uug/nh/NYg3vMKuK9DTQ2s8aSxvcBewd7/tCpzX0fEobVbrFO11vOS1R7k2Us8u4i3V",
-	"NB+XWN484f+elljif+MDb+MdaeMcuiuexzY6foesvHv7AivPcjEab7vbuBuoar2R7ZcYJ0Oek/Lkp63U",
-	"0bpP1vs+wNX1HIvcyhggnx4C1iIOuwhseGmPWzBloO9q7RqC6acZbGpT1dAGCpCRQOw3YgiVdRRAsYar",
-	"6zmomEuBYqSJQWJqxGIqJaQTzmXGxAIfyYcc6mQ0GU2iHqwjVs5giWdpq0CnpE6ljiXSmpYrkuN0P5O0",
-	"ngMoaEwQsEvIF0ZwTpVqA0U7ALF21rCAthT4jYB9JO+Njse04FVj71UDPdUFGIFdNyJ0rHBpPahDWcby",
-	"aMGYcvfJnGks8YMJMs8Zx34GZznknp1OJnmAWIhTIcq5Zgc1/hosHyYwrozQOl38reZ2Qu32LVbeq23u",
-	"8c9kPScp+zgbXiB2qnUsPTmC2MjTEcXzIbVhz2lIzpnTBfekQpZkksyA27sMVm7usqbAMFivk9DAkY+D",
-	"A2rBG2+EXqJ8qnUevTxAFOTc6u1fcf0HY31M5vTAjeFAXkbQizGWn/dI77w2RmpQDLMLHA66+Ja6I6Wc",
-	"/HOlzIcVzAcVQMvmoaVYx/BxSq/j8Fm6wb6v+R171Td6/BgA",
+	"xFTBbtswDP0Vghuwi5Gk7bCDbynaAellwxagh6ZAVYuJtTmUKtHNgsL/PkiKE6/puu20iy1K1CP5+Kgn",
+	"rOzaWSaWgOUThqqmtUrLS++tjwvnrSMvhtJ2ZTXFv6ZQeePEWMYyO0M6K3Bp/VoJlmhYzk6xQNk6yiat",
+	"yGNX4JpCUKvfAvXH+6tBvOEVdl2Bnh5a40ljeYO7gL37bVfgvI6OR2mzWqdor+Mlrz3KtZF6dhFvqab5",
+	"tMTy5gnfelpiiW/GB97GO9LGOXRXPI9tdPwOWfnw/gVWnuViNN52t3E3UNV6I9uvMU6GPCflyU9bqaN1",
+	"n6yPfYCr6zkWuZUxQD49BKxFHHYR2PDSHrdgykA/1No1BNPPM9jUpqqhDRQgI4HY78QQKusogGINV9dz",
+	"UDGXAsVIE4PE1IjFVEpIJ5zLjIkFPpIPOdTJaDKaRD1YR6ycwRLP0laBTkmdSh1LpDUtVyTH6X4haT0H",
+	"UNCYIGCXkC+M4Jwq1QaKdgBi7axhAW0p8DsB+0jeGx2PacGrxt6rBnqqCzACu25E6Fjh0npQh7KM5dGC",
+	"MeXukznTWGJMYp4zjv0MznLIPTudTPIAsRCnQpRzzQ5q/C1YPkxgXBmhdbr4R83thNrtW6y8V9vc41/J",
+	"ek5S9nE2vEDsVOtYenIEsZGnI4rnQ2rDntOQnDOnC+5JhSzJJJkBt3cZrNzcZU2BYbBeJ6GBIx8HB9SC",
+	"N94IvUS50jqPXh4gCnJu9fafuP6LsT4mc3rgxnAgLyPoxRjLz3ukd14bIzUohtkFDgddfEvdkVJO/rtS",
+	"5sMK5oMKoGXz0FKsY/g4pddx+CzdYN/X/I696hs9fg4A",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -690,14 +690,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

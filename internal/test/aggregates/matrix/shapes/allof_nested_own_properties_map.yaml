@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allOf over a $ref to a schema that declares a property next to an allOf
   with typed additionalProperties. v2 generates a map, and keeps it one

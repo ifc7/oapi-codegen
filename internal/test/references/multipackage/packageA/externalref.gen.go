@@ -16,44 +16,20 @@ import (
 	externalRef0 "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/packageB"
 )
 
-const (
-	BearerAuthScopes bearerAuthContextKey = "BearerAuth.Scopes"
-)
-
-// EnrichedUser defines model for EnrichedUser.
-type EnrichedUser struct {
-	ExtraField *string              `json:"extra_field,omitempty"`
-	Id         string               `json:"id"`
-	Roles      *[]externalRef0.Role `json:"roles,omitempty"`
-	Username   string               `json:"username"`
-}
-
 // ObjectA defines model for ObjectA.
 type ObjectA struct {
 	Name    *string               `json:"name,omitempty"`
 	ObjectB *externalRef0.ObjectB `json:"object_b,omitempty"`
 }
 
-// StatusPostPayload defines model for StatusPostPayload.
-type StatusPostPayload struct {
-	Reason *string                 `json:"reason,omitempty"`
-	Status externalRef0.StatusEnum `json:"status"`
-}
-
-// bearerAuthContextKey is the context key for BearerAuth security scheme
-type bearerAuthContextKey string
-
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"nFRNb9wgEP0v0x6RVrlyy0o5J2rUXKKVxeJxTIuBDuOqlsV/r8DeD3ddyZvbAPOe37yHGUH7LniHjiPI",
-	"EaJusVOlfHJkdIv194iU18ra5wbk+whfCRuQ8GV3we5m4C4o/VN94L6KAXVVsEmMEMgHJDZYqPEPk6oa",
-	"g7bOSx4CgoTIZNwHpCROO/74AzVDOiQBz6V+BPkvmVMdrrCIGV0dQd4jefrOHlLW8cqK+/jiI7+owXpV",
-	"f9aIiejtYcUMQhW92+zDutqtrqQbhm/elkZ0fQfyHVTdGQcC+hzdQdzaujbYUwFfkWg2vxEEGDeXW5ne",
-	"HpYWL6eKpee+QK8U5ukJf/WGsM4yZ7rDBqNPf8FSj6lXbx55O58zdnfKLXlcoldEaoA05fG/UJdTmRqu",
-	"2m+HSwIi6p4MD69ZwiR1j4qQHntuz+9ABh3LNpxJWuYwXSPjGg/S9dYK8AGdCgYkQDaO2zidpL8DAA==",
+	"jI4xysMwDEbv8v3/GMjurblAjxAcoyRuE1nY6lCC7l7sFLp06KQHDz3pQEi7JCbWAneghJV23/A63Sjo",
+	"paLkJJQ1UhPsd6pTn0JwKJojL7AOqW2MU5X/mWY4/PWffv+O9+LD3S80jEUojOedAWbW4bv69QVrjchz",
+	"guPHtnVIQuwlwgE1rms5jb0GAA==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -141,14 +117,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

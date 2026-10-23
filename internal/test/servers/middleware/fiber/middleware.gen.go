@@ -7,13 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const (
-	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
-)
-
-// bearerAuthContextKey is the context key for bearerAuth security scheme
-type bearerAuthContextKey string
-
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 

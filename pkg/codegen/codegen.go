@@ -82,15 +82,10 @@ var globalState struct {
 	// mapping, resolving media types to user-configured short names for use
 	// in generated type names. Nil-safe: a nil matcher matches nothing.
 	contentTypeNameTags *contentTypeNameTags
-	// schemaFieldTagGenerator renders struct tags for schema property
-	// fields (defaults + output-options.struct-tags, including the legacy
-	// yaml-tags injection). Built in Generate; lazily built for direct
-	// callers via schemaFieldTagGenerator().
-	schemaFieldTagGenerator *structTagGenerator
-	// paramFieldTagGenerator renders struct tags for path parameter fields
-	// on strict RequestObject structs; identical to the schema generator
-	// except the legacy yaml-tags flag does not apply.
-	paramFieldTagGenerator *structTagGenerator
+	// fieldTagGenerator renders struct tags for struct fields (defaults +
+	// output-options.struct-tags). Built in Generate; lazily built for direct
+	// callers via fieldTagGenerator().
+	fieldTagGenerator *structTagGenerator
 }
 
 // goImport represents a go package to be imported in the generated code
@@ -175,11 +170,6 @@ func constructImportMapping(importMapping map[string]string) importMap {
 // the descriptions we've built up above from the schema objects.
 // opts defines
 func Generate(spec *openapi3.T, opts Configuration) (string, error) {
-	// Validate() already rejects these, but Generate is also called directly.
-	if _, err := opts.Compatibility.schemaMergingVersion(); err != nil {
-		return "", fmt.Errorf("invalid `compatibility` configuration: %w", err)
-	}
-
 	// This is global state
 	globalState.options = opts
 	globalState.spec = spec
@@ -193,21 +183,14 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 	globalState.typeMappingImports = nil
 	globalState.usedFormatTypes = nil
 
-	// Build the struct tag generators eagerly so invalid user templates in
+	// Build the struct tag generator eagerly so invalid user templates in
 	// output-options.struct-tags are reported as errors instead of being
 	// skipped. Assigning here also resets any state from a prior Generate.
-	schemaTagGen, err := newStructTagGenerator(
-		defaultStructTagsConfig(opts.OutputOptions.EnableYamlTags).Merge(opts.OutputOptions.StructTags))
+	tagGen, err := newStructTagGenerator(defaultStructTagsConfig().Merge(opts.OutputOptions.StructTags))
 	if err != nil {
 		return "", fmt.Errorf("error in output-options.struct-tags: %w", err)
 	}
-	globalState.schemaFieldTagGenerator = schemaTagGen
-	paramTagGen, err := newStructTagGenerator(
-		defaultStructTagsConfig(false).Merge(opts.OutputOptions.StructTags))
-	if err != nil {
-		return "", fmt.Errorf("error in output-options.struct-tags: %w", err)
-	}
-	globalState.paramFieldTagGenerator = paramTagGen
+	globalState.fieldTagGenerator = tagGen
 
 	filterOperationsByTag(spec, opts)
 	filterOperationsByOperationID(spec, opts)
@@ -355,13 +338,10 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		return "", fmt.Errorf("error getting operation imports: %w", err)
 	}
 
-	// Type and constant emission is gated by Generate.Models. Both
-	// component-derived types (from #/components) and op-derived types
-	// (Params/RequestBody/hoisted-ResponseBody) flow through this gate
-	// today; that conflation is historical but kept for backwards
-	// compatibility (changing it would alter the symbols emitted by
-	// `models: true`-alone configs and break downstream code in the wild).
-	var typeDefinitions, constantDefinitions string
+	// Type emission is gated by Generate.Models. Both component-derived
+	// types (from #/components) and op-derived types
+	// (Params/RequestBody/hoisted-ResponseBody) are models.
+	var typeDefinitions string
 	if opts.Generate.Models {
 		componentTypes, err := collectComponentTypes(t, spec, opts.OutputOptions.ExcludeSchemas)
 		if err != nil {
@@ -384,11 +364,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		opDecls, err := GenerateTypesForOperations(t, allOps)
 		if err != nil {
 			return "", fmt.Errorf("error generating Go types for operations: %w", err)
-		}
-
-		constantDefinitions, err = GenerateConstants(t, spec)
-		if err != nil {
-			return "", fmt.Errorf("error generating constants: %w", err)
 		}
 
 		imprts, err := GetTypeDefinitionsImports(spec, opts.OutputOptions.ExcludeSchemas)
@@ -776,11 +751,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		return "", fmt.Errorf("error writing imports: %w", err)
 	}
 
-	_, err = w.WriteString(constantDefinitions)
-	if err != nil {
-		return "", fmt.Errorf("error writing constants: %w", err)
-	}
-
 	_, err = w.WriteString(serverURLsDefinitions)
 	if err != nil {
 		return "", fmt.Errorf("error writing Server URLs: %w", err)
@@ -1055,17 +1025,9 @@ func collectComponentTypes(t *template.Template, swagger *openapi3.T, excludeSch
 	if err != nil {
 		return nil, fmt.Errorf("error generating Go types for component request bodies: %w", err)
 	}
-	var securitySchemeTypes []TypeDefinition
-	if globalState.options.Compatibility.EnableAuthScopesOnContext {
-		securitySchemeTypes, err = GenerateTypesForSecuritySchemes(t, swagger.Components.SecuritySchemes)
-		if err != nil {
-			return nil, fmt.Errorf("error generating Go types for component security schemes: %w", err)
-		}
-	}
 	allTypes := append(schemaTypes, paramTypes...)
 	allTypes = append(allTypes, responseTypes...)
 	allTypes = append(allTypes, bodyTypes...)
-	allTypes = append(allTypes, securitySchemeTypes...)
 	return allTypes, nil
 }
 
@@ -1137,69 +1099,6 @@ func renderBoilerplate(t *template.Template, allEmitted []TypeDefinition) (enums
 		return "", "", "", "", fmt.Errorf("error generating boilerplate for union types with additionalProperties: %w", err)
 	}
 	return enumsOut, allOfOut, unionOut, unionAndAdditionalOut, nil
-}
-
-// GenerateConstants generates operation ids, context keys, paths, etc. to be exported as constants
-//
-// Scopes constants are derived from components/securitySchemes rather than
-// from the operations' security requirements (which are filtered to defined
-// schemes anyway), so that a spec holding shared definitions with no paths
-// still exports the constants other packages alias via import-mapping.
-func GenerateConstants(t *template.Template, swagger *openapi3.T) (string, error) {
-	var constants Constants
-
-	if swagger.Components != nil {
-		for _, schemeName := range SortedSecuritySchemeKeys(swagger.Components.SecuritySchemes) {
-			provider := SecuritySchemeProvider{Name: SanitizeGoIdentity(schemeName)}
-			alias := importedSecuritySchemeScopes(swagger.Components.SecuritySchemes[schemeName].Ref)
-			if alias == securitySchemeScopesConstant(provider.Name) {
-				// The scheme $refs a spec that import-mapping assigns to the
-				// current package under the same name: the sibling config
-				// generating that spec into this package already declares
-				// the constant, so re-declaring it here would collide.
-				continue
-			}
-			provider.ImportedScopes = alias
-			constants.SecuritySchemeProviders = append(constants.SecuritySchemeProviders, provider)
-		}
-	}
-
-	return GenerateTemplates([]string{"constants.tmpl"}, t, constants)
-}
-
-// securitySchemeScopesConstant returns the name of the generated scopes
-// context-key constant for a security scheme name. It must mirror the name
-// construction in constants.tmpl (`sanitizeGoIdentity | ucFirst` + "Scopes").
-func securitySchemeScopesConstant(schemeName string) string {
-	return UppercaseFirstCharacter(SanitizeGoIdentity(schemeName)) + "Scopes"
-}
-
-// importedSecuritySchemeScopes resolves a security scheme's $ref through
-// import-mapping to the scopes constant declared by the package generated
-// from the ref'd document. It returns "" when the scheme must be declared
-// locally: it is defined inline, the ref is internal, or the ref'd document
-// has no import-mapping entry (each package then keeps its own declaration,
-// matching the behavior from before typed context keys existed). For a
-// document mapped to the current package ("-") the returned constant is
-// unqualified — the sibling config generating that document declares it.
-func importedSecuritySchemeScopes(ref string) string {
-	if ref == "" || strings.HasPrefix(ref, "#") {
-		return ""
-	}
-	pathParts := strings.Split(ref, "#")
-	if len(pathParts) != 2 {
-		return ""
-	}
-	goPkg, ok := globalState.importMapping[pathParts[0]]
-	if !ok {
-		return ""
-	}
-	componentParts := strings.Split(pathParts[1], "/")
-	constName := securitySchemeScopesConstant(componentParts[len(componentParts)-1])
-	if goPkg.Path == importMappingCurrentPackage {
-		return constName
-	}
-	return fmt.Sprintf("%s.%s", goPkg.Name, constName)
 }
 
 // GenerateTypesForSchemas generates type definitions for any custom types defined in the
@@ -1466,36 +1365,6 @@ func GenerateTypesForRequestBodies(t *template.Template, bodies map[string]*open
 	return types, nil
 }
 
-// GenerateTypesForSecuritySchemes generates type definitions for any custom types defined in the
-// components/securitySchemes section of the Swagger spec.
-func GenerateTypesForSecuritySchemes(t *template.Template, schemes map[string]*openapi3.SecuritySchemeRef) ([]TypeDefinition, error) {
-	var types []TypeDefinition
-
-	for _, schemeName := range SortedSecuritySchemeKeys(schemes) {
-		if importedSecuritySchemeScopes(schemes[schemeName].Ref) != "" {
-			// The scheme $refs a spec assigned to another package by
-			// import-mapping. That package declares the context key type;
-			// the scopes constant alias emitted by GenerateConstants
-			// carries it over, so no local type is declared.
-			continue
-		}
-		// Generate a type to be used as a key in context.WithValue
-		goTypeName := LowercaseFirstCharacter(SchemaNameToTypeName(schemeName)) + "ContextKey"
-		goType := Schema{
-			GoType:      "string",
-			Description: fmt.Sprintf("is the context key for %s security scheme", schemeName),
-		}
-
-		types = append(types, TypeDefinition{
-			JsonName: schemeName,
-			TypeName: goTypeName,
-			Schema:   goType,
-		})
-	}
-
-	return types, nil
-}
-
 // GenerateTypes passes a bunch of types to the template engine, and buffers
 // its output into a string.
 func GenerateTypes(t *template.Template, types []TypeDefinition) (string, error) {
@@ -1608,62 +1477,38 @@ func GenerateEnums(t *template.Template, types []TypeDefinition) (string, error)
 				Schema:         tp.Schema,
 				TypeName:       tp.TypeName,
 				ValueWrapper:   wrapper,
-				PrefixTypeName: globalState.options.Compatibility.AlwaysPrefixEnumValues || tp.ForceEnumPrefix,
+				PrefixTypeName: globalState.options.OutputOptions.AlwaysPrefixEnumValues || tp.ForceEnumPrefix,
 			})
 		}
 	}
 
 	// Now, go through all the enums, and figure out if we have conflicts with
 	// any others.
-	if globalState.options.Compatibility.DisableEnumValueConflictResolution {
-		// Legacy behavior: compare generated constant names via GetValues().
-		// This is order-dependent because GetValues() reflects already-applied
-		// prefixes, so enums processed later (in sorted schema-name order) may
-		// miss conflicts with enums that were prefixed in an earlier iteration.
-		// Preserved here as an escape hatch for users who need to keep their
-		// existing generated output.
+	// Resolve cross-enum constant-name collisions by prefixing each
+	// conflicting enum's constants with its type name. Prefixing can itself
+	// introduce a new collision — a prefixed name like "Enum1One" matching
+	// another enum's raw value — so we iterate to a fixed point.
+	for {
+		changed := false
 		for i := range enums {
-			e1 := enums[i]
 			for j := i + 1; j < len(enums); j++ {
-				e2 := enums[j]
-				for e1key := range e1.GetValues() {
-					if _, found := e2.GetValues()[e1key]; found {
-						e1.PrefixTypeName = true
-						e2.PrefixTypeName = true
-						enums[i] = e1
-						enums[j] = e2
-						break
+				if enums[i].PrefixTypeName && enums[j].PrefixTypeName {
+					continue
+				}
+				if enumsConflict(enums[i], enums[j]) {
+					if !enums[i].PrefixTypeName {
+						enums[i].PrefixTypeName = true
+						changed = true
+					}
+					if !enums[j].PrefixTypeName {
+						enums[j].PrefixTypeName = true
+						changed = true
 					}
 				}
 			}
 		}
-	} else {
-		// Resolve cross-enum constant-name collisions by prefixing each
-		// conflicting enum's constants with its type name. Prefixing can itself
-		// introduce a new collision — a prefixed name like "Enum1One" matching
-		// another enum's raw value — so we iterate to a fixed point.
-		for {
-			changed := false
-			for i := range enums {
-				for j := i + 1; j < len(enums); j++ {
-					if enums[i].PrefixTypeName && enums[j].PrefixTypeName {
-						continue
-					}
-					if enumsConflict(enums[i], enums[j]) {
-						if !enums[i].PrefixTypeName {
-							enums[i].PrefixTypeName = true
-							changed = true
-						}
-						if !enums[j].PrefixTypeName {
-							enums[j].PrefixTypeName = true
-							changed = true
-						}
-					}
-				}
-			}
-			if !changed {
-				break
-			}
+		if !changed {
+			break
 		}
 	}
 

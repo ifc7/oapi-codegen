@@ -193,12 +193,11 @@ func (sh *strictHandler) GetPets(ctx *gin.Context) {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"bFFBbuMwDPyKMLtHI/bu3vSBRW9B0VsaFKpMxwpsSSXpAkHgvxeSEaRFexIpDofD4RU+zTlFiiqwV4gf",
-	"aXY1zI4p6suetGacMrEGqrXoZiqvXjLBQpRDPGFtoO70w//agOltCUw97GHrPjY3VHo9k1esBRbikApB",
-	"T+I5ZA0pwuJpDGL8GKbeSCZvwpwTq5g59TSJGTjNRkcym+SKQQMNOhX+2ogG78Sy8f3ZdUVsyhRdDrD4",
-	"t+t2HRpkp2NdsM20GXIi/a7nkXThKCaT3ofLRZRK6LTmixCb0Ylx3pOI0fQcUYeyKzwPPSz+k+7LpGKQ",
-	"5BRl8/dv15XHp6gUqwCX8xR8bWzPkuL9WCX6zTTA4ld7v2a7VaX9dMdq8ddVnJGl6huWydw0FGCBCnEx",
-	"DfZwxcITLNrNzPW4fgwA",
+	"bFHBTsMwDP2VyHCs1gK3fAVC3MaEQuqumdrY2C7SNPXfUVJNA8HJdvxsv7x3gUgzU8ZsCv4CGkecQ005",
+	"CGZ7f0arlRCjWMLay2HGEu3MCB7UJOUjrA1YOP7zvjYg+LkkwR78fps+NFcUfZwwGqwFlvJAZUGPGiWx",
+	"Jcrg4XVM6uKYpt4pY3RpZhJTN1OPk7pBaHY2otsoVww0YMmmsr8OQgNfKLrte9h1hSwx5sAJPDztul0H",
+	"DXCwsX6wZdwEOaL95fOCtkhWx2i343pWw5IGq/WiKG4M6kKMqOqM3jIUIZQp66bjY9eVECkb5nooME8p",
+	"hnKoPSnlmykluxccwMNde3Ot3bra/vCrSvmbcnC6VB7DMrkrhwIsUEUp4oDfX2CRCTy0m2jrYf0eAA==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -286,14 +285,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

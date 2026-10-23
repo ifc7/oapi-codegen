@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   A discriminated oneOf whose variants are inline, two pinning their
   discriminator value with a single-value enum (e05) and one pinning none,
@@ -27,6 +26,3 @@ samples:
   - '{"petType": "cat", "meow": "purr"}'
   - '{"petType": "dog", "bark": "woof"}'
   - '{"petType": "finch", "chirp": "tweet"}'
-rejects:
-  v1: "discriminator: not all schemas were mapped"
-  v2: "discriminator: not all schemas were mapped"

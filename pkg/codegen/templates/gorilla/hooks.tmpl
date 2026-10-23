@@ -7,19 +7,6 @@ replace the skeletons' {{block}} defaults.
 
 {{/* --- server-middleware.tmpl --- */}}
 {{define "middleware.pathParamValue"}}mux.Vars(r)["{{.ParamName}}"]{{end}}
-{{/*
-gorilla selects middleware order with its own compatibility flag; the stdhttp
-default uses ApplyChiMiddlewareFirstToLast. Only the flag name differs.
-*/}}
-{{define "middleware.applyMiddlewares"}}{{if opts.Compatibility.ApplyGorillaMiddlewareFirstToLast}}
-  for i := len(siw.HandlerMiddlewares) -1; i >= 0; i-- {
-    handler = siw.HandlerMiddlewares[i](handler)
-  }
-  {{else}}
-  for _, middleware := range siw.HandlerMiddlewares {
-    handler = middleware(handler)
-  }
-  {{end}}{{end}}
 
 {{/* --- server-handler.tmpl --- */}}
 {{/* The {{""}} action makes this override non-empty: text/template ignores a

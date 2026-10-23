@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allOf over two $refs to unions whose variants have additionalProperties:
   false, and a member with a property of its own. In v3, As* of a variant

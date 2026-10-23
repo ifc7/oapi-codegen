@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allOf over a $ref to a schema that declares a property next to an allOf of a
   oneOf. v2 generates a bare union, and keeps it one rather than add the

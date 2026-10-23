@@ -25,12 +25,6 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx {{block "echo.ctxType" .}
 {{end}}
 {{end}}
 
-{{if opts.Compatibility.EnableAuthScopesOnContext -}}
-{{range .SecurityDefinitions}}
-    ctx.Set(string({{.ProviderName | sanitizeGoIdentity | ucFirst}}Scopes), {{toStringArray .Scopes}})
-{{end}}
-{{- end}}
-
 {{if .RequiresParamObject}}
     // Parameter object where we will unmarshal all parameters from the context
     var params {{.OperationId}}Params

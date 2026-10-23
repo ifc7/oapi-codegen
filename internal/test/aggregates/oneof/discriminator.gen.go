@@ -160,6 +160,10 @@ func (t ConfigSaveReq) AsConfigSsh() (ConfigSsh, error) {
 // FromConfigSsh overwrites any union data inside the ConfigSaveReq as the provided ConfigSsh
 func (t *ConfigSaveReq) FromConfigSsh(v ConfigSsh) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"config_type":"ssh_server"}`))
 	t.union = b
 	return err
 }
@@ -167,6 +171,10 @@ func (t *ConfigSaveReq) FromConfigSsh(v ConfigSsh) error {
 // MergeConfigSsh performs a merge with any union data inside the ConfigSaveReq, using the provided ConfigSsh
 func (t *ConfigSaveReq) MergeConfigSsh(v ConfigSsh) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"config_type":"ssh_server"}`))
 	if err != nil {
 		return err
 	}

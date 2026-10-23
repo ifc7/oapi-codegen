@@ -128,8 +128,6 @@ func (e EnumInObjInArrayVal) Valid() bool {
 
 // Defines values for EnumUnion.
 const (
-	EnumUnionFour  EnumUnion = "Four"
-	EnumUnionOne   EnumUnion = "One"
 	EnumUnionThree EnumUnion = "Three"
 	EnumUnionTwo   EnumUnion = "Two"
 )
@@ -137,37 +135,9 @@ const (
 // Valid indicates whether the value is a known member of the EnumUnion enum.
 func (e EnumUnion) Valid() bool {
 	switch e {
-	case EnumUnionFour:
-		return true
-	case EnumUnionOne:
-		return true
 	case EnumUnionThree:
 		return true
 	case EnumUnionTwo:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnumUnion2.
-const (
-	EnumUnion2One   EnumUnion2 = "One"
-	EnumUnion2Seven EnumUnion2 = "Seven"
-	EnumUnion2Three EnumUnion2 = "Three"
-	EnumUnion2Two   EnumUnion2 = "Two"
-)
-
-// Valid indicates whether the value is a known member of the EnumUnion2 enum.
-func (e EnumUnion2) Valid() bool {
-	switch e {
-	case EnumUnion2One:
-		return true
-	case EnumUnion2Seven:
-		return true
-	case EnumUnion2Three:
-		return true
-	case EnumUnion2Two:
 		return true
 	default:
 		return false
@@ -227,11 +197,9 @@ type EnumInObjInArray = []struct {
 // EnumInObjInArrayVal defines model for EnumInObjInArray.Val.
 type EnumInObjInArrayVal string
 
-// EnumUnion Two enums of the same type combined with allOf.
+// EnumUnion Two enums of the same type combined with allOf: the values both
+// allow.
 type EnumUnion string
-
-// EnumUnion2 Two enums of the same type combined with allOf.
-type EnumUnion2 string
 
 // FunnyValues Edge cases for enum names
 type FunnyValues string

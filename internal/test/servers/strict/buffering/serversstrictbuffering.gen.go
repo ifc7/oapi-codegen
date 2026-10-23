@@ -82,8 +82,9 @@ func (siw *ServerInterfaceWrapper) BinaryEndpoint(w http.ResponseWriter, r *http
 		siw.Handler.BinaryEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -96,8 +97,9 @@ func (siw *ServerInterfaceWrapper) FormdataEndpoint(w http.ResponseWriter, r *ht
 		siw.Handler.FormdataEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -110,8 +112,9 @@ func (siw *ServerInterfaceWrapper) JsonEndpoint(w http.ResponseWriter, r *http.R
 		siw.Handler.JsonEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -124,8 +127,9 @@ func (siw *ServerInterfaceWrapper) MultipartEndpoint(w http.ResponseWriter, r *h
 		siw.Handler.MultipartEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -138,8 +142,9 @@ func (siw *ServerInterfaceWrapper) TextEndpoint(w http.ResponseWriter, r *http.R
 		siw.Handler.TextEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

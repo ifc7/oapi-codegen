@@ -291,7 +291,7 @@ func TestMarshalWhenNoUnionValueSet(t *testing.T) {
 
 	var dst OneOfObject10
 
-	bytes, err := dst.MarshalJSON()
+	bytes, err := json.Marshal(dst)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, string(bytes))
 }

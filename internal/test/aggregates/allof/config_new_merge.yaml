@@ -5,7 +5,6 @@ output: allof_new_merge.gen.go
 #   - models        : generate model types
 #   - embedded-spec : all_of/v2 embedded the spec (retained for fidelity)
 #   - skip-prune    : keep schemas not directly referenced by a path
-# No old-merge-schemas: the default (false) flat-struct behavior is under test.
 generate:
   models: true
   # embedded-spec is intentionally omitted: the original all_of/v2 had it, but since

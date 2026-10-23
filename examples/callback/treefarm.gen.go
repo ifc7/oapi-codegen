@@ -598,8 +598,9 @@ func (siw *ServerInterfaceWrapper) PlantTree(w http.ResponseWriter, r *http.Requ
 		siw.Handler.PlantTree(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

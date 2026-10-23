@@ -687,7 +687,7 @@ Only honour the `x-go-name` when generating field names.
 
 In some cases, you may not want use the inbuilt options for converting an OpenAPI field name to a Go field name, such as the `name-normalizer: "ToCamelCaseWithInitialisms"`, and instead trust the name that you've defined for the type better.
 
-In this case, you can use `x-oapi-codegen-only-honour-go-name` to enforce this, alongside specifying the `allow-unexported-struct-field-names` compatibility option.
+In this case, you can use `x-oapi-codegen-only-honour-go-name` to enforce this, alongside setting `output-options.allow-unexported-struct-field-names: true`.
 
 This allows you to take a spec such as:
 
@@ -726,9 +726,9 @@ You can see this in more detail in [the example code](../examples/extensions/xoa
 
 ## `x-oapi-codegen-enum-merge`
 
-Choose how the enums of an `allOf`'s members combine, with `compatibility.schema-merging-behavior: v3`.
+Choose how the enums of an `allOf`'s members combine.
 
-A value matches an `allOf` when it matches every member, so `v3` keeps only the enum values the members have in common, and reports an error when they have none. Some specs use `allOf` to add values to an enum instead. Set `x-oapi-codegen-enum-merge: union` on the schema with the `allOf`, or on a member's property that refines a property, to keep all the members' values:
+A value matches an `allOf` when it matches every member, so `oapi-codegen` keeps only the enum values the members have in common, and reports an error when they have none. Some specs use `allOf` to add values to an enum instead. Set `x-oapi-codegen-enum-merge: union` on the schema with the `allOf`, or on a member's property that refines a property, to keep all the members' values:
 
 ```yaml
 openapi: "3.0.0"
@@ -764,4 +764,4 @@ const (
 type ExtendedStatus string
 ```
 
-The other value, `intersection`, is the default. `v2` ignores the extension: it always keeps all the values. `v1` doesn't merge enums at all: it embeds the member's type. Validators read the `allOf` literally, so a service that validates requests against the spec has to accept the extra values some other way. See [How `allOf`, `anyOf` and `oneOf` become Go types](schema-merging.md#enums).
+The other value, `intersection`, is the default. Validators read the `allOf` literally, so a service that validates requests against the spec has to accept the extra values some other way. See [How `allOf`, `anyOf` and `oneOf` become Go types](schema-merging.md#enums).

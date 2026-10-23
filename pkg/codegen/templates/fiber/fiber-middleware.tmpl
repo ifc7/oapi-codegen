@@ -47,12 +47,6 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(c {{template "fiber.ctxType" .}}) e
 
   {{end}}
 
-{{if opts.Compatibility.EnableAuthScopesOnContext -}}
-{{range .SecurityDefinitions}}
-  c.{{block "fiber.ctxAccessor" .}}Context{{end}}().SetUserValue(({{.ProviderName | sanitizeGoIdentity | ucFirst}}Scopes), {{toStringArray .Scopes}})
-{{end}}
-{{- end}}
-
   {{if .RequiresParamObject}}
     // Parameter object where we will unmarshal all parameters from the context
     var params {{.OperationId}}Params

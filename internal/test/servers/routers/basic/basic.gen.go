@@ -345,8 +345,9 @@ func (siw *ServerInterfaceWrapper) GetEveryTypeOptional(w http.ResponseWriter, r
 		siw.Handler.GetEveryTypeOptional(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -359,8 +360,9 @@ func (siw *ServerInterfaceWrapper) GetSimple(w http.ResponseWriter, r *http.Requ
 		siw.Handler.GetSimple(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -426,8 +428,9 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 		siw.Handler.GetWithArgs(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -461,8 +464,9 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 		siw.Handler.GetWithReferences(w, r, globalArgument, argument)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -487,8 +491,9 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 		siw.Handler.GetWithContentType(w, r, contentType)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -501,8 +506,9 @@ func (siw *ServerInterfaceWrapper) GetReservedKeyword(w http.ResponseWriter, r *
 		siw.Handler.GetReservedKeyword(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -527,8 +533,9 @@ func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http
 		siw.Handler.CreateResource(w, r, argument)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -569,8 +576,9 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 		siw.Handler.CreateResource2(w, r, inlineArgument, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -595,8 +603,9 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 		siw.Handler.UpdateResource3(w, r, pFallthrough)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -609,8 +618,9 @@ func (siw *ServerInterfaceWrapper) GetResponseWithReference(w http.ResponseWrite
 		siw.Handler.GetResponseWithReference(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

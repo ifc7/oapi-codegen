@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allof_of_unions_closed with a discriminator next to the allOf, which the
   merge gives to Payment. Payment's own type has no discriminator, so in v3

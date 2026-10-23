@@ -2,7 +2,7 @@
 # Category: options/struct_tags
 # Tests:    struct-tags output option: user-configurable struct tag templates.
 #           - default json template kept when not overridden
-#           - user yaml entry supersedes the yaml-tags flag (no omitempty)
+#           - added yaml entry rendered from its template (no omitempty)
 #           - added tags (validate, db) rendered on every field
 #           - form tag still gated on form-style parameters (NeedsFormTag)
 # ==========================================================================

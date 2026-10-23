@@ -46,8 +46,9 @@ func (siw *ServerInterfaceWrapper) GetPing(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetPing(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -177,13 +178,13 @@ func HandlerWithOptions(si ServerInterface, options GorillaServerOptions) http.H
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"XFJBb1MxDP4rkeEA0mvTreKS24QQqji0EtymHbI8t8l4Lw6J39g05b8jJx2FnZw4X/x9n+0XcDQnihi5",
-	"gHmB4jzOth0PFE8SU6aEmQO2bAo9i092ThOCgSS4Afg5ya1wFkStA2T8tYSMI5jb/u3uL4ruH9AxDPC0",
-	"OtEq2lmS+0fMOYwjxkZdpUaIRxI6DtzIvnRaxaRCHIOzjMrTb7kvBRV7VPuE8eawU1Juss+qJHThKNBA",
-	"UX3wzKkYrU+B/XK/djTr/c1On9Gr7/+iP8IAj5hLoAgGrtab9aZppjPYpjQFHLvtxfGScXx9hDoAJYw2",
-	"BTCwPf9Nln3ro7bjHKK2C1NxdupdrQPo1wafkCWMWFwOibuEzx7dT8XecrMqNkNReYkxxJPaf4PGmZv4",
-	"nej6inwIbT4ZS6JY+hSvNxsJjiJjbDzNSnetHwrFyzLI6X3GIxh4py/bovtr0Zdh/a/1gPlIeVZWiSUl",
-	"24CF22YUzNJWMLdvDf7wqEY82mVi1VFrGGDJExiQyRmtJ3J28lTYbD9dXW+h3tVa658BAA==",
+	"XFLNbhshEH4VNO2hldbGidULt6jqIerBltpblANhxwvpLkNhNk0U8e7VgFO3PQHDx8z3wys4WhJFjFzA",
+	"vEJxHhfbtkeKk6wpU8LMAVs1hV7FZ7ukGcFAEtwA/JLkVDgLotYBMv5cQ8YRzF1/dv8HRQ+P6BgGeN5M",
+	"tIl2keLhCXMO44ixja7SI8QTyTgO3IZ96WMVkwpxDM4yKk+/5LwWVOxRHRLGm+OtknazfVEloQsngQaK",
+	"6oNnTsVoPQX268PW0aIPN7f6jN58+xv9EQZ4wlwCRTBwtd1td40zncE2pTng2GWvjteM49sl1AEoYbQp",
+	"gIH9+W2y7JuP2o5LiNquTMXZubtaB9BvBk/IsoxYXA6JO4XPHt0Pxd5ykyoyQ1F5jTHESR2+grheEsXS",
+	"07re7WRxFBlj69cod3X6sVC8hC679xlPYOCdvvwK3W+LvoTyL6cj5hPlRVkl1JWkjoXbDyiYxT4wd/8L",
+	"+e5RjXiy68yqo7YwwJpnMCAJGa1ncnb2VNjsP11d76He11rr7wEA",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -265,14 +266,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

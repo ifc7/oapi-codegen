@@ -88,12 +88,11 @@ func (pd ParameterDefinition) ZeroValueIsNil() bool {
 // JsonTag generates the struct tag annotation for a parameter field on a
 // strict RequestObject struct. If Parameter Foo is marshaled to json as "foo",
 // this will create the annotation 'json:"foo"'. Tags configured via
-// output-options.struct-tags are rendered too (the legacy yaml-tags flag does
-// not apply to these fields).
+// output-options.struct-tags are rendered too.
 // It also includes any additional struct tags from x-oapi-codegen-extra-tags
 // at the parameter or schema level (parameter-level takes precedence).
 func (pd *ParameterDefinition) JsonTag() string {
-	fieldTags := paramFieldTagGenerator().generateTagsMap(StructTagInfo{
+	fieldTags := fieldTagGenerator().generateTagsMap(StructTagInfo{
 		FieldName:  pd.ParamName,
 		IsOptional: !pd.Required,
 		OmitEmpty:  !pd.Required,
@@ -602,42 +601,6 @@ func sharedParameterTypeDefs(sharedParams []ParameterDefinition) []TypeDefinitio
 	return typeDefs
 }
 
-type SecurityDefinition struct {
-	ProviderName string
-	Scopes       []string
-}
-
-func DescribeSecurityDefinition(securityRequirements openapi3.SecurityRequirements) []SecurityDefinition {
-	outDefs := make([]SecurityDefinition, 0)
-
-	for _, sr := range securityRequirements {
-		if len(sr) == 0 {
-			return nil
-		}
-		for _, k := range SortedMapKeys(sr) {
-			v := sr[k]
-			outDefs = append(outDefs, SecurityDefinition{ProviderName: k, Scopes: v})
-		}
-	}
-
-	return outDefs
-}
-
-// filterOutUndefinedSecuritySchemes drops any SecurityDefinition whose ProviderName
-// is not present in defined. A `security` requirement that references an
-// unknown scheme would otherwise produce a constant declaration and middleware
-// references against a context-key type that is never emitted (the type is
-// only generated for entries in components/securitySchemes).
-func filterOutUndefinedSecuritySchemes(defs []SecurityDefinition, defined map[string]struct{}) []SecurityDefinition {
-	out := make([]SecurityDefinition, 0, len(defs))
-	for _, d := range defs {
-		if _, ok := defined[d.ProviderName]; ok {
-			out = append(out, d)
-		}
-	}
-	return out
-}
-
 // OperationDefinition describes an Operation
 type OperationDefinition struct {
 	// OperationId is the `operationId` field from the OpenAPI Specification, after going through a `nameNormalizer`, and will be used to generate function names
@@ -645,18 +608,17 @@ type OperationDefinition struct {
 	// SpecOperationId is the raw `operationId` value as it appears in the OpenAPI spec, before normalization to a Go identifier. Empty when the spec didn't supply one (in which case the codegen-generated ID is the only available identifier and is exposed via OperationId).
 	SpecOperationId string
 
-	PathParams          []ParameterDefinition // Parameters in the path, eg, /path/:param
-	HeaderParams        []ParameterDefinition // Parameters in HTTP headers
-	QueryParams         []ParameterDefinition // Parameters in the query, /path?param
-	CookieParams        []ParameterDefinition // Parameters in cookies
-	TypeDefinitions     []TypeDefinition      // These are all the types we need to define for this operation
-	SecurityDefinitions []SecurityDefinition  // These are the security providers
-	BodyRequired        bool
-	Bodies              []RequestBodyDefinition // The list of bodies for which to generate handlers.
-	Responses           []ResponseDefinition    // The list of responses that can be accepted by handlers.
-	Summary             string                  // Summary string from Swagger, used to generate a comment
-	Method              string                  // GET, POST, DELETE, etc.
-	Path                string                  // The Swagger path for the operation, like /resource/{id}
+	PathParams      []ParameterDefinition // Parameters in the path, eg, /path/:param
+	HeaderParams    []ParameterDefinition // Parameters in HTTP headers
+	QueryParams     []ParameterDefinition // Parameters in the query, /path?param
+	CookieParams    []ParameterDefinition // Parameters in cookies
+	TypeDefinitions []TypeDefinition      // These are all the types we need to define for this operation
+	BodyRequired    bool
+	Bodies          []RequestBodyDefinition // The list of bodies for which to generate handlers.
+	Responses       []ResponseDefinition    // The list of responses that can be accepted by handlers.
+	Summary         string                  // Summary string from Swagger, used to generate a comment
+	Method          string                  // GET, POST, DELETE, etc.
+	Path            string                  // The Swagger path for the operation, like /resource/{id}
 	// SpecOrder is the source line on which this operation's path is
 	// declared in the spec, used to register routes in the order the paths
 	// appear in the spec rather than sorted (issue #1887). Zero when the
@@ -1636,16 +1598,6 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 		return operations, nil
 	}
 
-	// Collect the names of security schemes actually defined under
-	// components/securitySchemes. Requirements that reference an undefined
-	// scheme are filtered out below so generated code stays compilable.
-	definedSecuritySchemes := map[string]struct{}{}
-	if swagger.Components != nil {
-		for name := range swagger.Components.SecuritySchemes {
-			definedSecuritySchemes[name] = struct{}{}
-		}
-	}
-
 	// Track alias counters for generating unique client method names
 	// when multiple paths $ref the same path item.
 	aliasCounters := map[string]int{}
@@ -1713,13 +1665,6 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 				operationId = operationId + fmt.Sprintf("Alias%d", n)
 			}
 
-			if !globalState.options.Compatibility.PreserveOriginalOperationIdCasingInEmbeddedSpec && !isAlias {
-				// update the existing, shared, copy of the spec if we're not wanting to preserve it.
-				// Skip for aliases: they share the same *Operation as the canonical path,
-				// and writing the suffixed name back would corrupt the original.
-				op.OperationID = operationId
-			}
-
 			// These are parameters defined for the specific path method that
 			// we're iterating over.
 			localParams, err := DescribeParameters(op.Parameters, []string{operationId + "Params"})
@@ -1779,21 +1724,6 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 				AliasTarget:     aliasTarget,
 				PathItemRef:     pathItem.Ref,
 			}
-
-			// check for overrides of SecurityDefinitions.
-			// See: "Step 2. Applying security:" from the spec:
-			// https://swagger.io/docs/specification/authentication/
-			if op.Security != nil {
-				opDef.SecurityDefinitions = DescribeSecurityDefinition(*op.Security)
-			} else {
-				// use global securityDefinitions
-				// globalSecurityDefinitions contains the top-level securityDefinitions.
-				// They are the default securityPermissions which are injected into each
-				// path, except for the case where a path explicitly overrides them.
-				opDef.SecurityDefinitions = DescribeSecurityDefinition(swagger.Security)
-
-			}
-			opDef.SecurityDefinitions = filterOutUndefinedSecuritySchemes(opDef.SecurityDefinitions, definedSecuritySchemes)
 
 			if op.RequestBody != nil {
 				opDef.BodyRequired = op.RequestBody.Value.Required
@@ -1921,12 +1851,6 @@ func WebhookOperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, er
 				TypeDefinitions: typeDefinitions,
 				IsWebhook:       true,
 				WebhookName:     webhookName,
-			}
-
-			if op.Security != nil {
-				opDef.SecurityDefinitions = DescribeSecurityDefinition(*op.Security)
-			} else {
-				opDef.SecurityDefinitions = DescribeSecurityDefinition(swagger.Security)
 			}
 
 			if op.RequestBody != nil {
@@ -2072,12 +1996,6 @@ func CallbackOperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, e
 							TypeDefinitions: typeDefinitions,
 							IsCallback:      true,
 							CallbackName:    callbackName,
-						}
-
-						if op.Security != nil {
-							opDef.SecurityDefinitions = DescribeSecurityDefinition(*op.Security)
-						} else {
-							opDef.SecurityDefinitions = DescribeSecurityDefinition(swagger.Security)
 						}
 
 						if op.RequestBody != nil {
@@ -2408,7 +2326,7 @@ func GenerateResponseDefinitions(operationID string, responses map[string]*opena
 				Schema:   contentSchema,
 				Style:    style,
 				Explode:  explode,
-				Required: header.Value.Required || globalState.options.Compatibility.HeadersImplicitlyRequired,
+				Required: header.Value.Required,
 				Nullable: nullable,
 			}
 			if header.Value.Deprecated {
@@ -2609,34 +2527,6 @@ func sortOperationsBySpecOrder(ops []OperationDefinition) []OperationDefinition 
 	return out
 }
 
-// sortOperationsLexicographically returns a copy of ops sorted by path then
-// method, reproducing the historical (pre-#1887) route-registration order in
-// which OperationDefinitions gathers paths. It is a stable no-op on an
-// already-gathered slice, but re-sorts explicitly so the ordering does not
-// depend on the caller's input.
-func sortOperationsLexicographically(ops []OperationDefinition) []OperationDefinition {
-	out := make([]OperationDefinition, len(ops))
-	copy(out, ops)
-	slices.SortStableFunc(out, func(a, b OperationDefinition) int {
-		if c := cmp.Compare(a.Path, b.Path); c != 0 {
-			return c
-		}
-		return cmp.Compare(a.Method, b.Method)
-	})
-	return out
-}
-
-// operationsInRegistrationOrder returns ops in the order route handlers should
-// be registered. By default this follows spec-declaration order (issue #1887);
-// when the sort-handler-registrations compatibility flag is set it restores the
-// historical lexicographic order.
-func operationsInRegistrationOrder(ops []OperationDefinition) []OperationDefinition {
-	if globalState.options.Compatibility.SortHandlerRegistrations {
-		return sortOperationsLexicographically(ops)
-	}
-	return sortOperationsBySpecOrder(ops)
-}
-
 // GenerateIrisServer generates all the go code for the ServerInterface as well as
 // all the wrapper functions around our handlers.
 func GenerateIrisServer(t *template.Template, operations []OperationDefinition) (string, error) {
@@ -2645,7 +2535,7 @@ func GenerateIrisServer(t *template.Template, operations []OperationDefinition) 
 		return "", err
 	}
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"iris/iris-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"iris/iris-handler.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -2659,7 +2549,7 @@ func GenerateChiServer(t *template.Template, operations []OperationDefinition) (
 		return "", err
 	}
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -2673,7 +2563,7 @@ func GenerateFiberServer(t *template.Template, operations []OperationDefinition)
 		return "", err
 	}
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"fiber-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"fiber-handler.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -2687,7 +2577,7 @@ func GenerateFiberV3Server(t *template.Template, operations []OperationDefinitio
 		return "", err
 	}
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"fiber-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"fiber-handler.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -2701,7 +2591,7 @@ func GenerateEchoServer(t *template.Template, operations []OperationDefinition) 
 		return "", err
 	}
 	// Route registration follows spec-declaration order (issue #1887).
-	registerData := EchoRegisterTemplateData{RouteReturnType: "*echo.Route", Operations: operationsInRegistrationOrder(operations)}
+	registerData := EchoRegisterTemplateData{RouteReturnType: "*echo.Route", Operations: sortOperationsBySpecOrder(operations)}
 	if err := GenerateTemplatesIntoBuffer(&buf, []string{"echo/echo-register.tmpl"}, t, registerData); err != nil {
 		return "", err
 	}
@@ -2719,7 +2609,7 @@ func GenerateEcho5Server(t *template.Template, operations []OperationDefinition)
 	// Echo v5's EchoRouter methods return echo.RouteInfo instead of v4's
 	// *echo.Route; the shared echo/echo-register.tmpl is parameterized on
 	// that return type.
-	registerData := EchoRegisterTemplateData{RouteReturnType: "echo.RouteInfo", Operations: operationsInRegistrationOrder(operations)}
+	registerData := EchoRegisterTemplateData{RouteReturnType: "echo.RouteInfo", Operations: sortOperationsBySpecOrder(operations)}
 	if err := GenerateTemplatesIntoBuffer(&buf, []string{"echo/echo-register.tmpl"}, t, registerData); err != nil {
 		return "", err
 	}
@@ -2734,7 +2624,7 @@ func GenerateGinServer(t *template.Template, operations []OperationDefinition) (
 		return "", err
 	}
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"gin/gin-register.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"gin/gin-register.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -2748,7 +2638,7 @@ func GenerateGorillaServer(t *template.Template, operations []OperationDefinitio
 		return "", err
 	}
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -2762,7 +2652,7 @@ func GenerateStdHTTPServer(t *template.Template, operations []OperationDefinitio
 		return "", err
 	}
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
 		return "", err
 	}
 	return buf.String(), nil

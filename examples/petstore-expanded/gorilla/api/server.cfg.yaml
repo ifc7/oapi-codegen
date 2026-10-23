@@ -4,6 +4,4 @@ generate:
   models: true
   gorilla-server: true
   embedded-spec: true
-compatibility:
-  apply-gorilla-middleware-first-to-last: true
 output: petstore-server.gen.go

@@ -1,4 +1,3 @@
-versions: [v3]
 description: >-
   oneof_closed_variants with output-options.lenient-union-accessors: As* of a
   variant with additionalProperties: false ignores the keys it doesn't

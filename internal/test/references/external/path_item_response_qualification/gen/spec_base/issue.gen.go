@@ -429,8 +429,9 @@ func (siw *ServerInterfaceWrapper) GetV1Outcome(w http.ResponseWriter, r *http.R
 		siw.Handler.GetV1Outcome(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -443,8 +444,9 @@ func (siw *ServerInterfaceWrapper) GetV1Version(w http.ResponseWriter, r *http.R
 		siw.Handler.GetV1Version(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

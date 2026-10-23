@@ -18,10 +18,6 @@ import (
 	externalRef1 "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/petstore"
 )
 
-const (
-	BearerAuthScopes = externalRef0.BearerAuthScopes
-)
-
 // Container defines model for Container.
 type Container struct {
 	ObjectA *externalRef0.ObjectA `json:"object_a,omitempty"`
@@ -35,16 +31,15 @@ type Container struct {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"vFVNb9swDP0rAbej6nbYsINvbXdfgW2nojAYmbG12ZJG0f1A4f8+SI4T127RbMh6aRVRfH58j5QeQbvW",
-	"O0tWAuSPEHRNLablpbOCxhLHH56dJxZDKeTWP0lLgXH9nmkDObw73QOdblFOPepfWNF5ETzp4mvKOode",
-	"jQDrAwEupgAXEwD9GsDuXK/Ak7x2PNxhVRGfoDfFuPYkQRxTwbQJRU1YhqLFIMRFYF20aGzBFFzHmkLh",
-	"PNmYfUUCfT9jimVpxDiLzdVET+GOFMiDJ8i3xxPdZ8VbeGGxpfh/mx+Eja2OoHG/pzALHUohIhxP0EsU",
-	"qhw/LD9vyviX7rH1DUH+QcHGcYsCORgrnz/BTlxjhSriqM7IeZcGX1wVQC2KmDuj4P5krIRdJ8QnrSup",
-	"ifAu20ayscYsxbIdeQX3bbPXDPQYOK5YVyRLnfREwbcZgl3ZvVq4dPaPNpWuqgwtjVLgayfuBzdDUwi1",
-	"YdmUc/3HnKnRyIwTp+4YvadymNNkk6B0CbukoNn4ONIRi2Q1xFbGrqSmVZIMFJDtWsivAW/RNLhu4p4n",
-	"Ww6MgmtKuHmmIMHqaS1v49p3HL5+iBq9AqbfneG4dT2oOnXi5ijjE9t54RzJkYcm1v3C5fIXnfpf7o9I",
-	"bS6A4HjHku7YyMO32AkD6wtCJj7vpH6xbZ4mzZ7qSf7iJXqKndov0lmn7b00tYgf+Bm7cUkZI2mCQcEt",
-	"cRiGJr1UgwGQw8fsLDuLDYRSx0L6/s8A",
+	"vFVNb9swDP0rAbej4mTYsINvbXdfDtupKAzGZhxt1scouk1R+L8PkuPEizs0G9JeEkUUn/jeI5UnKJ3x",
+	"zpKVAPkThHJLBtPyxllBbYnjD8/OE4umFHLrH1RKgXH9nmkDObxbHIEWe5SFx/In1nRVBE9l8TVlXUGn",
+	"BoD1mQDXY4DrEUD5EsDhXKfAk7x0PDxgXRPP0etiWHuSII6pYNqEYktYhcJgEOIicFkY1LZgCq7lkkLh",
+	"PNmYvSKBrjupFKtKi3YWm9VIT+GWFMijJ8j3x1O5z4o38cKiofi9zw/C2tYX0Lg7lnASOreEiHA5QW9Q",
+	"qHb8OL1eV/GTdmh8Q5B/ULBxbFAgB23l8yc4iKutUE0c1RlqPqTBF1cHUBMSp84o2M0HJuxaIZ4bV1ET",
+	"4V22j2QDxyzFskPxCnamOWoG5RC4rFgrkqlO5UjBtxmCA+1OTVxa/qdNlatrTVOjFPitE/edm74phEyY",
+	"NuWp/kPO2GhkxpFTD4zeU9XPabJJUNqEXVEoWfs40hGLZNbHZtrOZEuzJBkoINsayG8B71E3uG7inidb",
+	"9RUF11Rw9wwhwfpPLm/j2jfsbz9HjU4B069Wc9y67VUdO3F3kfGJ7TxxjuTCQxN5/+Vx+YdOfZX3I5Z2",
+	"KoBgemPjaNmNS1drSSMCCu6JQ9+V6a+gZwg5fMyW2TI6hLKN/Lru9wA=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -144,14 +139,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

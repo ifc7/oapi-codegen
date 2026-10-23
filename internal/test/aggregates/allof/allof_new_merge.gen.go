@@ -7,11 +7,11 @@ import (
 	"github.com/google/uuid"
 )
 
-// NewMergeFormatFromRef defines model for NewMergeFormatFromRef.
-type NewMergeFormatFromRef = uuid.UUID
+// NewMergeFormatFromRef decorator member with no format of its own
+type NewMergeFormatFromRef = NewMergeUuid
 
 // NewMergeFormatFromRefReversed Decorator first; type and format both come from the second member.
-type NewMergeFormatFromRefReversed = uuid.UUID
+type NewMergeFormatFromRefReversed = NewMergeUuid
 
 // NewMergePerson This is a person, with mandatory first and last name, but optional ID
 // number. This would be returned by a `Get` style API. We merge the person

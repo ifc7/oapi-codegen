@@ -1340,10 +1340,8 @@ components:
 	}
 }
 
-// A composition lowered to an untyped member's type is wrapped. How a
-// composition is lowered depends on the schema-merging behavior, so the
-// member is identified by the type the generator emitted; every behavior
-// lowers these to the member's type, v1 since #2590.
+// A composition lowered to an untyped member's type is wrapped. The member is
+// identified by the type the generator emitted.
 func TestStrictServerComposedResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.1.0"
@@ -1427,17 +1425,12 @@ components:
 `
 
 	wrapped := []string{"AllOfOp", "AllOfSiblingOp", "WrappedOp", "NullableOp", "NullableAnyOfOp", "NamedOp"}
-	for _, behavior := range []string{SchemaMergingV1, SchemaMergingV2, SchemaMergingV3} {
-		t.Run(behavior, func(t *testing.T) {
-			code := generateSpec(t, spec, func(c *Configuration) {
-				c.Compatibility.SchemaMergingBehavior = behavior
-				c.Generate.StdHTTPServer = true
-				c.Generate.Strict = true
-			})
-			for _, op := range wrapped {
-				assert.Contains(t, code, "type "+op+"200JSONResponse struct {\n\tBody ", op)
-			}
-		})
+	code := generateSpec(t, spec, func(c *Configuration) {
+		c.Generate.StdHTTPServer = true
+		c.Generate.Strict = true
+	})
+	for _, op := range wrapped {
+		assert.Contains(t, code, "type "+op+"200JSONResponse struct {\n\tBody ", op)
 	}
 }
 

@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   allOf over two $refs to untyped schemas and an annotation. Neither member
   places a constraint, so the composition is untyped. v1 used to embed both in

@@ -27,14 +27,7 @@ type OneOfObject10 struct {
 	One   *string `json:"one,omitempty"`
 	Three *bool   `json:"three,omitempty"`
 	Two   *int    `json:"two,omitempty"`
-	union json.RawMessage
 }
-
-// OneOfObject100 defines model for OneOfObject10.0.
-type OneOfObject100 = any
-
-// OneOfObject101 defines model for OneOfObject10.1.
-type OneOfObject101 = any
 
 // OneOfObject11 additional properties of oneOf
 type OneOfObject11 map[string]OneOfObject11_AdditionalProperties
@@ -58,11 +51,11 @@ type OneOfObject12 struct {
 	union json.RawMessage
 }
 
-// OneOfObject120 defines model for OneOfObject12.0.
-type OneOfObject120 = string
+// OneOfObject12OneOf00 defines model for OneOfObject12.OneOf0.0.
+type OneOfObject12OneOf00 = string
 
-// OneOfObject121 defines model for OneOfObject12.1.
-type OneOfObject121 = float32
+// OneOfObject12OneOf01 defines model for OneOfObject12.OneOf0.1.
+type OneOfObject12OneOf01 = float32
 
 // OneOfObject13 oneOf with fixed discriminator and other fields allowed
 type OneOfObject13 struct {
@@ -344,130 +337,6 @@ func (t *OneOfObject1) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// AsOneOfObject100 returns the union data inside the OneOfObject10 as a OneOfObject100
-func (t OneOfObject10) AsOneOfObject100() (OneOfObject100, error) {
-	var body OneOfObject100
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromOneOfObject100 overwrites any union data inside the OneOfObject10 as the provided OneOfObject100
-func (t *OneOfObject10) FromOneOfObject100(v OneOfObject100) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeOneOfObject100 performs a merge with any union data inside the OneOfObject10, using the provided OneOfObject100
-func (t *OneOfObject10) MergeOneOfObject100(v OneOfObject100) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsOneOfObject101 returns the union data inside the OneOfObject10 as a OneOfObject101
-func (t OneOfObject10) AsOneOfObject101() (OneOfObject101, error) {
-	var body OneOfObject101
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromOneOfObject101 overwrites any union data inside the OneOfObject10 as the provided OneOfObject101
-func (t *OneOfObject10) FromOneOfObject101(v OneOfObject101) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeOneOfObject101 performs a merge with any union data inside the OneOfObject10, using the provided OneOfObject101
-func (t *OneOfObject10) MergeOneOfObject101(v OneOfObject101) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t OneOfObject10) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	object := make(map[string]json.RawMessage)
-	if t.union != nil {
-		err = json.Unmarshal(b, &object)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if t.One != nil {
-		object["one"], err = json.Marshal(t.One)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'one': %w", err)
-		}
-	}
-
-	if t.Three != nil {
-		object["three"], err = json.Marshal(t.Three)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'three': %w", err)
-		}
-	}
-
-	if t.Two != nil {
-		object["two"], err = json.Marshal(t.Two)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'two': %w", err)
-		}
-	}
-	b, err = json.Marshal(object)
-	return b, err
-}
-
-func (t *OneOfObject10) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	if err != nil {
-		return err
-	}
-	object := make(map[string]json.RawMessage)
-	err = json.Unmarshal(b, &object)
-	if err != nil {
-		return err
-	}
-
-	if raw, found := object["one"]; found {
-		err = json.Unmarshal(raw, &t.One)
-		if err != nil {
-			return fmt.Errorf("error reading 'one': %w", err)
-		}
-	}
-
-	if raw, found := object["three"]; found {
-		err = json.Unmarshal(raw, &t.Three)
-		if err != nil {
-			return fmt.Errorf("error reading 'three': %w", err)
-		}
-	}
-
-	if raw, found := object["two"]; found {
-		err = json.Unmarshal(raw, &t.Two)
-		if err != nil {
-			return fmt.Errorf("error reading 'two': %w", err)
-		}
-	}
-
-	return err
-}
-
 // AsOneOfObject110 returns the union data inside the OneOfObject11_AdditionalProperties as a OneOfObject110
 func (t OneOfObject11_AdditionalProperties) AsOneOfObject110() (OneOfObject110, error) {
 	var body OneOfObject110
@@ -586,22 +455,44 @@ func (t *OneOfObject11_AdditionalProperties) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// AsOneOfObject120 returns the union data inside the OneOfObject12 as a OneOfObject120
-func (t OneOfObject12) AsOneOfObject120() (OneOfObject120, error) {
-	var body OneOfObject120
+// AsOneOfObject12OneOf00 returns the union data inside the OneOfObject12 as a OneOfObject12OneOf00
+func (t OneOfObject12) AsOneOfObject12OneOf00() (OneOfObject12OneOf00, error) {
+	var body OneOfObject12OneOf00
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromOneOfObject120 overwrites any union data inside the OneOfObject12 as the provided OneOfObject120
-func (t *OneOfObject12) FromOneOfObject120(v OneOfObject120) error {
+// FromOneOfObject12OneOf00 sets the union data inside the OneOfObject12 to the provided OneOfObject12OneOf00. It replaces
+// the data of OneOfObject12OneOf00's own union and keeps the other unions' data.
+func (t *OneOfObject12) FromOneOfObject12OneOf00(v OneOfObject12OneOf00) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var object, kept map[string]json.RawMessage
+	if json.Unmarshal(b, &object) == nil && json.Unmarshal(t.union, &kept) == nil && kept != nil {
+		added := object == nil
+		if added {
+			object = make(map[string]json.RawMessage)
+		}
+		for key, value := range kept {
+			if _, found := object[key]; !found {
+				object[key] = value
+				added = true
+			}
+		}
+		if added {
+			if b, err = json.Marshal(object); err != nil {
+				return err
+			}
+		}
+	}
 	t.union = b
 	return err
 }
 
-// MergeOneOfObject120 performs a merge with any union data inside the OneOfObject12, using the provided OneOfObject120
-func (t *OneOfObject12) MergeOneOfObject120(v OneOfObject120) error {
+// MergeOneOfObject12OneOf00 performs a merge with any union data inside the OneOfObject12, using the provided OneOfObject12OneOf00
+func (t *OneOfObject12) MergeOneOfObject12OneOf00(v OneOfObject12OneOf00) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -612,22 +503,44 @@ func (t *OneOfObject12) MergeOneOfObject120(v OneOfObject120) error {
 	return err
 }
 
-// AsOneOfObject121 returns the union data inside the OneOfObject12 as a OneOfObject121
-func (t OneOfObject12) AsOneOfObject121() (OneOfObject121, error) {
-	var body OneOfObject121
+// AsOneOfObject12OneOf01 returns the union data inside the OneOfObject12 as a OneOfObject12OneOf01
+func (t OneOfObject12) AsOneOfObject12OneOf01() (OneOfObject12OneOf01, error) {
+	var body OneOfObject12OneOf01
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromOneOfObject121 overwrites any union data inside the OneOfObject12 as the provided OneOfObject121
-func (t *OneOfObject12) FromOneOfObject121(v OneOfObject121) error {
+// FromOneOfObject12OneOf01 sets the union data inside the OneOfObject12 to the provided OneOfObject12OneOf01. It replaces
+// the data of OneOfObject12OneOf01's own union and keeps the other unions' data.
+func (t *OneOfObject12) FromOneOfObject12OneOf01(v OneOfObject12OneOf01) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var object, kept map[string]json.RawMessage
+	if json.Unmarshal(b, &object) == nil && json.Unmarshal(t.union, &kept) == nil && kept != nil {
+		added := object == nil
+		if added {
+			object = make(map[string]json.RawMessage)
+		}
+		for key, value := range kept {
+			if _, found := object[key]; !found {
+				object[key] = value
+				added = true
+			}
+		}
+		if added {
+			if b, err = json.Marshal(object); err != nil {
+				return err
+			}
+		}
+	}
 	t.union = b
 	return err
 }
 
-// MergeOneOfObject121 performs a merge with any union data inside the OneOfObject12, using the provided OneOfObject121
-func (t *OneOfObject12) MergeOneOfObject121(v OneOfObject121) error {
+// MergeOneOfObject12OneOf01 performs a merge with any union data inside the OneOfObject12, using the provided OneOfObject12OneOf01
+func (t *OneOfObject12) MergeOneOfObject12OneOf01(v OneOfObject12OneOf01) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -645,9 +558,33 @@ func (t OneOfObject12) AsOneOfVariant3() (OneOfVariant3, error) {
 	return body, err
 }
 
-// FromOneOfVariant3 overwrites any union data inside the OneOfObject12 as the provided OneOfVariant3
+// FromOneOfVariant3 sets the union data inside the OneOfObject12 to the provided OneOfVariant3. It replaces
+// the data of OneOfVariant3's own union and keeps the other unions' data.
 func (t *OneOfObject12) FromOneOfVariant3(v OneOfVariant3) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var object, kept map[string]json.RawMessage
+	if json.Unmarshal(b, &object) == nil && json.Unmarshal(t.union, &kept) == nil && kept != nil {
+		delete(kept, "discriminator")
+		delete(kept, "name")
+		added := object == nil
+		if added {
+			object = make(map[string]json.RawMessage)
+		}
+		for key, value := range kept {
+			if _, found := object[key]; !found {
+				object[key] = value
+				added = true
+			}
+		}
+		if added {
+			if b, err = json.Marshal(object); err != nil {
+				return err
+			}
+		}
+	}
 	t.union = b
 	return err
 }
@@ -671,9 +608,33 @@ func (t OneOfObject12) AsOneOfVariant4() (OneOfVariant4, error) {
 	return body, err
 }
 
-// FromOneOfVariant4 overwrites any union data inside the OneOfObject12 as the provided OneOfVariant4
+// FromOneOfVariant4 sets the union data inside the OneOfObject12 to the provided OneOfVariant4. It replaces
+// the data of OneOfVariant4's own union and keeps the other unions' data.
 func (t *OneOfObject12) FromOneOfVariant4(v OneOfVariant4) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var object, kept map[string]json.RawMessage
+	if json.Unmarshal(b, &object) == nil && json.Unmarshal(t.union, &kept) == nil && kept != nil {
+		delete(kept, "discriminator")
+		delete(kept, "name")
+		added := object == nil
+		if added {
+			object = make(map[string]json.RawMessage)
+		}
+		for key, value := range kept {
+			if _, found := object[key]; !found {
+				object[key] = value
+				added = true
+			}
+		}
+		if added {
+			if b, err = json.Marshal(object); err != nil {
+				return err
+			}
+		}
+	}
 	t.union = b
 	return err
 }

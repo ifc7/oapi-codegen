@@ -361,9 +361,28 @@ func (t *FilterPredicate) MergeFilterPredicate1(v FilterPredicate1) error {
 	return err
 }
 
-// AsFilterPredicateOp returns the union data inside the FilterPredicate as a FilterPredicateOp
+// AsFilterPredicateOp returns the union data inside the FilterPredicate as a FilterPredicateOp. FilterPredicateOp allows no
+// additional properties: a property that neither it nor the rest of FilterPredicate
+// declares is an error.
 func (t FilterPredicate) AsFilterPredicateOp() (FilterPredicateOp, error) {
 	var body FilterPredicateOp
+	var object map[string]json.RawMessage
+	if json.Unmarshal(t.union, &object) == nil {
+		// The first unknown key in sorted order, so the error is always the same.
+		unknown, found := "", false
+		for key := range object {
+			switch key {
+			case "$any", "$none":
+			default:
+				if !found || key < unknown {
+					unknown, found = key, true
+				}
+			}
+		}
+		if found {
+			return body, fmt.Errorf("FilterPredicateOp doesn't allow the property %q", unknown)
+		}
+	}
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
@@ -387,9 +406,28 @@ func (t *FilterPredicate) MergeFilterPredicateOp(v FilterPredicateOp) error {
 	return err
 }
 
-// AsFilterPredicateRangeOp returns the union data inside the FilterPredicate as a FilterPredicateRangeOp
+// AsFilterPredicateRangeOp returns the union data inside the FilterPredicate as a FilterPredicateRangeOp. FilterPredicateRangeOp allows no
+// additional properties: a property that neither it nor the rest of FilterPredicate
+// declares is an error.
 func (t FilterPredicate) AsFilterPredicateRangeOp() (FilterPredicateRangeOp, error) {
 	var body FilterPredicateRangeOp
+	var object map[string]json.RawMessage
+	if json.Unmarshal(t.union, &object) == nil {
+		// The first unknown key in sorted order, so the error is always the same.
+		unknown, found := "", false
+		for key := range object {
+			switch key {
+			case "$lt":
+			default:
+				if !found || key < unknown {
+					unknown, found = key, true
+				}
+			}
+		}
+		if found {
+			return body, fmt.Errorf("FilterPredicateRangeOp doesn't allow the property %q", unknown)
+		}
+	}
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }

@@ -30,7 +30,6 @@ func TestValidateSpecRejects(t *testing.T) {
 		"x_go_name_invalid.yaml":      "x-go-name",
 		"x_go_type_semicolon.yaml":    "x-go-type",
 		"ref_sibling_x_go_type.yaml":  "x-go-type",
-		"security_scope_quote.yaml":   "scope",
 	}
 
 	for file, want := range cases {

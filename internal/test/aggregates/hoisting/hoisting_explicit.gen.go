@@ -44,6 +44,7 @@ type GetRolesId200JSONResponseBody_Data struct {
 
 // GetRolesId200JSONResponseBody defines the 200 response body for GetRolesId for application/json ContentType.
 type GetRolesId200JSONResponseBody struct {
+	// Data If successful, response from api
 	Data GetRolesId200JSONResponseBody_Data `json:"data"`
 
 	// Ok Indicated whether the response is successful.

@@ -813,8 +813,9 @@ func (siw *ServerInterfaceWrapper) DeregisterWebhook(w http.ResponseWriter, r *h
 		siw.Handler.DeregisterWebhook(w, r, id)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -839,8 +840,9 @@ func (siw *ServerInterfaceWrapper) RegisterWebhook(w http.ResponseWriter, r *htt
 		siw.Handler.RegisterWebhook(w, r, kind)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

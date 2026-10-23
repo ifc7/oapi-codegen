@@ -56,8 +56,9 @@ func (siw *ServerInterfaceWrapper) GetForm(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetForm(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -70,8 +71,9 @@ func (siw *ServerInterfaceWrapper) GetNull(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetNull(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -84,8 +86,9 @@ func (siw *ServerInterfaceWrapper) GetNullableRef(w http.ResponseWriter, r *http
 		siw.Handler.GetNullableRef(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -98,8 +101,9 @@ func (siw *ServerInterfaceWrapper) GetText(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetText(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -112,8 +116,9 @@ func (siw *ServerInterfaceWrapper) GetTextRef(w http.ResponseWriter, r *http.Req
 		siw.Handler.GetTextRef(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -126,8 +131,9 @@ func (siw *ServerInterfaceWrapper) GetUnion(w http.ResponseWriter, r *http.Reque
 		siw.Handler.GetUnion(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -321,7 +327,7 @@ type GetNullableRefResponseObject interface {
 }
 
 type GetNullableRef200JSONResponse struct {
-	Body Untyped
+	Body any
 }
 
 func (response GetNullableRef200JSONResponse) VisitGetNullableRefResponse(w http.ResponseWriter) error {

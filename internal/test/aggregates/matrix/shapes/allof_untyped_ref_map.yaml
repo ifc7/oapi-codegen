@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   allOf over a $ref to an untyped schema, a $ref to a map (an object with only
   additionalProperties) and an annotation. The untyped member places no

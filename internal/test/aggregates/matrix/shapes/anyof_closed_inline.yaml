@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   anyOf over inline variants with additionalProperties: false. In v3, As* of
   a variant rejects the other variant's keys, as for a oneOf.

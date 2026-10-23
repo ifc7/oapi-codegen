@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allOf that adds a value to an enum, asking with x-oapi-codegen-enum-merge:
   union for the values of either enum rather than those of both. v2 always

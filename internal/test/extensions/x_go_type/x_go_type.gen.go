@@ -121,7 +121,7 @@ type MyTestRequest struct {
 
 // TypeWithAllOf defines model for TypeWithAllOf.
 type TypeWithAllOf struct {
-	Id googleuuid.UUID `json:"id,omitempty"`
+	Id ID `json:"id,omitempty"`
 }
 
 // TypeWithOptionalField defines model for TypeWithOptionalField.
@@ -925,21 +925,21 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"zFZbb9s2FP4rwtneJkuOu72oTx2yFcYuAZoVe2gDg5aOZbYiD0MepTYC/feBlCxLseKmBdbmJWZ4bt+5",
-	"feI95KQMadTsILsHl29RiXC8pLxWqNmfjSWDliUGiRYK/S/vDUIGjq3UJTQxOBZcBxXUtYLsHZBGiIE/",
-	"kf+7tej/21Bt4SZ+YB7DblbSzF/O2gA9gtV167dpeiNaf8CcfcyD0nUfewz2TlT1FNopX8vLU8UBLsig",
-	"JCorrGtZJG/fLi9HqKUyZPlYoIEyxGAEb/2d5G29TnJSaStOg9zDuSaFS81Yoh3AkN3N2UhWMA5iUCV0",
-	"mZAt013KUmEa5IcYV22+J5WSmlfCrbzuqpJKBpUfLW4ggx/S45yk3ZCkQ8DjMnkfyZ/BRxMfHHcF/Wqn",
-	"xznrHIbKfbW7/6+VTQwWb2tpsfA7ME6/R7+W5UpqhpuJQfwH3USDNhKr4sKfCnS5lYYlacjgVSSsFfuI",
-	"NpHfuyiMvPORGNV4HYPJBcTdaXG6h00MSuyWreUvvTRE8MIAYjEFQqNjLKI2i+iT5G0kqopy4W9DHeNH",
-	"E+qirIkqFHoc53Rxh9XtfPQGJ+WcIJa/9r7Ab/C2Rsd/B9i/e+s+7oun5Uc1P4sUm+ZLkw5Dtjf4r+Tt",
-	"q6q62kzQQdgt0Qrfnd+y5SU08f0gpvsozaydMVHNDHkWs5CxrbG5meTeA5qrzqhtyAkqwd+NouMn5heD",
-	"4NWxf9/rg/JgiIaYJgYosOqGTue+hxNtyEbhQHdorSzQvYwegg1KuGO0WlSREflHUaJ7+V6PxzGoSV1J",
-	"jS1lWdRCSV1GQhcPFu0gGjqJclJrqbFoaeYzfUnea4iBJVcIGXh02knSLt2tSlp5O4jhDq1rM75I5snc",
-	"t5sMamEkZPAiuUjmXc3DGKa4E8pU4WFRYuiRn1LhAy8LyOC3Vv4aGXwfnCHt2glezOf+JyfN3etKGFPJ",
-	"PNimHxzp40Psc1+3/o0WGjhu3NUf/raJe6yLJ4BdfAu0/XPuDGZLxI/ifY38xst9Q6xQyGhd4CjpndzW",
-	"aPcQH5ZGeL0jwA1ZJRgyKATjjGXg7GfNJ83NdE/GpfMPnagQLA4VZHSPVzA8MFqCQMe/UrE/02Xv6acv",
-	"a3Xw33QkNIL+8yn0kigQVtM0/w0A",
+	"zFZbb9s2FP4rwtneRluOu72oTx2CDcYuAZoVe2gDg5aOZbYiD0MepTYC/feBlCxLsZKmBdb2JWZ4bt+5",
+	"feI95KQtGTTsIbsHn+9Qy3i8pLzWaDicrSOLjhVGiZEawy8fLEIGnp0yJTQCPEuuowqaWkP2FsggCOCP",
+	"FP7uHIb/tlQ7uBEPzAXsZyXNwuWsDdAjWF+3fpumN6LNe8w5xDwqXfexx2DvZFVPoZ3ytbo8VxzgggxK",
+	"orLCulbF/M2b1eUItdKWHJ8KNFAGAVbyLtwp3tWbeU46bcVplAc416RxZRhLdAMYqrt5MpKTjIMYVElT",
+	"zsmV6T5lpTGN8mOMqzbfs0opw2vp10F3XSmtosqPDreQwQ/paU7SbkjSIeBxmYKP+Z/RRyOOjruCfrHT",
+	"05x1DmPlvtjd/9fKRoDD21o5LMIOjNPv0W9UuVaG4WZiEP9BP9GgrcKquAinAn3ulGVFBjJ4lUjn5CGh",
+	"bRL2Lokj70MkRj1ex2hyAaI7Lc/3sBGg5X7VWv7SS2OEIIwgllMgDHrGImmzSD4q3iWyqiiX4TbWUTya",
+	"UBdlQ1ShNOM454s7rG7nozc4K+cEsfx1CAV+jbc1ev47wv4tWPdxXzwvP6r5u0ixaT436ThkB4v/Kt69",
+	"qqqr7QQdxN2SrfDt01u2uoRG3A9i+g/KztoZk9XMUmAxBxm7GpubSe49ornqjNqGnKGS/M0oWjwzPwGS",
+	"16f+fasPyoMhGmKaGKDIqls6n/seTrIll8QD3aFzqkD/MnkINirhntEZWSVW5h9kif7lOzMex6imTKUM",
+	"tpTl0EitTJlIUzxYtKNo6CTJSW+UwaKlmU/0Zf7OgABWXCFkENAZr8j4dL8uaR3sQMAdOt9mfDFfzBeh",
+	"3WTRSKsggxfzi/miq3kcwxT3UtsqPixKjD0KUypD4FURo0T578gQ+uAtGd9O8HKxCD85Ge5eV9LaSuXR",
+	"Nn3vyZweYp/6uvVvtNjAceOu/gi3jeixLp8Bdvk10PbPuScwOyJ+FG+J/DrIQ0Oc1MjofOQoFZzc1ugO",
+	"II5LI4PeCeCWnJYMGRSSccYqcvZ3zSfNzXRPxqULD52kkCyPFWT0j1cwCluCQM+/UnF4ostB+afPa3V8",
+	"wDQdCY2g/3wOvSSKhNU0zX8DAA==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -1021,14 +1021,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

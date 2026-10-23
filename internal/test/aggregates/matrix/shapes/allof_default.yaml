@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   allOf decorating a $ref to an enum that has a default. Failed with "merging
   two sets of defaults is undefined" whenever either member had a default

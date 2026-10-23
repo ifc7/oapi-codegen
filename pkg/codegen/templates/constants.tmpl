@@ -1,14 +1,3 @@
-{{- if and (gt (len .SecuritySchemeProviders) 0) opts.Compatibility.EnableAuthScopesOnContext }}
-const (
-{{range $Provider := .SecuritySchemeProviders}}
-    {{- if $Provider.ImportedScopes}}
-    {{- $Provider.Name | sanitizeGoIdentity | ucFirst}}Scopes = {{$Provider.ImportedScopes}}
-    {{- else}}
-    {{- $Provider.Name | sanitizeGoIdentity | ucFirst}}Scopes {{$Provider.Name | schemaNameToTypeName | lcFirst}}ContextKey = "{{$Provider.Name}}.Scopes"
-    {{- end}}
-{{end}}
-)
-{{end}}
 {{range $Enum := .EnumDefinitions}}
 // Defines values for {{$Enum.TypeName}}.
 const (

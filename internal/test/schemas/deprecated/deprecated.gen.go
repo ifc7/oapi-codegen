@@ -1477,8 +1477,9 @@ func (siw *ServerInterfaceWrapper) PostClients(w http.ResponseWriter, r *http.Re
 		siw.Handler.PostClients(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1491,8 +1492,9 @@ func (siw *ServerInterfaceWrapper) GetDeprecatedEndpoint(w http.ResponseWriter, 
 		siw.Handler.GetDeprecatedEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1505,8 +1507,9 @@ func (siw *ServerInterfaceWrapper) PostDeprecatedEndpointWithNonDeprecatedBody(w
 		siw.Handler.PostDeprecatedEndpointWithNonDeprecatedBody(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1551,8 +1554,9 @@ func (siw *ServerInterfaceWrapper) GetDeprecatedField(w http.ResponseWriter, r *
 		siw.Handler.GetDeprecatedField(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1616,8 +1620,9 @@ func (siw *ServerInterfaceWrapper) GetDeprecatedParamsOldId(w http.ResponseWrite
 		siw.Handler.GetDeprecatedParamsOldId(w, r, oldId, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1630,8 +1635,9 @@ func (siw *ServerInterfaceWrapper) PostDeprecatedRequestBody(w http.ResponseWrit
 		siw.Handler.PostDeprecatedRequestBody(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1644,8 +1650,9 @@ func (siw *ServerInterfaceWrapper) GetLegacy(w http.ResponseWriter, r *http.Requ
 		siw.Handler.GetLegacy(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

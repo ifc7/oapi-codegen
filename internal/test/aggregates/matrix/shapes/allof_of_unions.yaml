@@ -1,6 +1,3 @@
-versions: [v1, v2, v3]
-broken:
-  v1: "v1 embeds both unions, whose MarshalJSON and UnmarshalJSON then cancel out."
 description: >-
   allOf over two $refs to unions: a value is one of Payment's variants and
   one of Delivery's at once. Setting one union's variant must keep the

@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   A discriminated oneOf over $ref variants, two with additionalProperties:
   false and one without, next to the union's own properties. In v3, As* of a

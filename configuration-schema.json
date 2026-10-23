@@ -71,83 +71,6 @@
         }
       }
     },
-    "compatibility": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "",
-      "properties": {
-        "old-merge-schemas": {
-          "type": "boolean",
-          "deprecated": true,
-          "description": "Deprecated: set `schema-merging-behavior: v1` instead, which this is an alias for. In the past, we merged schemas for `allOf` by inlining each schema within the schema list. This approach, though, is incorrect because `allOf` merges at the schema definition level, not at the resulting model level. So, new behavior merges OpenAPI specs but generates different code than we have in the past. Set OldMergeSchemas to true for the old behavior. Please see https://github.com/oapi-codegen/oapi-codegen/issues/531"
-        },
-        "schema-merging-behavior": {
-          "type": "string",
-          "enum": ["v1", "v2", "v3"],
-          "description": "Selects how schemas composed with `allOf` are merged into Go types, and how `anyOf` and `oneOf` are turned into Go unions. `v1`: `allOf` members that are `$ref`s are embedded in the Go struct and the fields of inline members are inlined, while `anyOf`/`oneOf` are handled as in `v2`; the only behavior before v1.11.0, and what `old-merge-schemas: true` is an alias for. `v2`: `allOf` members are merged keyword by keyword into one Go type, and `anyOf`/`oneOf` become a union type with `As*`, `From*` and `Merge*` methods; the default since v1.11.0. `v3`: `allOf` members are merged by what `allOf` means, and members no value can match are an error; unions model more of the spec. Added in v2.9.0 as an option; it becomes the default after at least one release as an option. Leaving it unset means `v2`. See https://github.com/oapi-codegen/oapi-codegen/blob/main/docs/schema-merging.md"
-        },
-        "old-allof-sibling-merging": {
-          "type": "boolean",
-          "description": "In the past, when a schema combined `allOf` with sibling fields at the same level (`properties`, `required`, `additionalProperties`, `description`), those siblings were silently discarded and the schema was emitted as a Go type alias to its sole `allOf` target. New behavior merges the parent's siblings with the `allOf` members so the generated type carries every field declared in the spec. This is a more accurate translation of OpenAPI semantics, but it changes the shape of generated types: a schema that previously produced `type X = Y` may now produce a distinct struct embedding Y with extra fields, which is not interchangeable with Y in downstream Go code. Set OldAllOfSiblingMerging to true to restore the prior behavior. Please see https://github.com/oapi-codegen/oapi-codegen/issues/697"
-        },
-        "old-enum-conflicts": {
-          "type": "boolean",
-          "description": "Enum values can generate conflicting typenames, so we've updated the code for enum generation to avoid these conflicts, but it will result in some enum types being renamed in existing code. Set OldEnumConflicts to true to revert to old behavior. Please see: Please see https://github.com/oapi-codegen/oapi-codegen/issues/549"
-        },
-        "old-aliasing": {
-          "type": "boolean",
-          "description": "It was a mistake to generate a go type definition for every $ref in the OpenAPI schema. New behavior uses type aliases where possible, but this can generate code which breaks existing builds. Set OldAliasing to true for old behavior. Please see https://github.com/oapi-codegen/oapi-codegen/issues/549"
-        },
-        "disable-flatten-additional-properties": {
-          "type": "boolean",
-          "description": "When an object contains no members, and only an additionalProperties specification, it is flattened to a map"
-        },
-        "disable-required-readonly-as-pointer": {
-          "type": "boolean",
-          "description": "When an object property is both required and readOnly the go model is generated as a pointer. Set DisableRequiredReadOnlyAsPointer to true to mark them as non pointer. Please see https://github.com/oapi-codegen/oapi-codegen/issues/604"
-        },
-        "always-prefix-enum-values": {
-          "type": "boolean",
-          "description": "When set to true, always prefix enum values with their type name instead of only when typenames would be conflicting."
-        },
-        "disable-enum-value-conflict-resolution": {
-          "type": "boolean",
-          "description": "Turns off cross-enum value conflict resolution. By default, when two enums declare the same value, the generated constants are prefixed with their type name so they don't collide. Set this to true to disable that resolution and restore the prior behavior, in which conflict detection compared already-prefixed constant names and could miss overlaps depending on declaration order. Please see https://github.com/oapi-codegen/oapi-codegen/issues/2391"
-        },
-        "apply-chi-middleware-first-to-last": {
-          "type": "boolean",
-          "description": "Our generated code for Chi has historically inverted the order in which Chi middleware is applied such that the last invoked middleware ends up executing first in the Chi chain This resolves the behavior such that middlewares are chained in the order they are invoked. Please see https://github.com/oapi-codegen/oapi-codegen/issues/786"
-        },
-        "apply-gorilla-middleware-first-to-last": {
-          "type": "boolean",
-          "description": "Our generated code for gorilla/mux has historically inverted the order in which gorilla/mux middleware is applied such that the last invoked middleware ends up executing first in the middlewares chain This resolves the behavior such that middlewares are chained in the order they are invoked. Please see https://github.com/oapi-codegen/oapi-codegen/issues/841"
-        },
-        "circular-reference-limit": {
-          "type": "integer",
-          "description": "DEPRECATED: No longer used.\nCircularReferenceLimit allows controlling the limit for circular reference checking. In some OpenAPI specifications, we have a higher number of circular references than is allowed out-of-the-box, but can be tuned to allow traversing them."
-        },
-        "allow-unexported-struct-field-names": {
-          "type": "boolean",
-          "description": "AllowUnexportedStructFieldNames makes it possible to output structs that have fields that are unexported.\nThis is expected to be used in conjunction with an extension such as `x-go-name` to override the output name, and `x-oapi-codegen-extra-tags` to not produce JSON tags for `encoding/json`.\nNOTE that this can be confusing to users of your OpenAPI specification, who may see a field present and therefore be expecting to see it in the response, without understanding the nuance of how `oapi-codegen` generates the code."
-        },
-        "preserve-original-operation-id-casing-in-embedded-spec": {
-          "type": "boolean",
-          "description": "When `oapi-codegen` parses the original OpenAPI specification, it will apply the configured `output-options.name-normalizer` to each operation's `operationId` before that is used to generate code from.\nHowever, this is also applied to the copy of the `operationId`s in the `embedded-spec` generation, which means that the embedded OpenAPI specification is then out-of-sync with the input specificiation.\nTo ensure that the `operationId` in the embedded spec is preserved as-is from the input specification, set this. NOTE that this will not impact generated code.\nNOTE that if you're using `include-operation-ids` or `exclude-operation-ids` you may want to ensure that the `operationId`s used are correct."
-        },
-        "headers-implicitly-required": {
-          "type": "boolean",
-          "description": "Treats all response headers as required, ignoring the `required` property from the header definition. Prior to v2.6.0, oapi-codegen generated all response headers as direct values (implicitly required). The OpenAPI specification defaults headers to optional (required: false), so the corrected behavior generates optional headers as pointers. Set this to true to restore the old behavior where all headers are treated as required.\nPlease see https://github.com/oapi-codegen/oapi-codegen/issues/2267"
-        },
-        "enable-auth-scopes-on-context": {
-          "type": "boolean",
-          "description": "DEPRECATED: perform authentication and authorization at runtime using the request validation middleware instead, which evaluates the spec's security requirements directly. Please see https://github.com/oapi-codegen/oapi-codegen/issues/1524\nRe-enables the legacy emission of security scheme scopes by generated server code: the per-scheme context key types (e.g. `bearerAuthContextKey`), the scope constants (e.g. `BearerAuthScopes`), and the per-operation calls that store the operation's scopes into the request context.\nThis mechanism is off by default: it flattens the OpenAPI `security` requirements into a per-scheme list of scopes, and cannot represent alternative schemes (OR), combined schemes (AND), or anonymous (`{}`) alternatives.\nA security scheme that is a $ref into a spec covered by import-mapping does not declare its own context key type; its scopes constant is an alias of the one in the mapped package, so `context.Value` lookups use the same key across the generated packages. This requires the mapped spec's config to also set this flag. Please see https://github.com/oapi-codegen/oapi-codegen/issues/2383"
-        },
-        "sort-handler-registrations": {
-          "type": "boolean",
-          "description": "Restores the historical behavior of registering generated route handlers in sorted (lexicographic, by path then method) order. By default handlers are registered in the order their paths are declared in the spec, so that on routers which match in registration order (e.g. Fiber, Gorilla/mux) overlapping paths can be disambiguated by ordering them in the spec. Set this to true to opt out and go back to the old sorted registration order.\nPlease see https://github.com/oapi-codegen/oapi-codegen/issues/1887"
-        }
-      }
-    },
     "output-options": {
       "type": "object",
       "additionalProperties": false,
@@ -165,6 +88,14 @@
           "type": "boolean",
           "description": "Whether to skip declaring the types that string formats map to by default (OpenAPIDate, OpenAPIDuration, OpenAPIEmail, OpenAPIFile), because another generated file in the same package already declares them"
         },
+        "always-prefix-enum-values": {
+          "type": "boolean",
+          "description": "When set to true, always prefix enum values with their type name instead of only when typenames would be conflicting."
+        },
+        "allow-unexported-struct-field-names": {
+          "type": "boolean",
+          "description": "AllowUnexportedStructFieldNames makes it possible to output structs that have fields that are unexported.\nThis is expected to be used in conjunction with an extension such as `x-go-name` to override the output name, and `x-oapi-codegen-extra-tags` to not produce JSON tags for `encoding/json`.\nNOTE that this can be confusing to users of your OpenAPI specification, who may see a field present and therefore be expecting to see it in the response, without understanding the nuance of how `oapi-codegen` generates the code."
+        },
         "skip-enum-validate": {
           "type": "boolean",
           "description": "Whether to skip generation of the Valid() method on enum types"
@@ -175,7 +106,7 @@
         },
         "lenient-union-accessors": {
           "type": "boolean",
-          "description": "Makes a union's As* methods ignore the properties a variant with `additionalProperties: false` doesn't declare, as they do for any other variant. By default, with `compatibility.schema-merging-behavior: v3`, such a variant's As* returns an error for a property that neither the variant nor anything else in the union's object declares, so that data of another variant isn't taken for it. The older values ignore this option: their As* always ignore such properties.",
+          "description": "Makes a union's As* methods ignore the properties a variant with `additionalProperties: false` doesn't declare, as they do for any other variant. By default such a variant's As* returns an error for a property that neither the variant nor anything else in the union's object declares, so that data of another variant isn't taken for it.",
           "default": false
         },
         "include-tags": {
@@ -289,10 +220,6 @@
             }
           },
           "required": ["path"]
-        },
-        "yaml-tags": {
-          "type": "boolean",
-          "description": "Enable the generation of YAML tags for struct fields. Superseded by `struct-tags`: when a `yaml` entry is present there, this flag has no effect."
         },
         "struct-tags": {
           "type": "object",

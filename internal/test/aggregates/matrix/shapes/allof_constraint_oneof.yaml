@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   allOf with a oneOf next to it whose branches only add constraints. Unlike a
   oneOf of types, this is still dropped, so the schema stays an alias of its

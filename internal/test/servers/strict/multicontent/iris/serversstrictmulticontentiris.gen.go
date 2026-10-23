@@ -429,9 +429,9 @@ func (sh *strictHandler) Test(ctx iris.Context) {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"rM8xSwQxEAXgvyJPy3BZtYvYWAj2ltfEOOvlyM0MyVjIsv9dEhcWLMVp3jTvY2ZBkosKE1tDWNDSiS5x",
-	"rK/UrKd9KSFA3s6UDOu6OmSeBYE/S3EQJY6aEXB/mA63cNBopyF424gPGiFKNVoWfnlH+PEdKjUVbjQa",
-	"d9PUIwkb8ehE1ZLTaPlzE96P7NtNpRkB137/wm8v+OH3a38TD1daZc6FHo94ivWIfzafRf5gbvM9AA==",
+	"rI8xS0QxEIT/ioyWj8tTu4iNhWBveU2M+7wcud0lWQs53n+XLA8OLOW2mYFlPmbOyHJSYWLriGf0fKBT",
+	"cvtO3YbajxIi5ONI2bCu64TCiyDyd60TRImTFkQ87ubdPSZosoMTgm2IL3IRpZasCL99IsKfExp1Fe7k",
+	"iYd5HpKFjdgzSbWW7Klw7MKXksPdNVoQcRsuK8I2IXj/0fYv4ulGmyyl0vMeL6ntcWXmq8g/mNv9DgA=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -513,14 +513,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

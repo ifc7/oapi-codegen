@@ -755,11 +755,11 @@ var swaggerSpec = []string{
 	"R+fL8LyHz5kACXZ8ZpZbUJOSWZ5lxmeo5Try03DK4C6iJdMqaxhZkVfRyEzNjHct+aZWNrTBbxOs1ffb",
 	"LwrZmki+yawTMqYFugdvZyYZK5h2faJJpsMc0sp4p7IkJiO/a3GB7S6vHE7JU07xgw8LTIlcRsht1sXB",
 	"I48efB4PSYtQw+QAQ6FrcDgIaFhg4uGI70fj0ThLFyJ6EwlquC4hDeVMWZQqC1+tIsqN63OgGXZoS/jG",
-	"QQ2fUfJuadhiMtT3K8gGLL1Ar/cMSifYn46kOeoXXPqoD61/NR4f+d3E2JItdKonDkeu/z/hFGr4r9pd",
-	"J9WQ5WqC6yU4HP7CtOTyzg3Gn3edScvhnDmqGlqgV+TQC00J06jUFa3q8q2R4qkYWE5X68e6oiw16CMt",
-	"N9nJkMw6IcvH4JZveerBjn3fH0+i/0u1twZ9VfYTy14eA0PJTc28lTdTYbjEz8DOPT5HtIJO4bpmfwkO",
-	"x1cGP7wak0QdCS2wWhUfvOiXu8NP/sw7ueJF71x6XnbXJMuyXBEDZbjkrnPCbeuqo9e3aPgv6e+9jif8",
-	"+77/PQA=",
+	"QZ2Debc0bDEZ6vsVZAOWXqDXewalE+xPR9Ic9QsufdSH1r8aj4/8bmJsyRY61ROHI9f/n3AKNfxX7a6T",
+	"ashyNcH1EhwOf2FacnnnBuPPu86kJdTwGSVHVUML9IoceqEpYRqVuqJVXb41UjwVA8vpav1YV5SlBn2k",
+	"5eb7yZDMOiHLx+CWb3nqwY593x9Pov9LtbcGfVX2E8teHgNDyU3NvJU3U2G4xM/Azj0+R7SCTuG6Zn8J",
+	"DsdXBj+8GpNEHQktsFoVH7zol7vDT/7MO7niRe9cel521yTLslwRA2W45K5zwm3rqqPXt2j4L+nvvY4n",
+	"/Pu+/z0A",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -841,14 +841,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

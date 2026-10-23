@@ -6,5 +6,4 @@ generate:
 output-options:
   # to make sure that all types are generated, even if they're unreferenced
   skip-prune: true
-compatibility:
   allow-unexported-struct-field-names: true

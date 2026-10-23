@@ -46,7 +46,7 @@ type Schema struct {
 	UnionVariantProperties []string
 
 	// UnionOwnedKeys is set for a union that combines several oneOfs or
-	// anyOfs (schema-merging-behavior v3, see unionComponent): the JSON keys
+	// anyOfs (see unionComponent): the JSON keys
 	// each variant's own union owns, which From* replaces, keeping the other
 	// unions' data, where for a single union it replaces all of it.
 	UnionOwnedKeys map[UnionElement][]string
@@ -57,8 +57,7 @@ type Schema struct {
 
 	// UnionAllowedKeys maps each variant with `additionalProperties: false`
 	// to the JSON keys its As* allows: the variant's own, and those anything
-	// else in the union's object declares (schema-merging-behavior v3, see
-	// closeUnionVariants). As* returns an error for any other key.
+	// else in the union's object declares (see closeUnionVariants). As* returns an error for any other key.
 	UnionAllowedKeys map[UnionElement][]string
 
 	Discriminator *Discriminator // Describes which value is stored in a union
@@ -282,7 +281,7 @@ func (p Property) GoFieldName() string {
 		}
 	}
 
-	if globalState.options.Compatibility.AllowUnexportedStructFieldNames {
+	if globalState.options.OutputOptions.AllowUnexportedStructFieldNames {
 		if extension, ok := p.Extensions[extOapiCodegenOnlyHonourGoName]; ok {
 			if extOapiCodegenOnlyHonourGoName, err := extParseOapiCodegenOnlyHonourGoName(extension); err == nil {
 				if extOapiCodegenOnlyHonourGoName {
@@ -301,9 +300,7 @@ func (p Property) GoTypeDef() string {
 		return "nullable.Nullable[" + typeDef + "]"
 	}
 	if !p.Schema.SkipOptionalPointer &&
-		(!p.Required || p.Nullable ||
-			(p.ReadOnly && (!p.Required || !globalState.options.Compatibility.DisableRequiredReadOnlyAsPointer)) ||
-			p.WriteOnly) {
+		(!p.Required || p.Nullable || p.ReadOnly || p.WriteOnly) {
 
 		typeDef = "*" + typeDef
 	}
@@ -359,7 +356,7 @@ type EnumDefinition struct {
 	// PrefixTypeName determines if the enum value is prefixed with its TypeName.
 	// This is set to true when this enum conflicts with another in terms of
 	// TypeNames or when explicitly requested via the
-	// `compatibility.always-prefix-enum-values` option.
+	// `output-options.always-prefix-enum-values` option.
 	PrefixTypeName bool
 }
 
@@ -378,28 +375,7 @@ func (e *EnumDefinition) GetValues() map[string]string {
 	return newValues
 }
 
-// SecuritySchemeProvider describes one security scheme from
-// components/securitySchemes for which a scopes context-key constant is
-// generated.
-type SecuritySchemeProvider struct {
-	// Name is the sanitized scheme name; templates derive the constant name
-	// (<Name>Scopes), the context key type name and the key's string value
-	// from it.
-	Name string
-	// ImportedScopes, when non-empty, is the scopes constant declared by the
-	// package that import-mapping assigns this scheme's $ref to (e.g.
-	// "externalRef0.BearerAuthScopes", or unqualified for the current
-	// package). The local constant is declared as an alias of it, so the
-	// context key — which context.Value compares by type and value — is
-	// shared across the generated packages. Empty means the scheme is
-	// declared locally with its own context key type.
-	ImportedScopes string
-}
-
 type Constants struct {
-	// SecuritySchemeProviders holds all security schemes for which scopes
-	// context-key constants are generated.
-	SecuritySchemeProviders []SecuritySchemeProvider
 	// EnumDefinitions holds type and value information for all enums
 	EnumDefinitions []EnumDefinition
 	// SkipEnumValidate suppresses generation of the `Valid()` method on
@@ -505,7 +481,7 @@ type ResponseTypeDefinition struct {
 }
 
 func (t *TypeDefinition) IsAlias() bool {
-	return !globalState.options.Compatibility.OldAliasing && t.Schema.DefineViaAlias &&
+	return t.Schema.DefineViaAlias &&
 		!mentionsTypeName(t.Schema.TypeDecl(), t.TypeName)
 }
 
@@ -543,11 +519,10 @@ type Discriminator struct {
 	// variants are the union members the discriminator tells apart, which can
 	// be only some of the union's: a union that combines several (see
 	// Schema.UnionOwnedKeys) has the discriminator of one of them, and an
-	// inline variant that pins no value has none. v1 and v2 leave it nil for
-	// all of the union's members.
+	// inline variant that pins no value has none.
 	variants []UnionElement
 
-	// literals is set by v3 for an integer or number discriminator: each
+	// literals is set for an integer or number discriminator: each
 	// mapping value as a Go literal of the type ValueByDiscriminator decodes
 	// the discriminator into (see SwitchType). The values are compared as
 	// numbers, so 1 and 1.0 of a number discriminator are one value.
@@ -555,7 +530,7 @@ type Discriminator struct {
 }
 
 // SwitchType returns the Go type ValueByDiscriminator decodes the
-// discriminator into and switches on: int64 or float64 for a v3 integer or
+// discriminator into and switches on: int64 or float64 for an integer or
 // number discriminator, and "" when it compares the value's JSON text.
 func (d *Discriminator) SwitchType() string {
 	switch {
@@ -656,11 +631,12 @@ func (s Schema) DiscriminatorStampFor(element UnionElement) *DiscriminatorStamp 
 	case len(values) == 0:
 		return nil
 	case d.variants != nil && len(values) > 1:
-		// v3 stamps each variant exactly one value leads to: which of
+		// Only a variant exactly one value leads to is stamped: which of
 		// several to write would be arbitrary (#2071).
 		return nil
 	case d.variants == nil && len(d.Mapping) != len(s.UnionElements):
-		// v1 and v2 stamp only when every member has exactly one value.
+		// Without discriminated variants, stamp only when every member has
+		// exactly one value.
 		return nil
 	}
 	stamp.Value = values[len(values)-1]
@@ -1354,12 +1330,10 @@ func generateGoSchema(ctx genContext, sref *openapi3.SchemaRef, path []string) (
 		return generateAllOf(ctx, schema, path, extensions, skipOptionalPointer)
 	}
 
-	// schema-merging-behavior v3 generates no union for a oneOf or anyOf
-	// whose branches only add constraints, such as
-	// `oneOf: [{required: [email]}, {required: [phone]}]`.
-	if ctx.run.merging == SchemaMergingV3 {
-		schema = withoutConstraintOnlyUnions(schema, nil)
-	}
+	// A oneOf or anyOf whose branches only add constraints, such as
+	// `oneOf: [{required: [email]}, {required: [phone]}]`, generates no
+	// union.
+	schema = withoutConstraintOnlyUnions(schema, nil)
 
 	// OpenAPI 3.1 enum-via-oneOf: a scalar schema whose oneOf branches
 	// each carry `title` + `const` is rendered as a Go typed enum, not as
@@ -1481,8 +1455,7 @@ func generateGoSchema(ctx genContext, sref *openapi3.SchemaRef, path []string) (
 			// early-out here and generate a map[string]<schema> instead of an object
 			// that contains this map. We skip over anyOf/oneOf here because they can
 			// introduce properties. allOf was handled above.
-			if !globalState.options.Compatibility.DisableFlattenAdditionalProperties &&
-				len(schema.Properties) == 0 && schema.AnyOf == nil && schema.OneOf == nil {
+			if len(schema.Properties) == 0 && schema.AnyOf == nil && schema.OneOf == nil {
 				// We have a dictionary here. Returns the goType to be just a map from
 				// string to the property type. HasAdditionalProperties=false means
 				// that we won't generate custom json.Marshaler and json.Unmarshaler functions,
@@ -1668,17 +1641,7 @@ func generateGoSchema(ctx genContext, sref *openapi3.SchemaRef, path []string) (
 		outSchema.EnumValues = make(map[string]string, len(sanitizedValues))
 
 		for k, v := range sanitizedValues {
-			var enumName string
-			if v == "" {
-				enumName = "Empty"
-			} else {
-				enumName = k
-			}
-			if globalState.options.Compatibility.OldEnumConflicts {
-				outSchema.EnumValues[SchemaNameToTypeName(PathToTypeName(append(path, enumName)))] = v
-			} else {
-				outSchema.EnumValues[SchemaNameToTypeName(k)] = v
-			}
+			outSchema.EnumValues[SchemaNameToTypeName(k)] = v
 		}
 		if len(path) > 1 { // handle additional type only on non-toplevel types
 			// Allow overriding autogenerated enum type names, since these may
@@ -1945,8 +1908,7 @@ func (p Property) withSkipOptionalPointerExtension() Property {
 // field, by tag name.
 func structFieldTags(p Property) map[string]string {
 	p = p.withSkipOptionalPointerExtension()
-	shouldOmitEmpty := (!p.Required || p.ReadOnly || p.WriteOnly) &&
-		(!p.Required || !p.ReadOnly || !globalState.options.Compatibility.DisableRequiredReadOnlyAsPointer)
+	shouldOmitEmpty := !p.Required || p.ReadOnly || p.WriteOnly
 
 	// Nullable fields don't get omitempty: `null` is a meaningful wire
 	// value distinct from key absence, and a nil pointer under omitempty
@@ -1977,7 +1939,7 @@ func structFieldTags(p Property) map[string]string {
 		}
 	}
 
-	fieldTags := schemaFieldTagGenerator().generateTagsMap(StructTagInfo{
+	fieldTags := fieldTagGenerator().generateTagsMap(StructTagInfo{
 		FieldName:    p.JsonFieldName,
 		IsOptional:   !p.Required,
 		OmitEmpty:    omitEmpty,

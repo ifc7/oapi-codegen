@@ -42,8 +42,8 @@ type DecoratableValue = string
 
 // DecoratedRef defines model for DecoratedRef.
 type DecoratedRef struct {
-	OptionalNullableRef nullable.Nullable[string] `json:"optional_nullable_ref,omitempty"`
-	RequiredNullableRef nullable.Nullable[string] `json:"required_nullable_ref"`
+	OptionalNullableRef nullable.Nullable[DecoratableValue] `json:"optional_nullable_ref,omitempty"`
+	RequiredNullableRef nullable.Nullable[DecoratableValue] `json:"required_nullable_ref"`
 }
 
 // PatchRequest A request to patch an existing user object.
@@ -386,8 +386,9 @@ func (siw *ServerInterfaceWrapper) ExamplePatch(w http.ResponseWriter, r *http.R
 		siw.Handler.ExamplePatch(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

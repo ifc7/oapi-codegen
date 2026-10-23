@@ -43,28 +43,6 @@ generate:
   embedded-spec: false
   server-urls: false
 
-# Backward compatibility settings. These preserve backward-compatible
-# behavior when a bug fix or improvement changes generated output.
-# See <a href="https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#CompatibilityOptions">CompatibilityOptions</a>
-compatibility:
-  schema-merging-behavior: v2   # v1, v2 or v3: how allOf, anyOf and oneOf become Go types; see <a href="schema-merging.md">schema-merging.md</a>
-  old-merge-schemas: false      # deprecated: an alias for schema-merging-behavior: v1
-  old-allof-sibling-merging: false
-  old-enum-conflicts: false
-  old-aliasing: false
-  disable-flatten-additional-properties: false
-  disable-required-readonly-as-pointer: false
-  always-prefix-enum-values: false
-  apply-chi-middleware-first-to-last: false
-  apply-gorilla-middleware-first-to-last: false
-  circular-reference-limit: 0   # deprecated: no longer used
-  allow-unexported-struct-field-names: false
-  preserve-original-operation-id-casing-in-embedded-spec: false
-  disable-enum-value-conflict-resolution: false
-  headers-implicitly-required: false
-  enable-auth-scopes-on-context: false
-  sort-handler-registrations: false
-
 # Output modification options
 # See <a href="https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#OutputOptions">OutputOptions</a>
 output-options:
@@ -79,6 +57,12 @@ output-options:
   # OpenAPIDuration, OpenAPIEmail, OpenAPIFile); set this when another
   # generated file in the same package already declares them.
   skip-format-types: false
+  # Always prefix enum values with their type name, rather than only when
+  # they would conflict.
+  always-prefix-enum-values: false
+  # Allow struct fields that x-go-name names to be unexported; see
+  # <a href="extensions.md#x-oapi-codegen-only-honour-go-name">extensions.md</a>
+  allow-unexported-struct-field-names: false
   name-normalizer: ""
   initialism-overrides: false
   additional-initialisms: []
@@ -92,7 +76,7 @@ output-options:
   prefer-skip-optional-pointer-on-container-types: false
   skip-enum-validate: false
   skip-enum-via-oneof: false
-  lenient-union-accessors: false   # schema-merging-behavior v3 only: see <a href="schema-merging.md#variants-with-additionalproperties-false">schema-merging.md</a>
+  lenient-union-accessors: false   # see <a href="schema-merging.md#variants-with-additionalproperties-false">schema-merging.md</a>
   generate-types-for-anonymous-schemas: false
   # How OpenAPI type/format combinations map to Go types; user-specified
   # mappings are merged on top of these defaults.
@@ -132,8 +116,6 @@ output-options:
         duration:  { type: OpenAPIDuration }
         uuid:      { type: uuid.UUID, import: github.com/google/uuid }
         binary:    { type: OpenAPIFile }
-  # Superseded by struct-tags: a `yaml` entry there takes precedence over this flag
-  yaml-tags: false
   # Configure generated struct tags. Entries are merged by name on top of the
   # defaults shown below, so redefining `json` replaces its template while new
   # names add tags. Values are Go text/templates over the variables

@@ -1,11 +1,8 @@
 package codegen
 
-// This file holds the anyOf/oneOf code that every schema-merging-behavior
-// version shares: the dispatch on the version in effect, the collapse of a
-// nullable union into its one branch, and the helpers that read a union's
-// branches. The versions' own code is in union_v2.go and union_v3.go. A
-// change here changes what every version generates, so the versions move in
-// step.
+// This file holds the anyOf/oneOf plumbing: the collapse of a nullable union
+// into its one branch, and the helpers that read a union's branches. The
+// generation of unions is in union_variants.go.
 
 import (
 	"maps"
@@ -63,16 +60,6 @@ func collapseNullableUnion(ctx genContext, outSchema *Schema, sole *openapi3.Sch
 	outSchema.SkipOptionalPointer = elementSchema.SkipOptionalPointer
 	outSchema.AdditionalTypes = append(outSchema.AdditionalTypes, elementSchema.AdditionalTypes...)
 	return nil
-}
-
-// generateUnions generates the anyOf and oneOf of an object schema into
-// outSchema's union members, the way the schema-merging-behavior in effect
-// does. v1 and v2 share v2's code.
-func generateUnions(ctx genContext, outSchema *Schema, schema *openapi3.Schema, path []string) error {
-	if ctx.run.merging == SchemaMergingV3 {
-		return generateUnionsV3(ctx, outSchema, schema, path)
-	}
-	return generateUnionsV2(ctx, outSchema, schema, path)
 }
 
 // generateUnionElement generates one branch of a oneOf or anyOf, at

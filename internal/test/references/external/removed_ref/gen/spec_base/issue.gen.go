@@ -64,8 +64,9 @@ func (siw *ServerInterfaceWrapper) PostInvalidExtRefTrouble(w http.ResponseWrite
 		siw.Handler.PostInvalidExtRefTrouble(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -78,8 +79,9 @@ func (siw *ServerInterfaceWrapper) PostNoTrouble(w http.ResponseWriter, r *http.
 		siw.Handler.PostNoTrouble(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   oneof_parent_lists_children with each child closed by
   additionalProperties: false in its own allOf member, which closes the

@@ -9,8 +9,6 @@ this skeleton straight from the base tree.
 Hooks:
   middleware.pathParamValue  - expression reading a path parameter from the request
   middleware.valueIsUnescaped - value for BindStyledParameterOptions.ValueIsUnescaped
-  middleware.applyMiddlewares - loop that applies per-operation middlewares (differs
-                                only in the compatibility flag name selecting order)
 */}}
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
@@ -51,14 +49,6 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
   }
   {{end}}
 
-  {{end}}
-
-  {{if and .SecurityDefinitions opts.Compatibility.EnableAuthScopesOnContext -}}
-  ctx := r.Context()
-{{range .SecurityDefinitions}}
-  ctx = context.WithValue(ctx, {{.ProviderName | sanitizeGoIdentity | ucFirst}}Scopes, {{toStringArray .Scopes}})
-{{end}}
-  r = r.WithContext(ctx)
   {{end}}
 
   {{if .RequiresParamObject}}
@@ -202,15 +192,10 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
     siw.Handler.{{.OperationId}}(w, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
   }))
 
-  {{block "middleware.applyMiddlewares" .}}{{if opts.Compatibility.ApplyChiMiddlewareFirstToLast}}
+  // Wrap in reverse, so the first middleware is the outermost and runs first.
   for i := len(siw.HandlerMiddlewares) -1; i >= 0; i-- {
     handler = siw.HandlerMiddlewares[i](handler)
   }
-  {{else}}
-  for _, middleware := range siw.HandlerMiddlewares {
-    handler = middleware(handler)
-  }
-  {{end}}{{end}}
 
   handler.ServeHTTP(w, r)
 }

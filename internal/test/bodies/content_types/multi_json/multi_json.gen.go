@@ -787,8 +787,8 @@ var swaggerSpec = []string{
 	"zFOxUsMwDP0XwYavSQuTRzZm2DgGN5Fb91LLWOodpZd/52S3hd61QzayWI6s9/T07AN0tE0UMQqDPUBG",
 	"ThQZy2bpvnXpKApG0dClNITOSaDYLF1+2DBF/c/dGrdOo/uMHizcNb+4Tc2yVsA4mgsUTzQRxRPBqJ85",
 	"FpReX3feh69n6ve6S5kSZglVhw849HONZJ8QLLDkEFcwmppaXEmNBjJ+7kLGHuz7CeJc8GFOBbTcYCeK",
-	"pfKuc18lUHaiCd1WzSF6Aht3w2CAEkaXAlh4nLWzFgwkJ+uC0nAZiIYrLN4pR5n5Sw/2OK83ZIGqFFlO",
-	"07thuCDLRK/+uFK7v7hfi/ZJlx65yyEpB1hYEfXHw4XxpoJz7xeI7T++sQYW7fzW4bOORp9dMXv8GQA=",
+	"pfKuc18lUHaiCd1WzSF6Aht3w2CAEkaXAlh4nLWzFgwkJ+uC0nAZiIYrLN4pR5n5S6+gJf2GLFCVIstp",
+	"ejcMF2SZ6NUfV2r3F/dr0T7p0iN3OSTlAAsrov54uDDeVHDu/QKx/cc31sCind86fNbR6LMrZo8/AwA=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -870,14 +870,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

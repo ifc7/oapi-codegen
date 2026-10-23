@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../../../configuration-schema.json
+package: optionsfiltertags
+output: tags/server.gen.go
+generate:
+  echo-server: true
+output-options:
+  include-tags: [included-tag1, included-tag2]

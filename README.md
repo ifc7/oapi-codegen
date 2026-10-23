@@ -24,8 +24,6 @@ With `oapi-codegen`, there are a few [Key Design Decisions](#key-design-decision
   - [Installing](#installing)
   - [Pinning to commits](#pinning-to-commits)
 - [Usage](#usage)
-  - [Backwards compatibility](#backwards-compatibility)
-  - [Migrating from `openapi_types`](#migrating-from-openapi_types)
 - [Features](#features)
 - [What does it look like?](#what-does-it-look-like)
 - [Key design decisions](#key-design-decisions)
@@ -36,6 +34,7 @@ With `oapi-codegen`, there are a few [Key Design Decisions](#key-design-decision
   - [With Server URLs](#with-server-urls)
   - [Duplicate types generated for clients's response object types](#duplicate-types-generated-for-clientss-response-object-types)
 - [Generating API models](#generating-api-models)
+  - [Format types](#format-types)
 - [Splitting large OpenAPI specs across multiple packages (aka &quot;Import Mapping&quot; or &quot;external references&quot;)](#splitting-large-openapi-specs-across-multiple-packages-aka-import-mapping-or-external-references)
   - [Using a single package with multiple OpenAPI specs](#using-a-single-package-with-multiple-openapi-specs)
   - [Using multiple packages, with one OpenAPI spec per package](#using-multiple-packages-with-one-openapi-spec-per-package)
@@ -45,7 +44,6 @@ With `oapi-codegen`, there are a few [Key Design Decisions](#key-design-decision
 - [Request/response validation middleware](#requestresponse-validation-middleware)
 - [Implementing security](#implementing-security)
   - [On the server](#on-the-server)
-    - [Deprecated: auth scopes on the request context](#deprecated-auth-scopes-on-the-request-context)
   - [On the client](#on-the-client)
 - [Custom code generation](#custom-code-generation)
   - [Local paths](#local-paths)
@@ -164,9 +162,7 @@ index 44f29a4..436a780 100644
 ## Usage
 
 `oapi-codegen` is configured using a YAML configuration file, to simplify the number of flags that users need to remember, and to make reading the `go:generate` command less daunting.
-While some command line options are supported, they should be considered deprecated,
-we just maintain them for backward compatibility, but we're not extending
-them.
+Prefer the configuration file to command line options, which only cover a subset of it.
 
 For full details of what is supported, check out the [oapi-codegen configuration documentation](docs/configuration.md).
 
@@ -179,62 +175,6 @@ package: api
 ```
 
 Note that it's recommended to pin to a specific version of the configuration schema, so it matches the version of `oapi-codegen` you're using. For instance, if you're using [Renovate](https://docs.renovatebot.com/), you can [have Renovate automagically update this version for you](https://www.jvt.me/posts/2026/03/01/oapi-codegen-config-renovate/).
-
-### Backwards compatibility
-
-Although we strive to retain backwards compatibility - as a project that's using a stable API per SemVer - there are sometimes opportunities we must take to fix a bug that could cause a breaking change for [people relying upon the behaviour](https://xkcd.com/1172/).
-
-In this case, we will expose a [compatibility option](https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#CompatibilityOptions) to restore old behaviour.
-
-That all being said, we operate in a little bit of a grey area, since we are a code generator, we support template overrides, and
-our code can be imported. So this is how we will try to maintain compatibility:
-
-  - SemVer mostly applies to generated code. We strive to avoid breaking your code which depends on the generated code. We will
-    provide compatibility flags for major breaking changes.
-  - A breaking change could happen with either a compilation error (as something has changed in the generated code) or a behaviour change (we generate a slightly different implementation)
-  - However, if you're using generated code that is "off the beaten path", on a seldom encountered edge case, we'll sometimes decide to make a breaking change to avoid complicating usage or internals.
-  - [Our `pkg/` directory is importable](https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg). In retrospect, this was a mistake in our original design. Importing anything other than the `Generate` function and its related `Configuration` is considered unstable (and at this point, [hasn't (yet) been documented](https://github.com/oapi-codegen/oapi-codegen/issues/1487)). In the future, we will clean up our import surface.
-  - Template overrides are considered unstable, and you use them at your own risk. These are always drifting and so are their input contexts, so we can't guarantee much here.
-  - The command-line interface and/or the configuration file format are classed as stable
-
-Also note that - if a security vulnerability is found - we will opt for breaking all users if need be, if it is the most secure response.
-
-Unless explicitly called out above, your usage of `oapi-codegen` may be using unstable features, which may make it harder to upgrade over time.
-
-### Migrating from `openapi_types`
-
-Generated code no longer imports `github.com/oapi-codegen/runtime/types` (conventionally imported as `openapi_types`). The string formats that used to map to its types now map to types declared in the generated package itself, or to `github.com/google/uuid`:
-
-| Format | Before | After |
-| --- | --- | --- |
-| `date` | `openapi_types.Date` | `OpenAPIDate` |
-| `duration` | `openapi_types.Duration` | `OpenAPIDuration` |
-| `email` | `openapi_types.Email` | `OpenAPIEmail` |
-| `binary` | `openapi_types.File` | `OpenAPIFile` |
-| `uuid` | `openapi_types.UUID` | `uuid.UUID` (from `github.com/google/uuid`) |
-
-Each type keeps the fields, methods and wire format of the one it replaces, so only code that names the types changes. For a generated package `api`:
-
-| Before | After |
-| --- | --- |
-| `openapi_types.Date{Time: t}` | `api.OpenAPIDate{Time: t}` |
-| `openapi_types.Email("a@example.com")` | `api.OpenAPIEmail("a@example.com")` |
-| `openapi_types.ParseDuration(s)` | `api.ParseOpenAPIDuration(s)` |
-| `openapi_types.FromTimeDuration(d)` | `api.OpenAPIDurationFromTimeDuration(d)` |
-| `openapi_types.ErrValidationEmail` | `api.ErrOpenAPIEmailValidation` |
-| `var f openapi_types.File` | `var f api.OpenAPIFile` |
-| `openapi_types.UUID` | `uuid.UUID`, which `openapi_types.UUID` was already an alias for, so only the import changes |
-| `openapi_types.DateFormat` | `time.DateOnly` |
-
-Some other details changed at the same time:
-
-- The format types are declared alongside the models, and only those the spec uses. If you generate models for several specs into one package, set `output-options.skip-format-types: true` on all but one of them, so that each type is declared once. The one without it must use every format the others do.
-- Types from different generated packages are now distinct: `admin.OpenAPIDate` and `common.OpenAPIDate` are different types, as they're separate declarations. `OpenAPIDate`, `OpenAPIDuration` and `OpenAPIEmail` convert into their counterparts with a plain conversion, e.g. `common.OpenAPIDate(d)`; `OpenAPIFile` doesn't, as its fields are unexported.
-- The `import` of a `type-mapping` entry is now added to the generated code. Previously it was ignored and left for `goimports` to guess, which failed for packages it couldn't find.
-- A parameter named after a package used by the type mapping, such as `uuid` or `time`, is now given a `p` prefix in generated code (`pUuid`), the same as Go keywords are. It would otherwise shadow the package, and the code wouldn't compile when the same function used that package again.
-- The format types use `time.DateOnly`, so the generated models need Go 1.20+. This is lower than the Go 1.24+ that `github.com/oapi-codegen/runtime` requires, so the minimum Go version only changes for generated code that no longer imports the runtime at all, which is now the case for most models-only output.
-
-To keep using your own types instead, map the formats to them with [`type-mapping`](docs/configuration.md).
 
 ## Features
 
@@ -920,7 +860,7 @@ There is no currently planned work to change this behaviour.
 If you're looking to only generate the models for interacting with a remote service, for instance if you need to hand-roll the API client for whatever reason, you can do this as-is.
 
 > [!NOTE]
-> Generated models need Go 1.20+. Models that use the `date` format declare an `OpenAPIDate` type built on `time.DateOnly`, and generated code that still imports `github.com/oapi-codegen/runtime` (such as parameter binding in servers and clients) needs Go 1.24+, as listed in [Supported Servers](#supported-servers). See [Migrating from `openapi_types`](#migrating-from-openapi_types).
+> Generated models need Go 1.20+. Models that use the `date` format declare an `OpenAPIDate` type built on `time.DateOnly`, and generated code that still imports `github.com/oapi-codegen/runtime` (such as parameter binding in servers and clients) needs Go 1.24+, as listed in [Supported Servers](#supported-servers).
 
 > [!TIP]
 > Try to define as much as possible within the `#/components/schemas` object, as `oapi-codegen` will generate all the types here.
@@ -1025,6 +965,23 @@ output-options:
 ```
 
 For a complete example see [`examples/only-models`](examples/only-models).
+
+### Format types
+
+Most string formats map to standard library or well-known types (`date-time` to `time.Time`, `uuid` to `uuid.UUID` from `github.com/google/uuid`). The rest map to types declared in the generated package itself, alongside the models:
+
+| Format | Go type | Notes |
+| --- | --- | --- |
+| `date` | `OpenAPIDate` | Embeds `time.Time`; marshals as `2006-01-02` (`time.DateOnly`) |
+| `duration` | `OpenAPIDuration` | RFC 3339 duration with its components kept as parsed; `ParseOpenAPIDuration`, `TimeDuration` and `OpenAPIDurationFromTimeDuration` convert it |
+| `email` | `OpenAPIEmail` | A `string`, validated and normalized when marshaled or unmarshaled as JSON; invalid addresses return `ErrOpenAPIEmailValidation` |
+| `binary` | `OpenAPIFile` | Content from a multipart upload (`InitFromMultipart`) or memory (`InitFromBytes`), read with `Bytes` or `Reader` |
+
+Only the types the spec uses are declared. Each generated package declares its own, so `admin.OpenAPIDate` and `common.OpenAPIDate` are distinct types; all but `OpenAPIFile` convert into each other with a plain conversion, e.g. `common.OpenAPIDate(d)`.
+
+If you generate models for several specs into one package, set `output-options.skip-format-types: true` on all but one of them, so each type is declared once; the one without it must use every format the others do.
+
+To use your own types instead, map the formats to them with [`type-mapping`](docs/configuration.md). A mapping's `import` is added to the generated code, and a parameter named after a package the mapping uses, such as `uuid`, is given a `p` prefix (`pUuid`) so it doesn't shadow that package.
 
 ## Splitting large OpenAPI specs across multiple packages (aka "Import Mapping" or "external references")
 <a name=import-mapping></a>
@@ -1397,7 +1354,7 @@ The following extensions are supported:
 | `x-deprecated-reason` | Add a GoDoc deprecation warning to a type | [(docs)](docs/extensions.md#x-deprecated-reason)                      |
 | `x-order` | Explicitly order struct fields | [(docs)](docs/extensions.md#x-order)                                  |
 | `x-oapi-codegen-only-honour-go-name` | Only honour the `x-go-name` when generating field names | [(docs)](docs/extensions.md#x-oapi-codegen-only-honour-go-name)       |
-| `x-oapi-codegen-enum-merge` | Keep all the values of an `allOf`'s enums, with `schema-merging-behavior: v3` | [(docs)](docs/extensions.md#x-oapi-codegen-enum-merge)                |
+| `x-oapi-codegen-enum-merge` | Keep all the values of an `allOf`'s enums | [(docs)](docs/extensions.md#x-oapi-codegen-enum-merge)                |
 
 ## Request/response validation middleware
 
@@ -1545,25 +1502,6 @@ If you're using a specification with [Security Schemes](https://spec.openapis.or
 > To perform authentication, you will need to use the [validation middleware](#requestresponse-validation-middleware), which validates each request against the spec's security requirements and calls your `AuthenticationFunc` with the scheme name and required scopes.
 
 To see how this can work, check out the [authenticated API example](examples/authenticated-api/echo).
-
-#### Deprecated: auth scopes on the request context
-
-Historically, generated server code embedded each operation's security scopes into the request context:
-a context key type per security scheme (e.g. `bearerAuthContextKey`), a scope constant (e.g. `BearerAuthScopes`),
-and a per-operation call storing the operation's scopes into the request context.
-
-This mechanism is deprecated and no longer generated by default. It flattens the
-spec's `security` requirements into a per-scheme list of scopes, and cannot represent
-alternative schemes (OR), combined schemes (AND), or anonymous (`{}`) alternatives, so middleware built on it can't correctly enforce the spec. Use the [validation middleware](#requestresponse-validation-middleware) instead. Please see [#1524](https://github.com/oapi-codegen/oapi-codegen/issues/1524) for more background.
-
-If you have existing middleware that relies on these constants, you can re-enable them with:
-
-```yaml
-compatibility:
-  enable-auth-scopes-on-context: true
-```
-
-Note that even when re-enabled, an operation that includes an empty `{}` security alternative allows anonymous requests, and no scopes are embedded into the request context for that operation.
 
 ### On the client
 
@@ -2369,13 +2307,7 @@ If you're on an older release that predates this, you can [use OpenAPI Overlay](
 
 `oapi-codegen` supports `anyOf`, `allOf` and `oneOf` for generated code.
 
-There are three ways of turning them into Go types, which the `compatibility.schema-merging-behavior` setting chooses between:
-
-- `v1` is the original behavior. It embeds the types of an `allOf`'s members in a struct, and is very limited.
-- `v2` merges an `allOf`'s members into one type. It is the current default.
-- `v3` merges them by what `allOf` means, reports conflicting members as errors, and models more of what `anyOf` and `oneOf` say. It is an option for now, and will become the default once it has been available as an option for at least one release.
-
-[How `allOf`, `anyOf` and `oneOf` become Go types](docs/schema-merging.md) describes how `v1` differs from the others, and compares `v2` and `v3` side by side. The example below generates the same code under `v2` and `v3`.
+An `allOf`'s members are merged into one type by what `allOf` means, conflicting members are reported as errors, and `anyOf` and `oneOf` become union types. [How `allOf`, `anyOf` and `oneOf` become Go types](docs/schema-merging.md) describes the rules in detail.
 
 For instance, through the following OpenAPI spec:
 
@@ -2415,7 +2347,7 @@ components:
 
     # a property several schemas declare is merged: here, the second schema
     # adds a description and a length limit to Identity's `issuer`. Their
-    # types have to agree; `v3` reports an error when they can't
+    # types have to agree; generation fails when they can't
     IdentityWithDuplicateField:
       allOf:
         - $ref: '#/components/schemas/Identity'
@@ -2653,7 +2585,7 @@ Check [the docs](https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/
 
 We recommend doing so, yes, for the following reasons:
 
-- It means it's easier to view the impact of a change - be it due to an upgrade of `oapi-codegen`, or a change to your spec - and has helped catch (possibly) breaking changes in the past more easily
+- It means it's easier to view the impact of a change - be it due to an upgrade of `oapi-codegen`, or a change to your spec
 - It then allows your codebase to be consumed as a library, as all the files are committed
 
 This means you'll need to have your CI/CD pipeline validate that generated files are all up-to-date, but that's a fairly straightforward piece of work.

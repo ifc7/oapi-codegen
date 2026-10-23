@@ -187,8 +187,9 @@ func (siw *ServerInterfaceWrapper) GetBionicleName(w http.ResponseWriter, r *htt
 		siw.Handler.GetBionicleName(w, r, name)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -426,12 +427,11 @@ func (sh *strictHandler) GetBionicleName(w http.ResponseWriter, r *http.Request,
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"lFG/TvMwEH+V6r5vtOIUmDJ2QSywsFUdXPfSuGpsc74iocjvjs5paEphwMvpfGf//g1gQx+DR88JmgGi",
-	"IdMjI5Vu64J39ojPpkfpd5gsucgueGhAbhehXXCHC9sZMpaRQIGTYTTcgQJfXo5FAeHbyRHuoGE6oYJk",
-	"O+yN/MwfUfYSk/N7yDlPw8JjdeZRGFKISOywTPyZ2ff3c6z1uLVR01bYHtDyiOJ8G26lvWJiUMCOj3hp",
-	"35HSOF9WdVVDVhAiehMdNHBf1dUSVBFeqOnJPT0Ifpa7PbIUUWAE6mkHDTwir+ZGq6sU1gP8J2yhgX/6",
-	"kpW+rOirlPJGpKcYfBoduqtrKTZ4Rl/QTYxHZwu+PiTRM8yS+AnsHIX+yiEX7x7++HXw+NL+qugWZJOn",
-	"8zkA",
+	"lFG9TgMxDH6VyjBGlysw3cgDwMJWdUhTXy9VzwmOi4ROeXeUpEdLCwNZIudz/P14AuvH4AlJInQTBMNm",
+	"REEu1cZ5cvaAL2bEXG8xWnZBnCfoIL8ufL+QARd2MGysIIMCl8FgZAAFVH7WSwHj+9ExbqETPqKCaAcc",
+	"TZ4snyH3RWFHO0gpzWDR8XzSURSyD8jisCB0Unb9/5JrVbvWau7ymz1aqSyOen9r7Q2jgAJxcsBz+YEc",
+	"K75s2qaFpMAHJBMcdPDYtM0SVDFepOk5PT1l/pTfdijXKa8muGfsoYM7fd6FPrfoH1tI62wtBk+xJvDQ",
+	"tvmyngSpTDchHJw12Yrex6x3ukj6N7KKRv2dcyrZPP1ztCd87f90dEuyTvP5GgA=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -519,14 +519,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

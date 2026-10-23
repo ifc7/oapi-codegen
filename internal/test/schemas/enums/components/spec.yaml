@@ -8,7 +8,7 @@ info:
   description: |
     Enum identifier generation: type-name prefixing on value conflicts (Enum1/2/3),
     unmodified values (Enum4), numeric enums (Enum5), allOf-combined enums
-    (EnumUnion/EnumUnion2), and edge-case value names (FunnyValues).
+    (EnumUnion), and edge-case value names (FunnyValues).
 paths: {}
 components:
   schemas:
@@ -42,16 +42,11 @@ components:
       enum: [ 5, 6, 7 ]
     EnumUnion:
       description: |
-        Two enums of the same type combined with allOf.
+        Two enums of the same type combined with allOf: the values both
+        allow.
       allOf:
         - $ref: "#/components/schemas/Enum1"
         - $ref: "#/components/schemas/Enum2"
-    EnumUnion2:
-      description: |
-        Two enums of the same type combined with allOf.
-      allOf:
-        - $ref: "#/components/schemas/Enum1"
-        - enum: [ Seven ]
     FunnyValues:
       description: Edge cases for enum names
       type: string

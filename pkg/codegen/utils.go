@@ -19,7 +19,6 @@ import (
 	"cmp"
 	"fmt"
 	"go/token"
-	"maps"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -406,13 +405,6 @@ func schemaXOrder(v *openapi3.SchemaRef) (int64, bool) {
 	}
 
 	return 0, false
-}
-
-// SortedSecuritySchemeKeys returns sorted keys for a SecuritySchemeRef dict
-func SortedSecuritySchemeKeys(dict map[string]*openapi3.SecuritySchemeRef) []string {
-	keys := slices.Collect(maps.Keys(dict))
-	slices.Sort(keys)
-	return keys
 }
 
 // RefPathToObjName returns the name of referenced object without changes.

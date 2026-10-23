@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allOf over a $ref to a schema that x-go-type replaces, and a member that
   only annotates it.
