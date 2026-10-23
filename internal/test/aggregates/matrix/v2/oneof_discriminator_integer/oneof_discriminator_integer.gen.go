@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/oapi-codegen/runtime"
@@ -183,7 +184,7 @@ func (t *InlineHolder_List_Item) FromV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -199,13 +200,13 @@ func (t *InlineHolder_List_Item) MergeV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -227,7 +228,7 @@ func (t *InlineHolder_List_Item) FromV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -243,13 +244,13 @@ func (t *InlineHolder_List_Item) MergeV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -373,7 +374,7 @@ func (t *InlineHolder_Map_AdditionalProperties) FromV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -389,13 +390,13 @@ func (t *InlineHolder_Map_AdditionalProperties) MergeV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -417,7 +418,7 @@ func (t *InlineHolder_Map_AdditionalProperties) FromV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -433,13 +434,13 @@ func (t *InlineHolder_Map_AdditionalProperties) MergeV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -563,7 +564,7 @@ func (t *InlineHolder_One) FromV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -579,13 +580,13 @@ func (t *InlineHolder_One) MergeV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -607,7 +608,7 @@ func (t *InlineHolder_One) FromV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -623,13 +624,13 @@ func (t *InlineHolder_One) MergeV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -753,7 +754,7 @@ func (t *Subject) FromV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -769,13 +770,13 @@ func (t *Subject) MergeV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -797,7 +798,7 @@ func (t *Subject) FromV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -813,13 +814,13 @@ func (t *Subject) MergeV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -943,7 +944,7 @@ func (t *InlineSubjectResponse) FromV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -959,13 +960,13 @@ func (t *InlineSubjectResponse) MergeV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -987,7 +988,7 @@ func (t *InlineSubjectResponse) FromV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1003,13 +1004,13 @@ func (t *InlineSubjectResponse) MergeV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1133,7 +1134,7 @@ func (t *InlineSubjectBody) FromV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1149,13 +1150,13 @@ func (t *InlineSubjectBody) MergeV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1177,7 +1178,7 @@ func (t *InlineSubjectBody) FromV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1193,13 +1194,13 @@ func (t *InlineSubjectBody) MergeV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1323,7 +1324,7 @@ func (t *BodyComponentInlineJSONBody) FromV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1339,13 +1340,13 @@ func (t *BodyComponentInlineJSONBody) MergeV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1367,7 +1368,7 @@ func (t *BodyComponentInlineJSONBody) FromV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1383,13 +1384,13 @@ func (t *BodyComponentInlineJSONBody) MergeV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1513,7 +1514,7 @@ func (t *BodyInlineJSONBody) FromV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1529,13 +1530,13 @@ func (t *BodyInlineJSONBody) MergeV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1557,7 +1558,7 @@ func (t *BodyInlineJSONBody) FromV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1573,13 +1574,13 @@ func (t *BodyInlineJSONBody) MergeV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1703,7 +1704,7 @@ func (t *BodyInline200JSONResponseBody) FromV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1719,13 +1720,13 @@ func (t *BodyInline200JSONResponseBody) MergeV1(v V1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":1}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1747,7 +1748,7 @@ func (t *BodyInline200JSONResponseBody) FromV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1763,13 +1764,13 @@ func (t *BodyInline200JSONResponseBody) MergeV2(v V2) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"version":2}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"version":2}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1854,6 +1855,87 @@ func (t *BodyInline200JSONResponseBody) UnmarshalJSON(b []byte) error {
 	}
 
 	return err
+}
+
+// oapiJSONMergeForInlineHolder_List_Item merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForInlineHolder_List_Item(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }
 
 // RequestEditorFn is the function signature for the RequestEditor callback function

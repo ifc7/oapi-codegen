@@ -142,7 +142,7 @@ it declares one. */ -}}
                 if err != nil {
                     return err
                 }
-                b, err = runtime.JSONMerge(b, []byte(`{{$stamp.JSONPatch}}`))
+                b, err = {{$.JSONMergeFunc}}(b, []byte(`{{$stamp.JSONPatch}}`))
             {{end -}}
             {{if $schema.InUnionComponent . -}}
                 if err != nil {
@@ -173,7 +173,7 @@ it declares one. */ -}}
               return err
             }
             {{if $stamp -}}
-                b, err = runtime.JSONMerge(b, []byte(`{{$stamp.JSONPatch}}`))
+                b, err = {{$.JSONMergeFunc}}(b, []byte(`{{$stamp.JSONPatch}}`))
                 if err != nil {
                     return err
                 }
@@ -181,7 +181,7 @@ it declares one. */ -}}
             {{if $adopts -}}
                 previous := t.union
             {{end -}}
-            merged, err := runtime.JSONMerge(t.union, b)
+            merged, err := {{$.JSONMergeFunc}}(t.union, b)
             t.union = merged
             {{if $adopts -}}
                 if err == nil {

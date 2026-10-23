@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -225,7 +226,7 @@ func (t *GetRefPetsDto_Data) MergeRefCat(v RefCat) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -251,7 +252,7 @@ func (t *GetRefPetsDto_Data) MergeRefDog(v RefDog) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -277,7 +278,7 @@ func (t *GetRefPetsDto_Data) MergeRefRat(v RefRat) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -313,7 +314,7 @@ func (t *Issue1189Test_FieldA) MergeIssue1189TestFieldA0(v Issue1189TestFieldA0)
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -339,7 +340,7 @@ func (t *Issue1189Test_FieldA) MergeIssue1189TestFieldA1(v Issue1189TestFieldA1)
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -392,7 +393,7 @@ func (t *Issue1189Test_FieldC) MergeIssue1189TestFieldC0(v Issue1189TestFieldC0)
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -418,7 +419,7 @@ func (t *Issue1189Test_FieldC) MergeIssue1189TestFieldC1(v Issue1189TestFieldC1)
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -471,7 +472,7 @@ func (t *ParamAnyOf) MergeParamAnyOf0(v ParamAnyOf0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -497,7 +498,7 @@ func (t *ParamAnyOf) MergeParamAnyOf1(v ParamAnyOf1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -533,7 +534,7 @@ func (t *ParamOneOf) MergeParamOneOf0(v ParamOneOf0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -559,7 +560,7 @@ func (t *ParamOneOf) MergeParamOneOf1(v ParamOneOf1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -623,7 +624,7 @@ func (t *GetInlinePets200JSONResponseBody_Data_Item) MergeInlineCat(v InlineCat)
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -649,7 +650,7 @@ func (t *GetInlinePets200JSONResponseBody_Data_Item) MergeInlineDog(v InlineDog)
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -675,7 +676,7 @@ func (t *GetInlinePets200JSONResponseBody_Data_Item) MergeInlineRat(v InlineRat)
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForGetRefPetsDto_Data(t.union, b)
 	t.union = merged
 	return err
 }
@@ -688,6 +689,87 @@ func (t GetInlinePets200JSONResponseBody_Data_Item) MarshalJSON() ([]byte, error
 func (t *GetInlinePets200JSONResponseBody_Data_Item) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
+}
+
+// oapiJSONMergeForGetRefPetsDto_Data merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForGetRefPetsDto_Data(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }
 
 // RequestEditorFn is the function signature for the RequestEditor callback function

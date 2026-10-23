@@ -2446,8 +2446,6 @@ type IdentityWithDuplicateField struct {
 ```go
 import (
 	"encoding/json"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // ClientAndMaybeIdentity defines model for ClientAndMaybeIdentity.
@@ -2476,7 +2474,7 @@ func (t *ClientAndMaybeIdentity) MergeClient(v Client) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForClientAndMaybeIdentity(t.union, b)
 	t.union = merged
 	return err
 }
@@ -2502,7 +2500,7 @@ func (t *ClientAndMaybeIdentity) MergeIdentity(v Identity) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForClientAndMaybeIdentity(t.union, b)
 	t.union = merged
 	return err
 }
@@ -2548,7 +2546,7 @@ func (t *ClientOrIdentity) MergeClient(v Client) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForClientAndMaybeIdentity(t.union, b)
 	t.union = merged
 	return err
 }
@@ -2574,7 +2572,7 @@ func (t *ClientOrIdentity) MergeIdentity(v Identity) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForClientAndMaybeIdentity(t.union, b)
 	t.union = merged
 	return err
 }

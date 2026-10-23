@@ -7,8 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
-	"github.com/oapi-codegen/runtime"
+	"strconv"
 )
 
 // ArrayValue defines model for ArrayValue.
@@ -331,7 +330,7 @@ func (t *FilterPredicate) MergeFilterValue(v FilterValue) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -357,7 +356,7 @@ func (t *FilterPredicate) MergeFilterPredicate1(v FilterPredicate1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -383,7 +382,7 @@ func (t *FilterPredicate) MergeFilterPredicateOp(v FilterPredicateOp) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -409,7 +408,7 @@ func (t *FilterPredicate) MergeFilterPredicateRangeOp(v FilterPredicateRangeOp) 
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -445,7 +444,7 @@ func (t *FilterPredicateOp_Any) MergeFilterPredicateOpAny0(v FilterPredicateOpAn
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -481,7 +480,7 @@ func (t *FilterPredicateOp_None) MergeFilterPredicate(v FilterPredicate) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -507,7 +506,7 @@ func (t *FilterPredicateOp_None) MergeFilterPredicateOpNone1(v FilterPredicateOp
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -543,7 +542,7 @@ func (t *FilterRangeValue) MergeFilterRangeValue0(v FilterRangeValue0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -569,7 +568,7 @@ func (t *FilterRangeValue) MergeFilterRangeValue1(v FilterRangeValue1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -631,7 +630,7 @@ func (t *FilterValue) MergeFilterValue0(v FilterValue0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -657,7 +656,7 @@ func (t *FilterValue) MergeFilterValue1(v FilterValue1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -683,7 +682,7 @@ func (t *FilterValue) MergeFilterValue2(v FilterValue2) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -749,7 +748,7 @@ func (t *Node) MergeNode0(v Node0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -775,7 +774,7 @@ func (t *Node) MergeNode1(v Node1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -811,7 +810,7 @@ func (t *Node_1_Children_Item) MergeNode1Children0(v Node1Children0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -837,7 +836,7 @@ func (t *Node_1_Children_Item) MergeNode1Children1(v Node1Children1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -907,7 +906,7 @@ func (t *NodeNestedAllOf) MergeNodeNestedAllOf0(v NodeNestedAllOf0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -933,7 +932,7 @@ func (t *NodeNestedAllOf) MergeNodeNestedAllOf1(v NodeNestedAllOf1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -969,7 +968,7 @@ func (t *NodeNestedAllOf_1_Children_Item) MergeNodeNestedAllOf1Children0(v NodeN
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -995,7 +994,7 @@ func (t *NodeNestedAllOf_1_Children_Item) MergeNodeNestedAllOf1Children1(v NodeN
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForFilterPredicate(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1042,4 +1041,85 @@ func (t *NodeNestedAllOf_1_Children_Item) UnmarshalJSON(b []byte) error {
 	}
 
 	return err
+}
+
+// oapiJSONMergeForFilterPredicate merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForFilterPredicate(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }

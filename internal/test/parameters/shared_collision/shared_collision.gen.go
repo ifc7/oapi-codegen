@@ -4,11 +4,14 @@
 package parameterssharedcollision
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/oapi-codegen/runtime"
@@ -122,7 +125,7 @@ func (t *Hd147675IdParam) MergeHd147675Id0(v Hd147675Id0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -148,7 +151,7 @@ func (t *Hd147675IdParam) MergeHd147675Id1(v Hd147675Id1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -201,7 +204,7 @@ func (t *Hdf81445IdParam) MergeHdf81445Id0(v Hdf81445Id0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -227,7 +230,7 @@ func (t *Hdf81445IdParam) MergeHdf81445Id1(v Hdf81445Id1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -280,7 +283,7 @@ func (t *RefParam) MergeRef0(v Ref0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -306,7 +309,7 @@ func (t *RefParam) MergeRef1(v Ref1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -359,7 +362,7 @@ func (t *WidParam) MergeWid0(v Wid0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -385,7 +388,7 @@ func (t *WidParam) MergeWid1(v Wid1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -438,7 +441,7 @@ func (t *WhidParam) MergeWhid0(v Whid0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -464,7 +467,7 @@ func (t *WhidParam) MergeWhid1(v Whid1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -517,7 +520,7 @@ func (t *CbidParam) MergeCbid0(v Cbid0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -543,7 +546,7 @@ func (t *CbidParam) MergeCbid1(v Cbid1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -573,6 +576,87 @@ func (t CbidParam) MarshalJSON() ([]byte, error) {
 func (t *CbidParam) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
+}
+
+// oapiJSONMergeForHd147675IdParam merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForHd147675IdParam(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }
 
 // RequestEditorFn is the function signature for the RequestEditor callback function

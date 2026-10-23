@@ -901,3 +901,32 @@ components:
 	code := generateSpec(t, spec)
 	assert.Equal(t, 1, strings.Count(code, `"time"`), code)
 }
+
+// TestUnionJSONMergeHelperIsLocal verifies that union methods merge JSON
+// through a helper emitted in the generated file rather than the runtime
+// library, and that the helper is named after a union type in the file, so
+// several generated files in one package don't redeclare it.
+func TestUnionJSONMergeHelperIsLocal(t *testing.T) {
+	code := generateSpec(t, `openapi: 3.0.3
+info: {title: api, version: "1.0.0"}
+paths: {}
+components:
+  schemas:
+    Cat:
+      type: object
+      properties:
+        name: {type: string}
+    Dog:
+      type: object
+      properties:
+        bark: {type: boolean}
+    Pet:
+      oneOf:
+        - $ref: '#/components/schemas/Cat'
+        - $ref: '#/components/schemas/Dog'
+`)
+	assert.Contains(t, code, "func oapiJSONMergeForPet(data, patch json.RawMessage) (json.RawMessage, error) {")
+	assert.Contains(t, methodBody(t, code, "func (t *Pet) MergeCat("), "oapiJSONMergeForPet(t.union, b)")
+	assert.NotContains(t, code, "runtime.JSONMerge")
+	assert.NotContains(t, code, `"github.com/oapi-codegen/runtime"`)
+}

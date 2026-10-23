@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/oapi-codegen/runtime"
@@ -149,7 +150,7 @@ func (t *InlineHolder_List_Item) FromCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	t.union = b
 	return err
 }
@@ -160,12 +161,12 @@ func (t *InlineHolder_List_Item) MergeCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -183,7 +184,7 @@ func (t *InlineHolder_List_Item) FromDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	t.union = b
 	return err
 }
@@ -194,12 +195,12 @@ func (t *InlineHolder_List_Item) MergeDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -250,7 +251,7 @@ func (t *InlineHolder_Map_AdditionalProperties) FromCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	t.union = b
 	return err
 }
@@ -261,12 +262,12 @@ func (t *InlineHolder_Map_AdditionalProperties) MergeCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -284,7 +285,7 @@ func (t *InlineHolder_Map_AdditionalProperties) FromDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	t.union = b
 	return err
 }
@@ -295,12 +296,12 @@ func (t *InlineHolder_Map_AdditionalProperties) MergeDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -351,7 +352,7 @@ func (t *InlineHolder_One) FromCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	t.union = b
 	return err
 }
@@ -362,12 +363,12 @@ func (t *InlineHolder_One) MergeCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -385,7 +386,7 @@ func (t *InlineHolder_One) FromDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	t.union = b
 	return err
 }
@@ -396,12 +397,12 @@ func (t *InlineHolder_One) MergeDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -452,7 +453,7 @@ func (t *Subject) FromCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	t.union = b
 	return err
 }
@@ -463,12 +464,12 @@ func (t *Subject) MergeCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -486,7 +487,7 @@ func (t *Subject) FromDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	t.union = b
 	return err
 }
@@ -497,12 +498,12 @@ func (t *Subject) MergeDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -553,7 +554,7 @@ func (t *InlineSubjectResponse) FromCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	t.union = b
 	return err
 }
@@ -564,12 +565,12 @@ func (t *InlineSubjectResponse) MergeCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -587,7 +588,7 @@ func (t *InlineSubjectResponse) FromDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	t.union = b
 	return err
 }
@@ -598,12 +599,12 @@ func (t *InlineSubjectResponse) MergeDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -654,7 +655,7 @@ func (t *InlineSubjectBody) FromCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	t.union = b
 	return err
 }
@@ -665,12 +666,12 @@ func (t *InlineSubjectBody) MergeCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -688,7 +689,7 @@ func (t *InlineSubjectBody) FromDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	t.union = b
 	return err
 }
@@ -699,12 +700,12 @@ func (t *InlineSubjectBody) MergeDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -755,7 +756,7 @@ func (t *BodyComponentInlineJSONBody) FromCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	t.union = b
 	return err
 }
@@ -766,12 +767,12 @@ func (t *BodyComponentInlineJSONBody) MergeCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -789,7 +790,7 @@ func (t *BodyComponentInlineJSONBody) FromDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	t.union = b
 	return err
 }
@@ -800,12 +801,12 @@ func (t *BodyComponentInlineJSONBody) MergeDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -856,7 +857,7 @@ func (t *BodyInlineJSONBody) FromCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	t.union = b
 	return err
 }
@@ -867,12 +868,12 @@ func (t *BodyInlineJSONBody) MergeCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -890,7 +891,7 @@ func (t *BodyInlineJSONBody) FromDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	t.union = b
 	return err
 }
@@ -901,12 +902,12 @@ func (t *BodyInlineJSONBody) MergeDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -957,7 +958,7 @@ func (t *BodyInline200JSONResponseBody) FromCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	t.union = b
 	return err
 }
@@ -968,12 +969,12 @@ func (t *BodyInline200JSONResponseBody) MergeCat(v Cat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"cat"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -991,7 +992,7 @@ func (t *BodyInline200JSONResponseBody) FromDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	t.union = b
 	return err
 }
@@ -1002,12 +1003,12 @@ func (t *BodyInline200JSONResponseBody) MergeDog(v Dog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"petType":"dog"}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"petType":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1043,6 +1044,87 @@ func (t BodyInline200JSONResponseBody) MarshalJSON() ([]byte, error) {
 func (t *BodyInline200JSONResponseBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
+}
+
+// oapiJSONMergeForInlineHolder_List_Item merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForInlineHolder_List_Item(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }
 
 // RequestEditorFn is the function signature for the RequestEditor callback function

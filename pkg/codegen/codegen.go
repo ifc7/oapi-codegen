@@ -1820,13 +1820,20 @@ func GenerateUnionBoilerplate(t *template.Template, typeDefs []TypeDefinition) (
 		return "", nil
 	}
 
+	// The union methods merge JSON through a helper emitted alongside them,
+	// so the generated code doesn't need the runtime library for it. The
+	// helper is named after a union type declared in this file: one package
+	// may be generated as several files, and type names are unique within
+	// it, so each file's helper gets a name no other file uses.
 	context := struct {
-		Types []TypeDefinition
+		Types         []TypeDefinition
+		JSONMergeFunc string
 	}{
-		Types: filteredTypes,
+		Types:         filteredTypes,
+		JSONMergeFunc: "oapiJSONMergeFor" + filteredTypes[0].TypeName,
 	}
 
-	return GenerateTemplates([]string{"union.tmpl"}, t, context)
+	return GenerateTemplates([]string{"union.tmpl", "json-merge.tmpl"}, t, context)
 }
 
 func GenerateUnionAndAdditionalProopertiesBoilerplate(t *template.Template, typeDefs []TypeDefinition) (string, error) {

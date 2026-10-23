@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/oapi-codegen/runtime"
@@ -149,7 +150,7 @@ func (t *InlineHolder_List_Item) FromSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	t.union = b
 	return err
 }
@@ -160,12 +161,12 @@ func (t *InlineHolder_List_Item) MergeSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -183,7 +184,7 @@ func (t *InlineHolder_List_Item) FromBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	t.union = b
 	return err
 }
@@ -194,12 +195,12 @@ func (t *InlineHolder_List_Item) MergeBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -270,7 +271,7 @@ func (t *InlineHolder_Map_AdditionalProperties) FromSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	t.union = b
 	return err
 }
@@ -281,12 +282,12 @@ func (t *InlineHolder_Map_AdditionalProperties) MergeSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -304,7 +305,7 @@ func (t *InlineHolder_Map_AdditionalProperties) FromBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	t.union = b
 	return err
 }
@@ -315,12 +316,12 @@ func (t *InlineHolder_Map_AdditionalProperties) MergeBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -391,7 +392,7 @@ func (t *InlineHolder_One) FromSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	t.union = b
 	return err
 }
@@ -402,12 +403,12 @@ func (t *InlineHolder_One) MergeSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -425,7 +426,7 @@ func (t *InlineHolder_One) FromBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	t.union = b
 	return err
 }
@@ -436,12 +437,12 @@ func (t *InlineHolder_One) MergeBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -512,7 +513,7 @@ func (t *Subject) FromSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	t.union = b
 	return err
 }
@@ -523,12 +524,12 @@ func (t *Subject) MergeSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -546,7 +547,7 @@ func (t *Subject) FromBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	t.union = b
 	return err
 }
@@ -557,12 +558,12 @@ func (t *Subject) MergeBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -633,7 +634,7 @@ func (t *InlineSubjectResponse) FromSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	t.union = b
 	return err
 }
@@ -644,12 +645,12 @@ func (t *InlineSubjectResponse) MergeSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -667,7 +668,7 @@ func (t *InlineSubjectResponse) FromBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	t.union = b
 	return err
 }
@@ -678,12 +679,12 @@ func (t *InlineSubjectResponse) MergeBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -754,7 +755,7 @@ func (t *InlineSubjectBody) FromSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	t.union = b
 	return err
 }
@@ -765,12 +766,12 @@ func (t *InlineSubjectBody) MergeSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -788,7 +789,7 @@ func (t *InlineSubjectBody) FromBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	t.union = b
 	return err
 }
@@ -799,12 +800,12 @@ func (t *InlineSubjectBody) MergeBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -875,7 +876,7 @@ func (t *BodyComponentInlineJSONBody) FromSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	t.union = b
 	return err
 }
@@ -886,12 +887,12 @@ func (t *BodyComponentInlineJSONBody) MergeSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -909,7 +910,7 @@ func (t *BodyComponentInlineJSONBody) FromBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	t.union = b
 	return err
 }
@@ -920,12 +921,12 @@ func (t *BodyComponentInlineJSONBody) MergeBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -996,7 +997,7 @@ func (t *BodyInlineJSONBody) FromSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	t.union = b
 	return err
 }
@@ -1007,12 +1008,12 @@ func (t *BodyInlineJSONBody) MergeSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1030,7 +1031,7 @@ func (t *BodyInlineJSONBody) FromBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	t.union = b
 	return err
 }
@@ -1041,12 +1042,12 @@ func (t *BodyInlineJSONBody) MergeBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1117,7 +1118,7 @@ func (t *BodyInline200JSONResponseBody) FromSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	t.union = b
 	return err
 }
@@ -1128,12 +1129,12 @@ func (t *BodyInline200JSONResponseBody) MergeSmall(v Small) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":1}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":1}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1151,7 +1152,7 @@ func (t *BodyInline200JSONResponseBody) FromBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	t.union = b
 	return err
 }
@@ -1162,12 +1163,12 @@ func (t *BodyInline200JSONResponseBody) MergeBig(v Big) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"id":9007199254740993}`))
+	b, err = oapiJSONMergeForInlineHolder_List_Item(b, []byte(`{"id":9007199254740993}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForInlineHolder_List_Item(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1223,6 +1224,87 @@ func (t BodyInline200JSONResponseBody) MarshalJSON() ([]byte, error) {
 func (t *BodyInline200JSONResponseBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
+}
+
+// oapiJSONMergeForInlineHolder_List_Item merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForInlineHolder_List_Item(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }
 
 // RequestEditorFn is the function signature for the RequestEditor callback function
