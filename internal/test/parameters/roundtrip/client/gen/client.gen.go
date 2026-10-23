@@ -4,15 +4,17 @@
 package paramclientgen
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for EnumParamsParamsEnumPathParam.
@@ -817,7 +819,19 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 		if params.Eo != nil {
 			var cookieParam4 string
 
-			cookieParam4, err = runtime.StyleParamWithOptions("simple", true, "eo", *params.Eo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "", Format: ""})
+			{
+				kv_ := map[string]string{}
+				kv_["firstName"] = (*params.Eo).FirstName
+				kv_["role"] = (*params.Eo).Role
+
+				if err == nil {
+					var parts_ []string
+					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+						parts_ = append(parts_, k_+"="+kv_[k_])
+					}
+					cookieParam4 = "" + strings.Join(parts_, ",")
+				}
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -832,7 +846,19 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 		if params.O != nil {
 			var cookieParam5 string
 
-			cookieParam5, err = runtime.StyleParamWithOptions("simple", false, "o", *params.O, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "", Format: ""})
+			{
+				kv_ := map[string]string{}
+				kv_["firstName"] = (*params.O).FirstName
+				kv_["role"] = (*params.O).Role
+
+				if err == nil {
+					var parts_ []string
+					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+						parts_ = append(parts_, k_, kv_[k_])
+					}
+					cookieParam5 = "" + strings.Join(parts_, ",")
+				}
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -1019,7 +1045,19 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 		if params.XObjectExploded != nil {
 			var headerParam4 string
 
-			headerParam4, err = runtime.StyleParamWithOptions("simple", true, "X-Object-Exploded", *params.XObjectExploded, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "", Format: ""})
+			{
+				kv_ := map[string]string{}
+				kv_["firstName"] = (*params.XObjectExploded).FirstName
+				kv_["role"] = (*params.XObjectExploded).Role
+
+				if err == nil {
+					var parts_ []string
+					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+						parts_ = append(parts_, k_+"="+kv_[k_])
+					}
+					headerParam4 = "" + strings.Join(parts_, ",")
+				}
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -1030,7 +1068,19 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 		if params.XObject != nil {
 			var headerParam5 string
 
-			headerParam5, err = runtime.StyleParamWithOptions("simple", false, "X-Object", *params.XObject, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "", Format: ""})
+			{
+				kv_ := map[string]string{}
+				kv_["firstName"] = (*params.XObject).FirstName
+				kv_["role"] = (*params.XObject).Role
+
+				if err == nil {
+					var parts_ []string
+					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+						parts_ = append(parts_, k_, kv_[k_])
+					}
+					headerParam5 = "" + strings.Join(parts_, ",")
+				}
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -1121,7 +1171,19 @@ func NewGetLabelExplodeObjectRequest(server string, param Object) (*http.Request
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("label", true, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	{
+		kv_ := map[string]string{}
+		kv_["firstName"] = param.FirstName
+		kv_["role"] = param.Role
+
+		if err == nil {
+			var parts_ []string
+			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+				parts_ = append(parts_, k_+"="+url.PathEscape(kv_[k_]))
+			}
+			pathParam0 = "." + strings.Join(parts_, ".")
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1230,7 +1292,19 @@ func NewGetLabelNoExplodeObjectRequest(server string, param Object) (*http.Reque
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("label", false, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	{
+		kv_ := map[string]string{}
+		kv_["firstName"] = param.FirstName
+		kv_["role"] = param.Role
+
+		if err == nil {
+			var parts_ []string
+			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+				parts_ = append(parts_, k_, url.PathEscape(kv_[k_]))
+			}
+			pathParam0 = "." + strings.Join(parts_, ",")
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1339,7 +1413,19 @@ func NewGetMatrixExplodeObjectRequest(server string, id Object) (*http.Request, 
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("matrix", true, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	{
+		kv_ := map[string]string{}
+		kv_["firstName"] = id.FirstName
+		kv_["role"] = id.Role
+
+		if err == nil {
+			var parts_ []string
+			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+				parts_ = append(parts_, k_+"="+url.PathEscape(kv_[k_]))
+			}
+			pathParam0 = ";" + strings.Join(parts_, ";")
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1448,7 +1534,19 @@ func NewGetMatrixNoExplodeObjectRequest(server string, id Object) (*http.Request
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("matrix", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	{
+		kv_ := map[string]string{}
+		kv_["firstName"] = id.FirstName
+		kv_["role"] = id.Role
+
+		if err == nil {
+			var parts_ []string
+			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+				parts_ = append(parts_, k_, url.PathEscape(kv_[k_]))
+			}
+			pathParam0 = ";id=" + strings.Join(parts_, ",")
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1570,12 +1668,35 @@ func NewGetDeepObjectRequest(server string, params *GetDeepObjectParams) (*http.
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
-		if queryFrag, err := runtime.StyleParamWithOptions("deepObject", true, "deepObj", params.DeepObj, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-			return nil, err
+		if b_, err_ := json.Marshal(params.DeepObj); err_ != nil {
+			err = err_
 		} else {
-			for _, qp := range strings.Split(queryFrag, "&") {
-				rawQueryFragments = append(rawQueryFragments, qp)
+			var tree_ any
+			dec_ := json.NewDecoder(bytes.NewReader(b_))
+			dec_.UseNumber()
+			if err = dec_.Decode(&tree_); err == nil {
+				var walk_ func(prefix string, node any)
+				walk_ = func(prefix string, node any) {
+					switch node := node.(type) {
+					case []any:
+						for i, e := range node {
+							walk_(prefix+"["+strconv.Itoa(i)+"]", e)
+						}
+					case map[string]any:
+						for _, k := range slices.Sorted(maps.Keys(node)) {
+							walk_(prefix+"["+url.QueryEscape(k)+"]", node[k])
+						}
+					case nil:
+						rawQueryFragments = append(rawQueryFragments, prefix+"=null")
+					default:
+						rawQueryFragments = append(rawQueryFragments, prefix+"="+url.QueryEscape(fmt.Sprint(node)))
+					}
+				}
+				walk_("deepObj", tree_)
 			}
+		}
+		if err != nil {
+			return nil, err
 		}
 
 		if encoded := queryValues.Encode(); encoded != "" {
@@ -1731,24 +1852,42 @@ func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Re
 
 		if params.Eo != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "eo", *params.Eo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				kv_ := map[string]string{}
+				kv_["firstName"] = (*params.Eo).FirstName
+				kv_["role"] = (*params.Eo).Role
+
+				if err == nil {
+					var parts_ []string
+					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+						parts_ = append(parts_, k_+"="+url.QueryEscape(kv_[k_]))
+					}
+					rawQueryFragments = append(rawQueryFragments, parts_...)
 				}
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
 
 		if params.O != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", false, "o", *params.O, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				kv_ := map[string]string{}
+				kv_["firstName"] = (*params.O).FirstName
+				kv_["role"] = (*params.O).Role
+
+				if err == nil {
+					var parts_ []string
+					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+						parts_ = append(parts_, k_, url.QueryEscape(kv_[k_]))
+					}
+					rawQueryFragments = append(rawQueryFragments, "o="+strings.Join(parts_, ","))
 				}
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1875,7 +2014,19 @@ func NewGetSimpleExplodeObjectRequest(server string, param Object) (*http.Reques
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", true, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	{
+		kv_ := map[string]string{}
+		kv_["firstName"] = param.FirstName
+		kv_["role"] = param.Role
+
+		if err == nil {
+			var parts_ []string
+			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+				parts_ = append(parts_, k_+"="+url.PathEscape(kv_[k_]))
+			}
+			pathParam0 = "" + strings.Join(parts_, ",")
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1983,7 +2134,19 @@ func NewGetSimpleNoExplodeObjectRequest(server string, param Object) (*http.Requ
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	{
+		kv_ := map[string]string{}
+		kv_["firstName"] = param.FirstName
+		kv_["role"] = param.Role
+
+		if err == nil {
+			var parts_ []string
+			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+				parts_ = append(parts_, k_, url.PathEscape(kv_[k_]))
+			}
+			pathParam0 = "" + strings.Join(parts_, ",")
+		}
+	}
 	if err != nil {
 		return nil, err
 	}

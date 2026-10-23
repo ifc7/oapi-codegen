@@ -37,6 +37,26 @@ error handler and returning when it is missing but required, or invalid.
 {{define "param.bindQuery" -}}
 {{- $p := .Param -}}
 {{- with $p.Codec -}}
+{{if .ExplodedQueryObject -}}
+{
+    // The object's properties are query parameters of their own.
+    var value_ {{$p.TypeDef}}
+    found_ := false
+    query_ := r.URL.Query()
+    _ = query_
+    {{.BindQueryObject "query_" "value_"}}
+    if err != nil {
+        {{$.Handler}}(w, r, &InvalidParamFormatError{ParamName: "{{$p.ParamName}}", Err: err})
+        return
+    }
+    if found_ {
+        params.{{$p.GoName}} = {{if $p.HasOptionalPointer}}&{{end}}value_
+    }{{if $p.Required}} else {
+        {{$.Handler}}(w, r, &RequiredParamError{ParamName: "{{$p.ParamName}}"})
+        return
+    }{{end}}
+}
+{{- else -}}
 if values_, found_ := r.URL.Query()["{{$p.ParamName}}"]; found_ {
     var value_ {{$p.TypeDef}}
     {{.BindQuery "values_" "value_"}}
@@ -49,6 +69,7 @@ if values_, found_ := r.URL.Query()["{{$p.ParamName}}"]; found_ {
     {{$.Handler}}(w, r, &RequiredParamError{ParamName: "{{$p.ParamName}}"})
     return
 }{{end}}
+{{- end}}
 {{- else -}}
 err = runtime.BindQueryParameterWithOptions("{{$p.Style}}", {{$p.Explode}}, {{$p.Required}}, "{{$p.ParamName}}", r.URL.Query(), &params.{{$p.GoName}}, runtime.BindQueryParameterOptions{Type: "{{$p.SchemaType}}", Format: "{{$p.SchemaFormat}}"{{unionTypes $p.SchemaTypes}}})
 if err != nil {

@@ -9,11 +9,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
+	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // ArrayContainer defines model for ArrayContainer.
@@ -377,12 +378,35 @@ func NewListThingsRequest(server string, params *ListThingsParams) (*http.Reques
 
 		if params.Tags != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("deepObject", true, "tags", params.Tags, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "object", Format: ""}); err != nil {
-				return nil, err
+			if b_, err_ := json.Marshal(params.Tags); err_ != nil {
+				err = err_
 			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+				var tree_ any
+				dec_ := json.NewDecoder(bytes.NewReader(b_))
+				dec_.UseNumber()
+				if err = dec_.Decode(&tree_); err == nil {
+					var walk_ func(prefix string, node any)
+					walk_ = func(prefix string, node any) {
+						switch node := node.(type) {
+						case []any:
+							for i, e := range node {
+								walk_(prefix+"["+strconv.Itoa(i)+"]", e)
+							}
+						case map[string]any:
+							for _, k := range slices.Sorted(maps.Keys(node)) {
+								walk_(prefix+"["+url.QueryEscape(k)+"]", node[k])
+							}
+						case nil:
+							rawQueryFragments = append(rawQueryFragments, prefix+"=null")
+						default:
+							rawQueryFragments = append(rawQueryFragments, prefix+"="+url.QueryEscape(fmt.Sprint(node)))
+						}
+					}
+					walk_("tags", tree_)
 				}
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}

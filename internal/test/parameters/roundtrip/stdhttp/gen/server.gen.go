@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"path"
@@ -19,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -264,7 +264,33 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 
 		if cookie, err = r.Cookie("eo"); err == nil {
 			var value Object
-			err = runtime.BindStyledParameterWithOptions("simple", "eo", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "", Format: ""})
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					pairs_ := make([][2]string, 0, len(parts_))
+					for _, part_ := range parts_ {
+						kv_ := strings.Split(part_, "=")
+						if len(kv_) != 2 {
+							err = errors.New("parameter 'eo' has invalid exploded format")
+							break
+						}
+						pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+					}
+					if err == nil {
+						for _, kv_ := range pairs_ {
+							switch kv_[0] {
+							case "firstName":
+								value.FirstName = kv_[1]
+							case "role":
+								value.Role = kv_[1]
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
 				return
@@ -279,7 +305,32 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 
 		if cookie, err = r.Cookie("o"); err == nil {
 			var value Object
-			err = runtime.BindStyledParameterWithOptions("simple", "o", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: false, Required: false, Type: "", Format: ""})
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					pairs_ := make([][2]string, 0, len(parts_)/2)
+					if len(parts_)%2 != 0 {
+						err = errors.New("parameter 'o' has invalid format, property/values need to be pairs")
+					} else {
+						for i_ := 0; i_ < len(parts_); i_ += 2 {
+							pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+						}
+					}
+					if err == nil {
+						for _, kv_ := range pairs_ {
+							switch kv_[0] {
+							case "firstName":
+								value.FirstName = kv_[1]
+							case "role":
+								value.Role = kv_[1]
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
 				return
@@ -521,7 +572,33 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Object-Exploded", valueList[0], &XObjectExploded, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: true, Required: false, Type: "", Format: ""})
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'X-Object-Exploded' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							XObjectExploded.FirstName = kv_[1]
+						case "role":
+							XObjectExploded.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object-Exploded", Err: err})
 			return
@@ -540,7 +617,32 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Object", valueList[0], &XObject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "", Format: ""})
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'X-Object' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							XObject.FirstName = kv_[1]
+						case "role":
+							XObject.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object", Err: err})
 			return
@@ -677,7 +779,41 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, 
 	// ------------- Path parameter "param" -------------
 	var param Object
 
-	err = runtime.BindStyledParameterWithOptions("label", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ".")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'param' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -806,7 +942,41 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter
 	// ------------- Path parameter "param" -------------
 	var param Object
 
-	err = runtime.BindStyledParameterWithOptions("label", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("param"), ".") {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			} else {
+				parts_ = strings.Split(r.PathValue("param")[1:], ",")
+			}
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'param' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -938,7 +1108,41 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter,
 	// ------------- Path parameter "id" -------------
 	var id Object
 
-	err = runtime.BindStyledParameterWithOptions("matrix", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("id"), ";")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'id' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							id.FirstName = kv_[1]
+						case "role":
+							id.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -1070,7 +1274,41 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWrite
 	// ------------- Path parameter "id" -------------
 	var id Object
 
-	err = runtime.BindStyledParameterWithOptions("matrix", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
+				err = errors.New("expected parameter 'id' to start with ;id=")
+			} else {
+				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
+			}
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'id' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							id.FirstName = kv_[1]
+						case "role":
+							id.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -1171,15 +1409,183 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 
 	// ------------- Required query parameter "deepObj" -------------
 
-	err = runtime.BindQueryParameterWithOptions("deepObject", true, true, "deepObj", r.URL.Query(), &params.DeepObj, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deepObj"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deepObj", Err: err})
+	{
+		// The object's properties are query parameters of their own.
+		var value_ ComplexObject
+		found_ := false
+		query_ := r.URL.Query()
+		_ = query_
+		{
+			tree_ := map[string]any{}
+			insert_ := func(path []string, value string) {
+				node := tree_
+				for _, key := range path[:len(path)-1] {
+					next, ok := node[key].(map[string]any)
+					if !ok {
+						next = map[string]any{}
+						node[key] = next
+					}
+					node = next
+				}
+				node[path[len(path)-1]] = value
+			}
+			for key_, values_ := range query_ {
+				rest_, ok_ := strings.CutPrefix(key_, "deepObj[")
+				if !ok_ {
+					continue
+				}
+				found_ = true
+				path_ := strings.Split(strings.TrimRight(rest_, "]"), "][")
+				if len(values_) == 1 {
+					insert_(path_, values_[0])
+				} else {
+					for i_, value_ := range values_ {
+						insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
+					}
+				}
+			}
+			if found_ {
+				kinds_ := map[string]map[string]string{
+					"ComplexObject": {"Id": "int", "IsAdmin": "bool", "Object": "object:Object"},
+					"Object":        {"firstName": "string", "role": "string"},
+				}
+				var convert_ func(node any, kind string) (any, error)
+				convert_ = func(node any, kind string) (any, error) {
+					fields, isMap := node.(map[string]any)
+					text, _ := node.(string)
+					switch {
+					case strings.HasPrefix(kind, "object:"):
+						if !isMap {
+							return nil, fmt.Errorf("expected an object, got %q", text)
+						}
+						object := kinds_[strings.TrimPrefix(kind, "object:")]
+						out := make(map[string]any, len(fields))
+						for key, value := range fields {
+							fieldKind, ok := object[key]
+							if !ok {
+								if fieldKind, ok = object["*"]; !ok {
+									return nil, fmt.Errorf("field [%s] is not present in destination object", key)
+								}
+							}
+							v, err := convert_(value, fieldKind)
+							if err != nil {
+								return nil, fmt.Errorf("error assigning field [%s]: %w", key, err)
+							}
+							out[key] = v
+						}
+						return out, nil
+					case strings.HasPrefix(kind, "map:"):
+						if !isMap {
+							return nil, fmt.Errorf("expected an object, got %q", text)
+						}
+						out := make(map[string]any, len(fields))
+						for key, value := range fields {
+							v, err := convert_(value, strings.TrimPrefix(kind, "map:"))
+							if err != nil {
+								return nil, err
+							}
+							out[key] = v
+						}
+						return out, nil
+					case strings.HasPrefix(kind, "array:"):
+						if !isMap {
+							return nil, fmt.Errorf("expected an array, got %q", text)
+						}
+						out := make([]any, len(fields))
+						for i := range out {
+							value, ok := fields[strconv.Itoa(i)]
+							if !ok {
+								return nil, errors.New("array deepObjects must have consecutive indices")
+							}
+							v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
+							if err != nil {
+								return nil, fmt.Errorf("error binding array element %d: %w", i, err)
+							}
+							out[i] = v
+						}
+						return out, nil
+					case isMap:
+						if kind != "any" {
+							return nil, fmt.Errorf("expected a value, got an object")
+						}
+						keys := make([]int, 0, len(fields))
+						for key := range fields {
+							if i, err := strconv.Atoi(key); err == nil && i >= 0 && i < len(fields) {
+								keys = append(keys, i)
+							}
+						}
+						out := make(map[string]any, len(fields))
+						for key, value := range fields {
+							v, err := convert_(value, "any")
+							if err != nil {
+								return nil, err
+							}
+							out[key] = v
+						}
+						if len(keys) != len(fields) {
+							return out, nil
+						}
+						array := make([]any, len(fields))
+						for key, value := range out {
+							i, _ := strconv.Atoi(key)
+							array[i] = value
+						}
+						return array, nil
+					case kind == "int":
+						i, err := strconv.ParseInt(text, 10, 64)
+						if err != nil {
+							return nil, fmt.Errorf("expected a valid int, got %s", text)
+						}
+						return i, nil
+					case kind == "float":
+						f, err := strconv.ParseFloat(text, 64)
+						if err != nil || math.IsInf(f, 0) || math.IsNaN(f) {
+							return nil, fmt.Errorf("expected a valid float, got %s", text)
+						}
+						return f, nil
+					case kind == "bool":
+						b, err := strconv.ParseBool(text)
+						if err != nil {
+							return nil, fmt.Errorf("expected a valid bool, got %s", text)
+						}
+						return b, nil
+					case kind == "any":
+						switch text {
+						case "true":
+							return true, nil
+						case "false":
+							return false, nil
+						case "null":
+							return nil, nil
+						}
+						var f float64
+						if err := json.Unmarshal([]byte(text), &f); err == nil {
+							return f, nil
+						}
+						return text, nil
+					default:
+						return text, nil
+					}
+				}
+				if v_, err_ := convert_(tree_, "object:ComplexObject"); err_ != nil {
+					err = err_
+				} else if b_, err_ := json.Marshal(v_); err_ != nil {
+					err = err_
+				} else {
+					err = json.Unmarshal(b_, &value_)
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deepObj", Err: err})
+			return
+		}
+		if found_ {
+			params.DeepObj = value_
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deepObj"})
+			return
+		}
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1338,28 +1744,73 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	// ------------- Optional query parameter "eo" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "eo", r.URL.Query(), &params.Eo, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "eo"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
+	{
+		// The object's properties are query parameters of their own.
+		var value_ Object
+		found_ := false
+		query_ := r.URL.Query()
+		_ = query_
+		if vs_, ok_ := query_["firstName"]; ok_ {
+			found_ = true
+			if len(vs_) != 1 {
+				err = errors.New("field 'firstName' specified multiple times for param 'eo'")
+			} else {
+				value_.FirstName = vs_[0]
+			}
 		}
-		return
+		if vs_, ok_ := query_["role"]; ok_ {
+			found_ = true
+			if len(vs_) != 1 {
+				err = errors.New("field 'role' specified multiple times for param 'eo'")
+			} else {
+				value_.Role = vs_[0]
+			}
+		}
+
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
+			return
+		}
+		if found_ {
+			params.Eo = &value_
+		}
 	}
 
 	// ------------- Optional query parameter "o" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", false, false, "o", r.URL.Query(), &params.O, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "o"})
+	if values_, found_ := r.URL.Query()["o"]; found_ {
+		var value_ Object
+		if len(values_) != 1 {
+			err = errors.New("parameter 'o' is not exploded, but is specified multiple times")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
+			parts_ := strings.Split(values_[0], ",")
+			pairs_ := make([][2]string, 0, len(parts_)/2)
+			if len(parts_)%2 != 0 {
+				err = errors.New("parameter 'o' has invalid format, property/values need to be pairs")
+			} else {
+				for i_ := 0; i_ < len(parts_); i_ += 2 {
+					pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+				}
+			}
+			if err == nil {
+				for _, kv_ := range pairs_ {
+					switch kv_[0] {
+					case "firstName":
+						value_.FirstName = kv_[1]
+					case "role":
+						value_.Role = kv_[1]
+					}
+					if err != nil {
+						break
+					}
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
+			return
+		}
+		params.O = &value_
 	}
 
 	// ------------- Optional query parameter "ep" -------------
@@ -1519,7 +1970,37 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter,
 	// ------------- Path parameter "param" -------------
 	var param Object
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'param' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -1630,7 +2111,36 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWrite
 	// ------------- Path parameter "param" -------------
 	var param Object
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'param' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return

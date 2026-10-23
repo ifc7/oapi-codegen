@@ -54,8 +54,8 @@ components:
 		"ids":     true,
 		"color":   true, // a named type over string
 		"on":      true,
-		"deep":    false, // deepObject style
-		"custom":  true,  // must implement encoding.TextMarshaler and TextUnmarshaler
+		"deep":    true,
+		"custom":  true, // must implement encoding.TextMarshaler and TextUnmarshaler
 		"since":   true,
 		"session": true,
 		"blob":    true,

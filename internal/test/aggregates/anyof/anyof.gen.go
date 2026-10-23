@@ -9,15 +9,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for Issue1189TestFieldA1.
@@ -1046,12 +1045,40 @@ func NewGetParamTestRequest(server string, params *GetParamTestParams) (*http.Re
 
 		if params.Test != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "test", *params.Test, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				kv_ := map[string]string{}
+				if b_, err_ := json.Marshal((*params.Test)); err_ != nil {
+					err = err_
+				} else {
+					var m_ map[string]any
+					dec_ := json.NewDecoder(bytes.NewReader(b_))
+					dec_.UseNumber()
+					if err = dec_.Decode(&m_); err == nil {
+						for k_, e_ := range m_ {
+							switch e_ := e_.(type) {
+							case string:
+								kv_[k_] = e_
+							case json.Number:
+								kv_[k_] = e_.String()
+							case bool:
+								kv_[k_] = strconv.FormatBool(e_)
+							default:
+								b_, _ := json.Marshal(e_)
+								kv_[k_] = string(b_)
+							}
+						}
+					}
 				}
+				if err == nil {
+					var parts_ []string
+					for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+						parts_ = append(parts_, k_+"="+url.QueryEscape(kv_[k_]))
+					}
+					rawQueryFragments = append(rawQueryFragments, parts_...)
+				}
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1577,15 +1604,20 @@ func (siw *ServerInterfaceWrapper) GetParamTest(w http.ResponseWriter, r *http.R
 
 	// ------------- Optional query parameter "test" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "test", r.URL.Query(), &params.Test, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "test"})
-		} else {
+	{
+		// The object's properties are query parameters of their own.
+		var value_ ParamAnyOf
+		found_ := false
+		query_ := r.URL.Query()
+		_ = query_
+
+		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "test", Err: err})
+			return
 		}
-		return
+		if found_ {
+			params.Test = &value_
+		}
 	}
 
 	// ------------- Optional query parameter "test2" -------------

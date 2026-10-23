@@ -10,16 +10,19 @@ import (
 	"compress/flate"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/oapi-codegen/runtime"
 )
 
 // N5StartsWithNumber This schema name starts with a number
@@ -233,7 +236,38 @@ func NewIssue41Request(server string, n1param N5StartsWithNumber) (*http.Request
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "1param", n1param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "object", Format: ""})
+	{
+		kv_ := map[string]string{}
+		if b_, err_ := json.Marshal(n1param); err_ != nil {
+			err = err_
+		} else {
+			var m_ map[string]any
+			dec_ := json.NewDecoder(bytes.NewReader(b_))
+			dec_.UseNumber()
+			if err = dec_.Decode(&m_); err == nil {
+				for k_, e_ := range m_ {
+					switch e_ := e_.(type) {
+					case string:
+						kv_[k_] = e_
+					case json.Number:
+						kv_[k_] = e_.String()
+					case bool:
+						kv_[k_] = strconv.FormatBool(e_)
+					default:
+						b_, _ := json.Marshal(e_)
+						kv_[k_] = string(b_)
+					}
+				}
+			}
+		}
+		if err == nil {
+			var parts_ []string
+			for _, k_ := range slices.Sorted(maps.Keys(kv_)) {
+				parts_ = append(parts_, k_, url.PathEscape(kv_[k_]))
+			}
+			pathParam0 = "" + strings.Join(parts_, ",")
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -605,7 +639,43 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 	// ------------- Path parameter "1param" -------------
 	var n1param N5StartsWithNumber
 
-	err = runtime.BindStyledParameterWithOptions("simple", "1param", r.PathValue("_param"), &n1param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "object", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("_param") == "" {
+		err = errors.New("parameter '1param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("_param"), ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter '1param' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					{
+						m_ := make(map[string]any, len(pairs_))
+						for _, kv_ := range pairs_ {
+							switch {
+							case kv_[1] == "true" || kv_[1] == "false":
+								m_[kv_[0]] = kv_[1] == "true"
+							case kv_[1] != "" && (kv_[1][0] == '-' || (kv_[1][0] >= '0' && kv_[1][0] <= '9')) && strings.TrimSpace(kv_[1]) == kv_[1] && json.Valid([]byte(kv_[1])):
+								m_[kv_[0]] = json.Number(kv_[1])
+							default:
+								m_[kv_[0]] = kv_[1]
+							}
+						}
+						if b_, err_ := json.Marshal(m_); err_ != nil {
+							err = err_
+						} else {
+							err = json.Unmarshal(b_, &n1param)
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1param", Err: err})
 		return
