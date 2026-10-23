@@ -163,7 +163,14 @@ func NewListThingsRequest(server string, params *ListThingsParams) (*http.Reques
 
 		if params.Filter != nil {
 
-			rawQueryFragments = append(rawQueryFragments, "filter="+url.QueryEscape(string((*params.Filter))))
+			{
+				var s_ string
+				s_ = url.QueryEscape(string((*params.Filter)))
+				rawQueryFragments = append(rawQueryFragments, "filter="+s_)
+			}
+			if err != nil {
+				return nil, err
+			}
 
 		}
 

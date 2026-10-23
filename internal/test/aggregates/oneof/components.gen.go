@@ -440,9 +440,20 @@ func (t *OneOfObject11_AdditionalProperties) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *OneOfObject11_AdditionalProperties) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t OneOfObject11_AdditionalProperties) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t OneOfObject11_AdditionalProperties) MarshalJSON() ([]byte, error) {

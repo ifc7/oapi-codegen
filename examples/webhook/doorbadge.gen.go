@@ -242,6 +242,9 @@ func NewDeregisterWebhookRequest(server string, id uuid.UUID) (*http.Request, er
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(id.String())
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -284,6 +287,9 @@ func NewRegisterWebhookRequestWithBody(server string, kind RegisterWebhookParams
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(string(kind))
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {

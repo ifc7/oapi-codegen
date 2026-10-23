@@ -304,7 +304,11 @@ func (response GetExample403JSONResponse) VisitGetExampleResponse(w http.Respons
 	w.Header().Set("Content-Type", "application/json")
 	{
 		var v string
+		var err error
 		v = response.Headers.XRequestID
+		if err != nil {
+			return fmt.Errorf("error styling response header X-Request-ID: %w", err)
+		}
 		w.Header().Set("X-Request-ID", v)
 	}
 	w.WriteHeader(403)

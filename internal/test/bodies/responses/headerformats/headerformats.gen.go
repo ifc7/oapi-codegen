@@ -522,24 +522,40 @@ func (response GetThing200JSONResponse) VisitGetThingResponse(w http.ResponseWri
 	w.Header().Set("Content-Type", "application/json")
 	{
 		var v string
+		var err error
 		v = response.Headers.XExpiresAt.Format(time.RFC3339Nano)
+		if err != nil {
+			return fmt.Errorf("error styling response header X-Expires-At: %w", err)
+		}
 		w.Header().Set("X-Expires-At", v)
 	}
 	if response.Headers.XOptionalExpiresAt != nil {
 		{
 			var v string
+			var err error
 			v = (*response.Headers.XOptionalExpiresAt).Format(time.RFC3339Nano)
+			if err != nil {
+				return fmt.Errorf("error styling response header X-Optional-Expires-At: %w", err)
+			}
 			w.Header().Set("X-Optional-Expires-At", v)
 		}
 	}
 	{
 		var v string
+		var err error
 		v = response.Headers.XPlain
+		if err != nil {
+			return fmt.Errorf("error styling response header X-Plain: %w", err)
+		}
 		w.Header().Set("X-Plain", v)
 	}
 	{
 		var v string
+		var err error
 		v = response.Headers.XTraceId.String()
+		if err != nil {
+			return fmt.Errorf("error styling response header X-Trace-Id: %w", err)
+		}
 		w.Header().Set("X-Trace-Id", v)
 	}
 	w.WriteHeader(200)

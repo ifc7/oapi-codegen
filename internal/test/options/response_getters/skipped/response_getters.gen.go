@@ -126,6 +126,9 @@ func NewGetThingRequest(server string, id string) (*http.Request, error) {
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(id)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {

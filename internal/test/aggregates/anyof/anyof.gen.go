@@ -359,9 +359,20 @@ func (t *Issue1189Test_FieldA) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *Issue1189Test_FieldA) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t Issue1189Test_FieldA) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t Issue1189Test_FieldA) MarshalJSON() ([]byte, error) {
@@ -438,9 +449,20 @@ func (t *Issue1189Test_FieldC) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *Issue1189Test_FieldC) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t Issue1189Test_FieldC) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t Issue1189Test_FieldC) MarshalJSON() ([]byte, error) {
@@ -590,9 +612,20 @@ func (t *ParamOneOf) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *ParamOneOf) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t ParamOneOf) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t ParamOneOf) MarshalJSON() ([]byte, error) {
@@ -1025,12 +1058,20 @@ func NewGetParamTestRequest(server string, params *GetParamTestParams) (*http.Re
 
 		if params.Test2 != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "test2", *params.Test2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			if len((*params.Test2)) == 0 {
+				rawQueryFragments = append(rawQueryFragments, "test2=")
+			}
+			for _, e_ := range *params.Test2 {
+				var s_ string
+				if b_, err_ := e_.MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "test2="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1549,15 +1590,23 @@ func (siw *ServerInterfaceWrapper) GetParamTest(w http.ResponseWriter, r *http.R
 
 	// ------------- Optional query parameter "test2" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "test2", r.URL.Query(), &params.Test2, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "test2"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "test2", Err: err})
+	if values_, found_ := r.URL.Query()["test2"]; found_ {
+		var value_ []ParamOneOf
+		{
+			parts_ := values_
+			value_ = make([]ParamOneOf, len(parts_))
+			for i_, part_ := range parts_ {
+				err = value_[i_].Bind(part_)
+				if err != nil {
+					break
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "test2", Err: err})
+			return
+		}
+		params.Test2 = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

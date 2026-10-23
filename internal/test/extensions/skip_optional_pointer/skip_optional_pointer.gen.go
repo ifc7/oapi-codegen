@@ -393,7 +393,12 @@ func NewListThingsRequest(server string, params *ListThingsParams) (*http.Reques
 				rawQueryFragments = append(rawQueryFragments, "labels=")
 			}
 			for _, e_ := range params.Labels {
-				rawQueryFragments = append(rawQueryFragments, "labels="+url.QueryEscape(e_))
+				var s_ string
+				s_ = url.QueryEscape(e_)
+				rawQueryFragments = append(rawQueryFragments, "labels="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}

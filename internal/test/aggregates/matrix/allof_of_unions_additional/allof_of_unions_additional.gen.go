@@ -6163,7 +6163,11 @@ func (response BodyHeaders200JSONResponse) VisitBodyHeadersResponse(w http.Respo
 	w.Header().Set("Content-Type", "application/json")
 	{
 		var v string
+		var err error
 		v = response.Headers.XShape
+		if err != nil {
+			return fmt.Errorf("error styling response header X-Shape: %w", err)
+		}
 		w.Header().Set("X-Shape", v)
 	}
 	w.WriteHeader(200)

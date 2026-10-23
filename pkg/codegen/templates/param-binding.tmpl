@@ -39,25 +39,7 @@ error handler and returning when it is missing but required, or invalid.
 {{- with $p.Codec -}}
 if values_, found_ := r.URL.Query()["{{$p.ParamName}}"]; found_ {
     var value_ {{$p.TypeDef}}
-    {{if $p.Explode -}}
-    {{if .IsArray -}}
-    {{.BindList "values_" "value_"}}
-    {{- else if .TimeLike -}}
-    {{.Scalar.Bind "values_[0]" "value_" false}}
-    {{- else -}}
-    if len(values_) != 1 {
-        err = errors.New({{printf "multiple values for single value parameter '%s'" $p.ParamName | toGoString}})
-    } else {
-        {{.Scalar.Bind "values_[0]" "value_" false}}
-    }
-    {{- end}}
-    {{- else -}}
-    if len(values_) != 1 {
-        err = errors.New({{printf "parameter '%s' is not exploded, but is specified multiple times" $p.ParamName | toGoString}})
-    } else {
-        {{.BindQueryValue "values_[0]" "value_"}}
-    }
-    {{- end}}
+    {{.BindQuery "values_" "value_"}}
     if err != nil {
         {{$.Handler}}(w, r, &InvalidParamFormatError{ParamName: "{{$p.ParamName}}", Err: err})
         return

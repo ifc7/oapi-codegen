@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/oapi-codegen/runtime"
 )
 
 // Hd147675Id0 is a helper type for the shared "id" parameter of "/gadget/{id}", prefixed with a per-path hash to disambiguate it from the same-named parameter on another path.
@@ -168,9 +167,20 @@ func (t *Hd147675IdParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *Hd147675IdParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t Hd147675IdParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t Hd147675IdParam) MarshalJSON() ([]byte, error) {
@@ -247,9 +257,20 @@ func (t *Hdf81445IdParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *Hdf81445IdParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t Hdf81445IdParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t Hdf81445IdParam) MarshalJSON() ([]byte, error) {
@@ -326,9 +347,20 @@ func (t *RefParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *RefParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t RefParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t RefParam) MarshalJSON() ([]byte, error) {
@@ -405,9 +437,20 @@ func (t *WidParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *WidParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t WidParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t WidParam) MarshalJSON() ([]byte, error) {
@@ -484,9 +527,20 @@ func (t *WhidParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *WhidParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t WhidParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t WhidParam) MarshalJSON() ([]byte, error) {
@@ -563,9 +617,20 @@ func (t *CbidParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *CbidParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t CbidParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t CbidParam) MarshalJSON() ([]byte, error) {
@@ -836,7 +901,11 @@ func NewDeleteGadgetRequest(server string, id Hd147675IdParam) (*http.Request, e
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := id.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -870,7 +939,11 @@ func NewGetGadgetPartRequest(server string, id Hdf81445IdParam) (*http.Request, 
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := id.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -904,7 +977,11 @@ func NewGetSprocketRequest(server string, ref RefParam) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "ref", ref, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := ref.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -965,7 +1042,11 @@ func NewDeleteWidgetRequest(server string, wid WidParam) (*http.Request, error) 
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "wid", wid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := wid.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -999,7 +1080,11 @@ func NewGetWidgetRequest(server string, wid WidParam) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "wid", wid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := wid.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1581,12 +1666,17 @@ func NewOnEventGetWebhookRequest(targetURL string, params *OnEventGetParams) (*h
 
 		if params.Whid != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "whid", *params.Whid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Whid).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "whid="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1621,12 +1711,17 @@ func NewOnEventPostWebhookRequest(targetURL string, params *OnEventPostParams) (
 
 		if params.Whid != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "whid", *params.Whid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Whid).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "whid="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1759,12 +1854,17 @@ func NewOnDataGetCallbackRequest(targetURL string, params *OnDataGetParams) (*ht
 
 		if params.Cbid != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cbid", *params.Cbid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Cbid).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "cbid="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1799,12 +1899,17 @@ func NewOnDataPostCallbackRequest(targetURL string, params *OnDataPostParams) (*
 
 		if params.Cbid != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cbid", *params.Cbid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Cbid).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "cbid="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}

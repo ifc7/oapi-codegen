@@ -40,7 +40,11 @@ the already-dereferenced Go expression holding the header value.
 {{- with .Header.Codec -}}
 {
     var v string
-    {{.Style $.Value "v" ""}}
+    var err error
+    {{.Style $.Value "v"}}
+    if err != nil {
+        return fmt.Errorf("error styling response header {{$.Header.Name}}: %w", err)
+    }
     {{$.Setter}}("{{$.Header.Name}}", v)
 }
 {{- else -}}

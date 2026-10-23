@@ -21,7 +21,6 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	googleuuid "github.com/google/uuid"
-	"github.com/oapi-codegen/runtime"
 	rate "golang.org/x/time/rate"
 )
 
@@ -381,12 +380,17 @@ func NewGetRootRequest(server string, params *GetRootParams) (*http.Request, err
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
-		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "at", params.At, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "date-time"}); err != nil {
-			return nil, err
-		} else {
-			for _, qp := range strings.Split(queryFrag, "&") {
-				rawQueryFragments = append(rawQueryFragments, qp)
+		{
+			var s_ string
+			if b_, err_ := params.At.MarshalText(); err_ != nil {
+				err = err_
+			} else {
+				s_ = url.QueryEscape(string(b_))
 			}
+			rawQueryFragments = append(rawQueryFragments, "at="+s_)
+		}
+		if err != nil {
+			return nil, err
 		}
 
 		if encoded := queryValues.Encode(); encoded != "" {
@@ -868,15 +872,18 @@ func (siw *ServerInterfaceWrapper) GetRoot(w http.ResponseWriter, r *http.Reques
 
 	// ------------- Optional query parameter "at" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "at", r.URL.Query(), &params.At, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "at"})
+	if values_, found_ := r.URL.Query()["at"]; found_ {
+		var value_ googleuuid.UUID
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'at'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "at", Err: err})
+			err = value_.UnmarshalText([]byte(values_[0]))
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "at", Err: err})
+			return
+		}
+		params.At = value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

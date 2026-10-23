@@ -184,7 +184,10 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 				for i_, e_ := range params.Tags {
 					parts_[i_] = e_
 				}
-				cookieParam0 = strings.Join(parts_, ",")
+				cookieParam0 = "" + strings.Join(parts_, ",")
+			}
+			if err != nil {
+				return nil, err
 			}
 
 			cookie0 := &http.Cookie{
@@ -231,7 +234,10 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 				for i_, e_ := range params.XTags {
 					parts_[i_] = e_
 				}
-				headerParam0 = strings.Join(parts_, ",")
+				headerParam0 = "" + strings.Join(parts_, ",")
+			}
+			if err != nil {
+				return nil, err
 			}
 
 			req.Header.Set("X-Tags", headerParam0)
@@ -276,7 +282,12 @@ func NewGetQueryRequest(server string, params *GetQueryParams) (*http.Request, e
 				rawQueryFragments = append(rawQueryFragments, "user_ids%5B%5D=")
 			}
 			for _, e_ := range params.UserIds {
-				rawQueryFragments = append(rawQueryFragments, "user_ids%5B%5D="+url.QueryEscape(strconv.FormatInt(int64(e_), 10)))
+				var s_ string
+				s_ = url.QueryEscape(strconv.FormatInt(int64(e_), 10))
+				rawQueryFragments = append(rawQueryFragments, "user_ids%5B%5D="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}

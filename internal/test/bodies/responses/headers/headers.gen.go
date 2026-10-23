@@ -189,7 +189,11 @@ func (response GetPing200TextResponse) VisitGetPingResponse(w http.ResponseWrite
 	if response.Headers.MyHeader != nil {
 		{
 			var v string
+			var err error
 			v = (*response.Headers.MyHeader)
+			if err != nil {
+				return fmt.Errorf("error styling response header MyHeader: %w", err)
+			}
 			w.Header().Set("MyHeader", v)
 		}
 	}

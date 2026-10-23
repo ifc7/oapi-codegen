@@ -4,21 +4,17 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
 // This file generates the code that binds request parameters on the server,
-// and styles them on the client, for the parameters whose Go type is known
-// well enough to do that without the runtime library's reflection: builtin
-// scalars and named types over them (such as enums), the time, date, duration
-// and UUID types, and arrays of those. Other parameters keep calling the
-// runtime library.
-//
-// The generated code mirrors what the runtime does for the same parameter,
-// including which parse method it picks for each location, so that moving a
-// parameter from one to the other doesn't change what it accepts or sends.
+// and styles them on the client, without the runtime library: scalars, arrays
+// of scalars, and their styles. The generated code follows what the runtime
+// library did for the same parameter, including which parse method it picks
+// for each position, except where noted.
 
 // scalarKind is how a scalar parameter's value is parsed and formatted.
 type scalarKind int
@@ -31,12 +27,25 @@ const (
 	kindBool
 	// kindTime is time.Time: RFC 3339, or a date when bound as an object.
 	kindTime
-	// kindBinder is a type with Bind, UnmarshalText and String methods, such
-	// as OpenAPIDate and OpenAPIDuration.
+	// kindBinder is a type with Bind and UnmarshalText methods, formatted by
+	// formatExpr: OpenAPIDate and OpenAPIDuration.
 	kindBinder
-	// kindText is a type with UnmarshalText and String methods but no Bind,
-	// such as uuid.UUID.
+	// kindUUID is uuid.UUID: UnmarshalText and String.
+	kindUUID
+	// kindUnion is a generated union of scalars, which has Bind,
+	// UnmarshalText and MarshalText methods.
+	kindUnion
+	// kindText is a type the generator knows nothing about, from x-go-type
+	// or a custom type mapping, which must implement encoding.TextMarshaler
+	// and encoding.TextUnmarshaler.
 	kindText
+	// kindBytes is []byte, base64-encoded.
+	kindBytes
+	// kindAny is any: an untyped value, or an OpenAPI 3.1 multi-type union
+	// of scalars, bound to the first of its types the value parses as.
+	kindAny
+	// kindFile is OpenAPIFile, holding the value's bytes.
+	kindFile
 )
 
 // scalarKinds maps the Go types the type mapping can produce to their kind
@@ -63,7 +72,10 @@ var scalarKinds = map[string]struct {
 	"time.Time":       {kindTime, 0},
 	"OpenAPIDate":     {kindBinder, 0},
 	"OpenAPIDuration": {kindBinder, 0},
-	"uuid.UUID":       {kindText, 0},
+	"uuid.UUID":       {kindUUID, 0},
+	"[]byte":          {kindBytes, 0},
+	"json.RawMessage": {kindString, 0},
+	"OpenAPIFile":     {kindFile, 0},
 }
 
 // namedType matches a type name, optionally qualified by a package.
@@ -74,20 +86,40 @@ type ScalarCodec struct {
 	goType string
 	kind   scalarKind
 	bits   int
-	// timeLike reports whether the runtime treats the type as a struct
-	// rather than a primitive when binding query parameters.
-	timeLike bool
+	// date reports whether a kindBinder value is a date, formatted with
+	// time.DateOnly rather than String.
+	date bool
+	// types are the members of a kindAny union; none for an untyped value.
+	types []string
+	// format is the OpenAPI format; a kindAny union's string member is
+	// base64 with format byte.
+	format string
 }
 
-// newScalarCodec returns the codec for a scalar of Go type goType generated
-// from schema, or nil when the type isn't one the generated code can bind
-// itself: a type x-go-type or a custom type mapping chose, or a type that
-// isn't scalar.
-func newScalarCodec(goType string, schema *openapi3.Schema) *ScalarCodec {
-	if schema == nil || schema.Extensions[extPropGoType] != nil {
+// newScalarCodec returns the codec for a scalar value of the generated
+// schema s, whose OpenAPI schema is spec, or nil when it isn't a scalar.
+func newScalarCodec(s Schema, spec *openapi3.Schema) *ScalarCodec {
+	goType := s.TypeDecl()
+	if spec == nil {
 		return nil
 	}
-	types := schemaPrimaryType(schema.Type).Slice()
+	if spec.Extensions[extPropGoType] != nil {
+		// x-go-type chose a type the generator knows nothing about.
+		return &ScalarCodec{goType: goType, kind: kindText}
+	}
+	if len(spec.Properties) == 0 && !hasAdditionalProperties(spec) && len(spec.AllOf) == 0 && len(slices.Concat(spec.AnyOf, spec.OneOf)) > 0 {
+		if len(unionTextKinds(slices.Concat(spec.AnyOf, spec.OneOf))) == 0 || !namedType.MatchString(goType) {
+			return nil
+		}
+		return &ScalarCodec{goType: goType, kind: kindUnion}
+	}
+	types := schemaPrimaryType(spec.Type).Slice()
+	if goType == "any" || goType == "interface{}" {
+		if slices.Contains(types, "array") || slices.Contains(types, "object") {
+			return nil
+		}
+		return &ScalarCodec{goType: goType, kind: kindAny, types: schemaUnionTypes(spec.Type), format: spec.Format}
+	}
 	if len(types) != 1 {
 		return nil
 	}
@@ -95,36 +127,46 @@ func newScalarCodec(goType string, schema *openapi3.Schema) *ScalarCodec {
 	switch types[0] {
 	case "string":
 		// contentMediaType and contentEncoding select a binary format.
-		if schema.Format == "" && (schema.ContentMediaType != "" || schema.ContentEncoding != "") {
+		if spec.Format == "" && (spec.ContentMediaType != "" || spec.ContentEncoding != "") {
 			return nil
 		}
-		expected = globalState.typeMapping.String.Resolve(schema.Format).Type
+		expected = globalState.typeMapping.String.Resolve(spec.Format).Type
 	case "integer":
-		expected = globalState.typeMapping.Integer.Resolve(schema.Format).Type
+		expected = globalState.typeMapping.Integer.Resolve(spec.Format).Type
 	case "number":
-		expected = globalState.typeMapping.Number.Resolve(schema.Format).Type
+		expected = globalState.typeMapping.Number.Resolve(spec.Format).Type
 	case "boolean":
-		expected = globalState.typeMapping.Boolean.Resolve(schema.Format).Type
+		expected = globalState.typeMapping.Boolean.Resolve(spec.Format).Type
 	default:
 		return nil
 	}
 	sk, ok := scalarKinds[expected]
 	if !ok {
+		// A custom type mapping chose a type the generator knows nothing
+		// about.
+		return &ScalarCodec{goType: goType, kind: kindText}
+	}
+	if sk.kind == kindBytes && goType != expected {
 		return nil
 	}
-	c := &ScalarCodec{goType: goType, kind: sk.kind, bits: sk.bits}
-	c.timeLike = expected == "time.Time" || expected == "OpenAPIDate" || expected == "OpenAPIDuration"
-	_, goTypeIsKnown := scalarKinds[goType]
-	switch {
-	case goType == expected:
-	case sk.kind <= kindBool && namedType.MatchString(goType) && !goTypeIsKnown && goType != "any":
-		// A named type over a builtin, such as an enum, converts to and
-		// from it. Other kinds need the type's own methods, which a
-		// defined type over them doesn't have.
-	default:
-		return nil
-	}
-	return c
+	// A named type over the expected one, such as an enum or an alias,
+	// converts to and from it; one over a type with methods keeps them as
+	// an alias does.
+	return &ScalarCodec{goType: goType, kind: sk.kind, bits: sk.bits, date: expected == "OpenAPIDate", format: spec.Format}
+}
+
+// hasAdditionalProperties reports whether the schema allows properties it
+// doesn't declare.
+func hasAdditionalProperties(spec *openapi3.Schema) bool {
+	return spec.AdditionalProperties.Schema != nil || (spec.AdditionalProperties.Has != nil && *spec.AdditionalProperties.Has)
+}
+
+// structLike reports whether the runtime library treated the type as a
+// struct rather than a primitive when binding a query value: it read the
+// first of several exploded values, and split an unexploded one like an
+// object, rather than rejecting several values or reading one whole.
+func (c *ScalarCodec) structLike() bool {
+	return c.kind == kindTime || c.kind == kindBinder || c.kind == kindUnion
 }
 
 // convert returns expr, of the builtin type the parse produced, converted to
@@ -138,10 +180,10 @@ func (c *ScalarCodec) convert(expr, builtin string) string {
 
 // Bind returns statements that parse the string src into dst, an
 // addressable variable of the codec's type, and set err when it can't.
-// asText selects how the runtime reads the time, date, duration and UUID
-// types in this position: with UnmarshalText, as it does a path, header or
-// cookie value, or as an object, as it does a query value or an array
-// element, which uses Bind and reads time.Time as RFC 3339 or a date.
+// asText selects how a type with an UnmarshalText method is read: with it, as
+// the whole value of a path, header or cookie parameter is, or as an object,
+// as a query value or an array element is, which uses Bind if there is one
+// and reads time.Time as RFC 3339 or a date.
 func (c *ScalarCodec) Bind(src, dst string, asText bool) string {
 	switch c.kind {
 	case kindString:
@@ -158,23 +200,127 @@ func (c *ScalarCodec) Bind(src, dst string, asText bool) string {
 		if asText {
 			return fmt.Sprintf("err = %s.UnmarshalText([]byte(%s))", dst, src)
 		}
-		return fmt.Sprintf("if %[1]s != \"\" {\nif v_, err_ := time.Parse(time.RFC3339Nano, %[1]s); err_ == nil {\n%[2]s = v_\n} else if v_, err_ := time.Parse(time.DateOnly, %[1]s); err_ == nil {\n%[2]s = v_\n} else {\nerr = err_\n}\n}", src, dst)
-	case kindBinder:
+		return fmt.Sprintf("if %[1]s != \"\" {\nif v_, err_ := time.Parse(time.RFC3339Nano, %[1]s); err_ == nil {\n%[2]s = %[3]s\n} else if v_, err_ := time.Parse(time.DateOnly, %[1]s); err_ == nil {\n%[2]s = %[3]s\n} else {\nerr = err_\n}\n}",
+			src, dst, c.convert("v_", "time.Time"))
+	case kindBinder, kindUnion:
 		if asText {
 			return fmt.Sprintf("err = %s.UnmarshalText([]byte(%s))", dst, src)
 		}
 		return fmt.Sprintf("err = %s.Bind(%s)", dst, src)
-	default: // kindText
+	case kindBytes:
+		return bindBase64(src, dst)
+	case kindFile:
+		return fmt.Sprintf("%s.InitFromBytes([]byte(%s), \"\")", dst, src)
+	case kindAny:
+		return c.bindAny(src, dst)
+	default: // kindUUID, kindText
 		return fmt.Sprintf("err = %s.UnmarshalText([]byte(%s))", dst, src)
 	}
 }
 
-// Format returns an expression that formats v, an expression of the codec's
-// type, as the string the runtime would send for it.
-func (c *ScalarCodec) Format(v string) string {
+// bindBase64 returns statements that decode src, in standard or URL-safe
+// base64, padded or not, into dst, and set err when it can't.
+func bindBase64(src, dst string) string {
+	return fmt.Sprintf(`{
+enc_ := base64.RawStdEncoding
+switch {
+case strings.ContainsRune(%[1]s, '=') && strings.ContainsAny(%[1]s, "-_"):
+enc_ = base64.URLEncoding
+case strings.ContainsRune(%[1]s, '='):
+enc_ = base64.StdEncoding
+case strings.ContainsAny(%[1]s, "-_"):
+enc_ = base64.RawURLEncoding
+}
+%[2]s, err = enc_.DecodeString(%[1]s)
+}`, src, dst)
+}
+
+// bindAny returns statements that bind src into dst, of type any, as the
+// first of the union's types it parses as, trying the most restrictive
+// first: boolean, integer, number, then string. Numbers follow the JSON
+// number grammar, so "007" and "+1" are strings. An untyped value is a
+// string.
+func (c *ScalarCodec) bindAny(src, dst string) string {
+	if len(c.types) == 0 {
+		return fmt.Sprintf("%s = %s", dst, src)
+	}
+	has := func(t string) bool { return slices.Contains(c.types, t) }
+	var b strings.Builder
+	b.WriteString("{\n")
+	if has("integer") || has("number") {
+		fmt.Fprintf(&b, "number_ := %[1]s != \"\" && (%[1]s[0] == '-' || (%[1]s[0] >= '0' && %[1]s[0] <= '9')) && strings.TrimSpace(%[1]s) == %[1]s && json.Valid([]byte(%[1]s))\n", src)
+	}
+	b.WriteString("switch {\n")
+	if has("boolean") {
+		fmt.Fprintf(&b, "case %[1]s == \"true\" || %[1]s == \"false\":\n%[2]s = %[1]s == \"true\"\n", src, dst)
+	}
+	if has("integer") {
+		fmt.Fprintf(&b, "case number_ && !strings.ContainsAny(%[1]s, \".eE\") && func() bool { _, err_ := strconv.ParseInt(%[1]s, 10, 64); return err_ == nil }():\n%[2]s, _ = strconv.ParseInt(%[1]s, 10, 64)\n", src, dst)
+	}
+	if has("number") {
+		fmt.Fprintf(&b, "case number_ && func() bool { _, err_ := strconv.ParseFloat(%[1]s, 64); return err_ == nil }():\n%[2]s, _ = strconv.ParseFloat(%[1]s, 64)\n", src, dst)
+	}
+	if has("string") {
+		b.WriteString("default:\n")
+		if c.format == "byte" {
+			fmt.Fprintf(&b, "var bytes_ []byte\n%s\n%s = bytes_\n", bindBase64(src, "bytes_"), dst)
+		} else {
+			fmt.Fprintf(&b, "%s = %s\n", dst, src)
+		}
+	} else {
+		var members []string
+		for _, t := range c.types {
+			if t != "null" {
+				members = append(members, t)
+			}
+		}
+		fmt.Fprintf(&b, "default:\nerr = fmt.Errorf(\"value '%%s' does not match any member of type union %v\", %s)\n", members, src)
+	}
+	b.WriteString("}\n}")
+	return b.String()
+}
+
+// Format returns statements that set out to v, an expression of the codec's
+// type, as text escaped by escape (a function name, or "" for none), and set
+// err when it can't be formatted.
+func (c *ScalarCodec) Format(v, out, escape string) string {
+	esc := func(s string) string {
+		if escape == "" {
+			return s
+		}
+		return escape + "(" + s + ")"
+	}
 	if strings.HasPrefix(v, "*") {
 		v = "(" + v + ")"
 	}
+	switch c.kind {
+	case kindUnion, kindText:
+		return fmt.Sprintf("if b_, err_ := %s.MarshalText(); err_ != nil {\nerr = err_\n} else {\n%s = %s\n}", v, out, esc("string(b_)"))
+	case kindFile:
+		return fmt.Sprintf("if b_, err_ := %s.Bytes(); err_ != nil {\nerr = err_\n} else {\n%s = %s\n}", v, out, esc("string(b_)"))
+	case kindAny:
+		return fmt.Sprintf(`switch v_ := %[1]s.(type) {
+case string:
+%[2]s = %[3]s
+case []byte:
+%[2]s = %[4]s
+case bool:
+%[2]s = %[5]s
+case float32:
+%[2]s = %[6]s
+case float64:
+%[2]s = %[7]s
+default:
+%[2]s = %[8]s
+}`, v, out, esc("v_"), esc("base64.StdEncoding.EncodeToString(v_)"), esc("strconv.FormatBool(v_)"),
+			esc("strconv.FormatFloat(float64(v_), 'f', -1, 32)"), esc("strconv.FormatFloat(v_, 'f', -1, 64)"), esc("fmt.Sprint(v_)"))
+	}
+	return fmt.Sprintf("%s = %s", out, esc(c.formatExpr(v)))
+}
+
+// formatExpr returns an expression formatting v, of a kind whose formatting
+// can't fail.
+func (c *ScalarCodec) formatExpr(v string) string {
 	switch c.kind {
 	case kindString:
 		if c.goType == "string" {
@@ -192,63 +338,128 @@ func (c *ScalarCodec) Format(v string) string {
 	case kindTime:
 		return v + ".Format(time.RFC3339Nano)"
 	case kindBinder:
-		if c.goType == "OpenAPIDate" {
+		if c.date {
 			return v + ".Format(time.DateOnly)"
 		}
 		return v + ".String()"
-	default: // kindText
+	case kindBytes:
+		return "base64.StdEncoding.EncodeToString(" + v + ")"
+	default: // kindUUID
 		return v + ".String()"
 	}
 }
 
-// ParamCodec binds and formats a parameter's value: a scalar, or an array of
-// scalars.
+// ParamCodec binds and styles a parameter's value: a scalar, or an array of
+// scalars, in the parameter's location, style and explode.
 type ParamCodec struct {
 	// Scalar is the codec of the value, or of an array's elements.
 	Scalar *ScalarCodec
 	// IsArray reports whether the value is an array of Scalar.
 	IsArray bool
 	goType  string
+	name    string
+	in      string
+	style   string
+	explode bool
 }
 
 // newParamCodec returns the codec for a value of the generated schema s,
-// whose OpenAPI schema is spec, or nil when the runtime binds it instead.
+// whose OpenAPI schema is spec, or nil when the generated code can't bind it
+// without the runtime library.
 func newParamCodec(s Schema, spec *openapi3.Schema) *ParamCodec {
-	if spec == nil || spec.Extensions[extPropGoType] != nil {
+	if spec == nil {
 		return nil
 	}
-	types := schemaPrimaryType(spec.Type).Slice()
-	if len(types) == 1 && types[0] == "array" {
+	if types := schemaPrimaryType(spec.Type).Slice(); len(types) == 1 && types[0] == "array" && spec.Extensions[extPropGoType] == nil {
 		if spec.Items == nil || spec.Items.Value == nil || s.ArrayType == nil {
 			return nil
 		}
-		elem := newScalarCodec(s.ArrayType.TypeDecl(), spec.Items.Value)
+		elem := newScalarCodec(*s.ArrayType, spec.Items.Value)
 		if elem == nil {
 			return nil
 		}
 		return &ParamCodec{Scalar: elem, IsArray: true, goType: s.TypeDecl()}
 	}
-	scalar := newScalarCodec(s.TypeDecl(), spec)
+	scalar := newScalarCodec(s, spec)
 	if scalar == nil {
 		return nil
 	}
 	return &ParamCodec{Scalar: scalar, goType: s.TypeDecl()}
 }
 
-// TimeLike reports whether the runtime binds a query value of this scalar as
-// a struct: it takes the first of several values rather than rejecting them.
-func (c *ParamCodec) TimeLike() bool {
-	return !c.IsArray && c.Scalar.timeLike
+// escape returns the function that escapes the parameter's names and values
+// for its location, or "" for none.
+func (c *ParamCodec) escape() string {
+	switch c.in {
+	case "path":
+		return "url.PathEscape"
+	case "query":
+		return "url.QueryEscape"
+	default:
+		return ""
+	}
 }
 
-// BindStyled returns statements that bind src, a `simple`-style value of a
-// path, header or cookie parameter, into dst, and set err when it can't: a
-// scalar is the whole value, an array its comma-separated parts.
+// escapedName returns the parameter's name escaped for its location.
+func (c *ParamCodec) escapedName() string {
+	switch c.in {
+	case "path":
+		return url.PathEscape(c.name)
+	case "query":
+		return url.QueryEscape(c.name)
+	default:
+		return c.name
+	}
+}
+
+// split returns statements that split src, a styled path, header or cookie
+// value, into parts_, and set err when it isn't in the style.
+func (c *ParamCodec) split(src string) string {
+	errorf := func(format string) string {
+		return fmt.Sprintf("err = errors.New(%s)", StringToGoString(fmt.Sprintf(format, c.name)))
+	}
+	switch {
+	case c.style == "label" && c.explode:
+		return fmt.Sprintf("parts_ := strings.Split(%s, \".\")\nif parts_[0] != \"\" {\n%s\n}\nparts_ = parts_[1:]", src,
+			errorf("invalid format for label parameter '%s', should start with '.'"))
+	case c.style == "label":
+		return fmt.Sprintf("var parts_ []string\nif !strings.HasPrefix(%[1]s, \".\") {\n%[2]s\n} else {\nparts_ = strings.Split(%[1]s[1:], \",\")\n}", src,
+			errorf("invalid format for label parameter '%s', should start with '.'"))
+	case c.style == "matrix" && c.explode:
+		return fmt.Sprintf("parts_ := strings.Split(%s, \";\")\nif parts_[0] != \"\" {\n%s\n}\nparts_ = parts_[1:]\nfor i_ := range parts_ {\nparts_[i_] = strings.TrimPrefix(parts_[i_], %s)\n}", src,
+			errorf("invalid format for matrix parameter '%s', should start with ';'"), StringToGoString(c.name+"="))
+	case c.style == "matrix":
+		prefix := ";" + c.name + "="
+		return fmt.Sprintf("var parts_ []string\nif !strings.HasPrefix(%[1]s, %[2]s) {\n%[3]s\n} else {\nparts_ = strings.Split(strings.TrimPrefix(%[1]s, %[2]s), \",\")\n}", src,
+			StringToGoString(prefix), errorf("expected parameter '%s' to start with "+strings.ReplaceAll(prefix, "%", "%%")))
+	default: // simple
+		return fmt.Sprintf("parts_ := strings.Split(%s, \",\")", src)
+	}
+}
+
+// BindStyled returns statements that bind src, the value of a path, header or
+// cookie parameter, into dst, and set err when it can't: a scalar is the
+// value without the style's prefix, an array its parts.
+//
+// The runtime library read a value with an UnmarshalText method whole, prefix
+// and all, so a `label` or `matrix` date, time, UUID or union never bound;
+// the generated code strips the prefix first.
 func (c *ParamCodec) BindStyled(src, dst string) string {
-	if !c.IsArray {
+	if !c.IsArray && c.style == "simple" && c.Scalar.kind != kindBytes {
 		return c.Scalar.Bind(src, dst, true)
 	}
-	return c.BindList(fmt.Sprintf("strings.Split(%s, \",\")", src), dst)
+	if !c.IsArray {
+		// A scalar is the one part of the value.
+		bind := c.Scalar.Bind("parts_[0]", dst, c.Scalar.kind != kindBytes)
+		if c.style == "simple" { // kindBytes, which can't contain a comma
+			bind = c.Scalar.Bind(src, dst, false)
+			return fmt.Sprintf("if strings.Contains(%s, \",\") {\nerr = errors.New(%s)\n} else {\n%s\n}",
+				src, StringToGoString(fmt.Sprintf("expected single base64 value for byte slice parameter '%s'", c.name)), bind)
+		}
+		return fmt.Sprintf("{\n%s\nif err == nil {\nif len(parts_) != 1 {\nerr = errors.New(%s)\n} else {\n%s\n}\n}\n}",
+			c.split(src), StringToGoString(fmt.Sprintf("parameter '%s': expected single value", c.name)), bind)
+	}
+	return fmt.Sprintf("{\n%s\nif err == nil {\n%s\n}\n}", c.split(src), c.BindList("parts_", dst))
 }
 
 // BindList returns statements that bind each string of list, an expression
@@ -270,92 +481,151 @@ func (c *ParamCodec) BindList(list, dst string) string {
 		list, dst, c.goType, c.Scalar.Bind("part_", dst+"[i_]", false))
 }
 
-// BindQueryValue returns statements that bind value, the one value of a
-// non-exploded `form` query parameter, into dst, and set err when it can't.
-func (c *ParamCodec) BindQueryValue(value, dst string) string {
-	if c.IsArray {
-		return c.BindList(fmt.Sprintf("strings.Split(%s, \",\")", value), dst)
+// BindQuery returns statements that bind values, the values of the query
+// parameter, of which there is at least one, into dst, and set err when they
+// can't be.
+func (c *ParamCodec) BindQuery(values, dst string) string {
+	errorf := func(format string) string {
+		return fmt.Sprintf("err = errors.New(%s)", StringToGoString(fmt.Sprintf(format, c.name)))
 	}
-	// The runtime reads a struct-like value by splitting it like an object
-	// and requiring one part, then with Bind, or for time.Time, which has
-	// no Bind, UnmarshalText.
-	if c.Scalar.timeLike {
-		return fmt.Sprintf("if strings.Contains(%s, \",\") {\nerr = errors.New(\"multiple values for single value parameter\")\n} else {\n%s\n}",
-			value, c.Scalar.Bind(value, dst, c.Scalar.kind == kindTime))
-	}
-	return c.Scalar.Bind(value, dst, false)
-}
-
-// Style returns statements that set out to the `simple`-style serialization
-// of v, the value of a path, header or cookie parameter, with each value
-// escaped by escape, a function name or "" for none.
-func (c *ParamCodec) Style(v, out, escape string) string {
-	esc := func(s string) string {
-		if escape == "" {
-			return s
+	if c.explode {
+		switch {
+		case c.IsArray:
+			return c.BindList(values, dst)
+		case c.Scalar.structLike():
+			return c.Scalar.Bind(values+"[0]", dst, false)
+		default:
+			return fmt.Sprintf("if len(%s) != 1 {\n%s\n} else {\n%s\n}", values,
+				errorf("multiple values for single value parameter '%s'"), c.Scalar.Bind(values+"[0]", dst, false))
 		}
-		return escape + "(" + s + ")"
 	}
-	if !c.IsArray {
-		return fmt.Sprintf("%s = %s", out, esc(c.Scalar.Format(v)))
+	var bind string
+	switch {
+	case c.IsArray:
+		sep := map[string]string{"spaceDelimited": " ", "pipeDelimited": "|"}[c.style]
+		if sep == "" {
+			sep = ","
+		}
+		bind = c.BindList(fmt.Sprintf("strings.Split(%s[0], %q)", values, sep), dst)
+	case c.Scalar.structLike():
+		// The runtime library split a struct like an object and required
+		// one part, then read it with Bind, or for time.Time, which has no
+		// Bind, UnmarshalText.
+		bind = fmt.Sprintf("if strings.Contains(%s[0], \",\") {\n%s\n} else {\n%s\n}", values,
+			errorf("multiple values for single value parameter '%s'"), c.Scalar.Bind(values+"[0]", dst, c.Scalar.kind == kindTime))
+	default:
+		bind = c.Scalar.Bind(values+"[0]", dst, false)
 	}
-	if strings.HasPrefix(v, "*") {
-		v = "(" + v + ")"
-	}
-	return fmt.Sprintf("{\nparts_ := make([]string, len(%[1]s))\nfor i_, e_ := range %[1]s {\nparts_[i_] = %[2]s\n}\n%[3]s = strings.Join(parts_, \",\")\n}",
-		v, esc(c.Scalar.Format("e_")), out)
+	return fmt.Sprintf("if len(%s) != 1 {\n%s\n} else {\n%s\n}", values,
+		errorf("parameter '%s' is not exploded, but is specified multiple times"), bind)
 }
 
-// StyleQuery returns statements that append the `form`-style serialization
-// of v, the value of query parameter name, to fragments, a []string of
-// `key=value` query fragments.
-func (c *ParamCodec) StyleQuery(name string, explode bool, v, fragments string) string {
-	prefix := StringToGoString(url.QueryEscape(name) + "=")
+// Style returns statements that set out to the styled value v of a path,
+// header or cookie parameter, escaped for its location, and set err when it
+// can't be formatted.
+func (c *ParamCodec) Style(v, out string) string {
+	esc := c.escape()
+	var prefix, sep string
+	switch c.style {
+	case "label":
+		prefix, sep = ".", ","
+		if c.explode {
+			sep = "."
+		}
+	case "matrix":
+		prefix, sep = ";"+c.escapedName()+"=", ","
+		if c.explode {
+			sep = prefix
+		}
+	default:
+		sep = ","
+	}
 	if !c.IsArray {
-		return fmt.Sprintf("%[1]s = append(%[1]s, %[2]s+url.QueryEscape(%[3]s))", fragments, prefix, c.Scalar.Format(v))
+		if prefix == "" {
+			return c.Scalar.Format(v, out, esc)
+		}
+		return fmt.Sprintf("%s\n%s = %s + %s", c.Scalar.Format(v, out, esc), out, StringToGoString(prefix), out)
 	}
 	if strings.HasPrefix(v, "*") {
 		v = "(" + v + ")"
 	}
-	elem := "url.QueryEscape(" + c.Scalar.Format("e_") + ")"
-	if explode {
-		// An empty array still sends the bare key, as the runtime does.
-		return fmt.Sprintf("if len(%[1]s) == 0 {\n%[2]s = append(%[2]s, %[3]s)\n}\nfor _, e_ := range %[1]s {\n%[2]s = append(%[2]s, %[3]s+%[4]s)\n}",
+	return fmt.Sprintf("{\nparts_ := make([]string, len(%[1]s))\nfor i_, e_ := range %[1]s {\n%[2]s\n}\n%[3]s = %[4]s + strings.Join(parts_, %[5]s)\n}",
+		v, c.Scalar.Format("e_", "parts_[i_]", esc), out, StringToGoString(prefix), StringToGoString(sep))
+}
+
+// StyleQuery returns statements that append the styled value v of the query
+// parameter to fragments, a []string of `key=value` query fragments, and set
+// err when it can't be formatted.
+//
+// The runtime library couldn't style a scalar in `spaceDelimited` or
+// `pipeDelimited` style; the generated code styles it as `form`.
+func (c *ParamCodec) StyleQuery(v, fragments string) string {
+	prefix := StringToGoString(c.escapedName() + "=")
+	if !c.IsArray {
+		return fmt.Sprintf("{\nvar s_ string\n%s\n%s = append(%s, %s+s_)\n}", c.Scalar.Format(v, "s_", "url.QueryEscape"), fragments, fragments, prefix)
+	}
+	if strings.HasPrefix(v, "*") {
+		v = "(" + v + ")"
+	}
+	elem := c.Scalar.Format("e_", "s_", "url.QueryEscape")
+	if c.explode {
+		// An empty array still sends the bare key, as the runtime library
+		// did.
+		return fmt.Sprintf("if len(%[1]s) == 0 {\n%[2]s = append(%[2]s, %[3]s)\n}\nfor _, e_ := range %[1]s {\nvar s_ string\n%[4]s\n%[2]s = append(%[2]s, %[3]s+s_)\n}",
 			v, fragments, prefix, elem)
 	}
-	return fmt.Sprintf("{\nparts_ := make([]string, len(%[1]s))\nfor i_, e_ := range %[1]s {\nparts_[i_] = %[4]s\n}\n%[2]s = append(%[2]s, %[3]s+strings.Join(parts_, \",\"))\n}",
-		v, fragments, prefix, elem)
+	sep := map[string]string{"spaceDelimited": " ", "pipeDelimited": "|"}[c.style]
+	if sep == "" {
+		sep = ","
+	}
+	return fmt.Sprintf("{\nparts_ := make([]string, len(%[1]s))\nfor i_, e_ := range %[1]s {\nvar s_ string\n%[4]s\nparts_[i_] = s_\n}\n%[2]s = append(%[2]s, %[3]s+strings.Join(parts_, %[5]q))\n}",
+		v, fragments, prefix, elem, sep)
 }
 
 // Codec returns the codec that binds and styles the parameter without the
-// runtime library, or nil when the runtime does that: the parameter isn't
-// `simple` style in a path or header, `form` style in a query, or in a
-// cookie, which is always `simple`, or its type isn't one the codec knows.
+// runtime library, or nil when the runtime library does that.
 func (pd ParameterDefinition) Codec() *ParamCodec {
-	if !pd.IsStyled() || len(pd.SchemaTypes()) > 0 {
+	if !pd.IsStyled() {
 		return nil
 	}
+	style := pd.Style()
 	switch pd.In {
-	case "path", "header":
-		if pd.Style() != "simple" {
+	case "path":
+		if style != "simple" && style != "label" && style != "matrix" {
+			return nil
+		}
+	case "header":
+		if style != "simple" {
 			return nil
 		}
 	case "query":
-		if pd.Style() != "form" {
+		if style != "form" && style != "spaceDelimited" && style != "pipeDelimited" {
 			return nil
 		}
 	case "cookie":
+		// Cookies are always `simple` style.
+		style = "simple"
 	default:
 		return nil
 	}
-	return newParamCodec(pd.Schema, pd.Spec.Schema.Value)
+	c := newParamCodec(pd.Schema, pd.Spec.Schema.Value)
+	if c == nil {
+		return nil
+	}
+	c.name, c.in, c.style, c.explode = pd.ParamName, pd.In, style, pd.Explode()
+	return c
 }
 
 // Codec returns the codec that binds and styles the response header without
-// the runtime library, or nil when the runtime does that.
+// the runtime library, or nil when the runtime library does that.
 func (h ResponseHeaderDefinition) Codec() *ParamCodec {
-	if h.Style != "simple" || len(h.SchemaTypes()) > 0 {
+	if h.Style != "simple" {
 		return nil
 	}
-	return newParamCodec(h.Schema, h.Schema.OAPISchema)
+	c := newParamCodec(h.Schema, h.Schema.OAPISchema)
+	if c == nil {
+		return nil
+	}
+	c.name, c.in, c.style, c.explode = h.Name, "header", "simple", h.Explode
+	return c
 }

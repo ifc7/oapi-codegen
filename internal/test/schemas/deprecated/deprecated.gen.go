@@ -489,13 +489,27 @@ func NewGetDeprecatedFieldRequest(server string, params *GetDeprecatedFieldParam
 
 		if params.OldFilter != nil {
 
-			rawQueryFragments = append(rawQueryFragments, "old_filter="+url.QueryEscape((*params.OldFilter)))
+			{
+				var s_ string
+				s_ = url.QueryEscape((*params.OldFilter))
+				rawQueryFragments = append(rawQueryFragments, "old_filter="+s_)
+			}
+			if err != nil {
+				return nil, err
+			}
 
 		}
 
 		if params.NewFilter != nil {
 
-			rawQueryFragments = append(rawQueryFragments, "new_filter="+url.QueryEscape((*params.NewFilter)))
+			{
+				var s_ string
+				s_ = url.QueryEscape((*params.NewFilter))
+				rawQueryFragments = append(rawQueryFragments, "new_filter="+s_)
+			}
+			if err != nil {
+				return nil, err
+			}
 
 		}
 
@@ -520,6 +534,9 @@ func NewGetDeprecatedParamsOldIdRequest(server string, oldId string, params *Get
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(oldId)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -547,6 +564,9 @@ func NewGetDeprecatedParamsOldIdRequest(server string, oldId string, params *Get
 			var headerParam0 string
 
 			headerParam0 = (*params.OldHeader)
+			if err != nil {
+				return nil, err
+			}
 
 			req.Header.Set("old_header", headerParam0)
 		}
@@ -559,6 +579,9 @@ func NewGetDeprecatedParamsOldIdRequest(server string, oldId string, params *Get
 			var cookieParam0 string
 
 			cookieParam0 = (*params.OldCookie)
+			if err != nil {
+				return nil, err
+			}
 
 			cookie0 := &http.Cookie{
 				Name:  "old_cookie",
@@ -1920,7 +1943,11 @@ func (response GetDeprecatedParamsOldId200JSONResponse) VisitGetDeprecatedParams
 	if response.Headers.XOldToken != nil {
 		{
 			var v string
+			var err error
 			v = (*response.Headers.XOldToken)
+			if err != nil {
+				return fmt.Errorf("error styling response header X-Old-Token: %w", err)
+			}
 			w.Header().Set("X-Old-Token", v)
 		}
 	}
@@ -1970,14 +1997,22 @@ func (response GetLegacy200JSONResponse) VisitGetLegacyResponse(w http.ResponseW
 	if response.Headers.XCorrelationId != nil {
 		{
 			var v string
+			var err error
 			v = (*response.Headers.XCorrelationId)
+			if err != nil {
+				return fmt.Errorf("error styling response header X-Correlation-Id: %w", err)
+			}
 			w.Header().Set("X-Correlation-Id", v)
 		}
 	}
 	if response.Headers.XOldTrace != nil {
 		{
 			var v string
+			var err error
 			v = (*response.Headers.XOldTrace)
+			if err != nil {
+				return fmt.Errorf("error styling response header X-Old-Trace: %w", err)
+			}
 			w.Header().Set("X-Old-Trace", v)
 		}
 	}

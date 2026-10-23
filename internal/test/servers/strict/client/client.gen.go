@@ -1226,6 +1226,9 @@ func NewReservedGoKeywordParametersRequest(server string, pType string) (*http.R
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(pType)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -1348,6 +1351,9 @@ func NewSameNameParamAndBodyPropertyRequestWithBody(server string, name string, 
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(name)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -1554,6 +1560,9 @@ func NewHeadersExampleRequestWithBody(server string, params *HeadersExampleParam
 		var headerParam0 string
 
 		headerParam0 = params.Header1
+		if err != nil {
+			return nil, err
+		}
 
 		req.Header.Set("header1", headerParam0)
 
@@ -1561,6 +1570,9 @@ func NewHeadersExampleRequestWithBody(server string, params *HeadersExampleParam
 			var headerParam1 string
 
 			headerParam1 = strconv.FormatInt(int64((*params.Header2)), 10)
+			if err != nil {
+				return nil, err
+			}
 
 			req.Header.Set("header2", headerParam1)
 		}

@@ -33,7 +33,10 @@ locals, which both call sites declare.
         {{end}}
         {{if .IsStyled}}
         {{with .Codec -}}
-        {{.Style (printf "%sparams.%s" (or (and $param.HasOptionalPointer "*") "") $param.GoName) (printf "headerParam%d" $paramIdx) ""}}
+        {{.Style (printf "%sparams.%s" (or (and $param.HasOptionalPointer "*") "") $param.GoName) (printf "headerParam%d" $paramIdx)}}
+        if err != nil {
+            return nil, err
+        }
         {{- else -}}
         headerParam{{$paramIdx}}, err = runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"})
         if err != nil {
@@ -56,7 +59,10 @@ enclosing builder's params.
 {{define "client.styleQuery" -}}
 {{- $p := . -}}
 {{- with .Codec -}}
-{{.StyleQuery $p.ParamName $p.Explode (printf "%sparams.%s" (or (and $p.RequiresNilCheck $p.HasOptionalPointer "*") "") $p.GoName) "rawQueryFragments"}}
+{{.StyleQuery (printf "%sparams.%s" (or (and $p.RequiresNilCheck $p.HasOptionalPointer "*") "") $p.GoName) "rawQueryFragments"}}
+if err != nil {
+    return nil, err
+}
 {{- else -}}
 if queryFrag, err := runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if and .RequiresNilCheck .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"}); err != nil {
     return nil, err

@@ -259,6 +259,9 @@ func NewUpdateThingRequestWithBody(server string, id string, params *UpdateThing
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(id)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -286,7 +289,14 @@ func NewUpdateThingRequestWithBody(server string, id string, params *UpdateThing
 
 		if params.Limit != nil {
 
-			rawQueryFragments = append(rawQueryFragments, "limit="+url.QueryEscape(strconv.FormatInt(int64((*params.Limit)), 10)))
+			{
+				var s_ string
+				s_ = url.QueryEscape(strconv.FormatInt(int64((*params.Limit)), 10))
+				rawQueryFragments = append(rawQueryFragments, "limit="+s_)
+			}
+			if err != nil {
+				return nil, err
+			}
 
 		}
 
@@ -1094,7 +1104,11 @@ func (response UpdateThing200JSONResponse) VisitUpdateThingResponse(w http.Respo
 	w.Header().Set("Content-Type", "application/json")
 	{
 		var v string
+		var err error
 		v = string(response.Headers.XThingID)
+		if err != nil {
+			return fmt.Errorf("error styling response header X-Thing-ID: %w", err)
+		}
 		w.Header().Set("X-Thing-ID", v)
 	}
 	w.WriteHeader(200)

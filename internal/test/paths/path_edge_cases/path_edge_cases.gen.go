@@ -212,6 +212,9 @@ func NewGetPetRequest(server string, petId string) (*http.Request, error) {
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(petId)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -283,6 +286,9 @@ func NewGetSimplePrimitiveRequest(server string, param string) (*http.Request, e
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(param)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {

@@ -274,7 +274,11 @@ func (response UpdateThing200JSONResponse) VisitUpdateThingResponse(w http.Respo
 	w.Header().Set("Content-Type", "application/json")
 	{
 		var v string
+		var err error
 		v = string(response.Headers.XThingID)
+		if err != nil {
+			return fmt.Errorf("error styling response header X-Thing-ID: %w", err)
+		}
 		w.Header().Set("X-Thing-ID", v)
 	}
 	w.WriteHeader(200)

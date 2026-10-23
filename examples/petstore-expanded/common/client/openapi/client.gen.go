@@ -299,14 +299,26 @@ func NewFindPetsRequest(server string, params *FindPetsParams) (*http.Request, e
 				rawQueryFragments = append(rawQueryFragments, "tags=")
 			}
 			for _, e_ := range *params.Tags {
-				rawQueryFragments = append(rawQueryFragments, "tags="+url.QueryEscape(e_))
+				var s_ string
+				s_ = url.QueryEscape(e_)
+				rawQueryFragments = append(rawQueryFragments, "tags="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
 
 		if params.Limit != nil {
 
-			rawQueryFragments = append(rawQueryFragments, "limit="+url.QueryEscape(strconv.FormatInt(int64((*params.Limit)), 10)))
+			{
+				var s_ string
+				s_ = url.QueryEscape(strconv.FormatInt(int64((*params.Limit)), 10))
+				rawQueryFragments = append(rawQueryFragments, "limit="+s_)
+			}
+			if err != nil {
+				return nil, err
+			}
 
 		}
 
@@ -371,6 +383,9 @@ func NewDeletePetRequest(server string, id int64) (*http.Request, error) {
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(strconv.FormatInt(int64(id), 10))
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -402,6 +417,9 @@ func NewFindPetByIDRequest(server string, id int64) (*http.Request, error) {
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(strconv.FormatInt(int64(id), 10))
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {

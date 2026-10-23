@@ -166,6 +166,9 @@ func NewIssue209Request(server string, str StringInPath) (*http.Request, error) 
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(string(str))
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -197,6 +200,9 @@ func NewIssue30Request(server string, pFallthrough string) (*http.Request, error
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(pFallthrough)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {

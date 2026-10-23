@@ -1294,7 +1294,14 @@ func NewPostFooRequestWithBody(server string, params *PostFooParams, contentType
 
 		if params.Bar != nil {
 
-			rawQueryFragments = append(rawQueryFragments, "bar="+url.QueryEscape(string((*params.Bar))))
+			{
+				var s_ string
+				s_ = url.QueryEscape(string((*params.Bar)))
+				rawQueryFragments = append(rawQueryFragments, "bar="+s_)
+			}
+			if err != nil {
+				return nil, err
+			}
 
 		}
 
@@ -1804,6 +1811,9 @@ func NewPatchResourceRequestWithBody(server string, id string, contentType strin
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(id)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {

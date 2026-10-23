@@ -987,7 +987,11 @@ func (response ListThings422JSONResponse) VisitListThingsResponse(w http.Respons
 	w.Header().Set("Content-Type", "application/json")
 	{
 		var v string
+		var err error
 		v = response.Headers.XRequestId
+		if err != nil {
+			return fmt.Errorf("error styling response header X-Request-Id: %w", err)
+		}
 		w.Header().Set("X-Request-Id", v)
 	}
 	w.WriteHeader(422)

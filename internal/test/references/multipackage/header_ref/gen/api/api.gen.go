@@ -117,6 +117,9 @@ func NewGetThingRequest(server string, id string) (*http.Request, error) {
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(id)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -490,7 +493,11 @@ func (response GetThing200JSONResponse) VisitGetThingResponse(w http.ResponseWri
 	if response.Headers.ETag != nil {
 		{
 			var v string
+			var err error
 			v = string((*response.Headers.ETag))
+			if err != nil {
+				return fmt.Errorf("error styling response header ETag: %w", err)
+			}
 			w.Header().Set("ETag", v)
 		}
 	}

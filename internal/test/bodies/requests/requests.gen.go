@@ -186,7 +186,14 @@ func NewIssue9RequestWithBody(server string, params *Issue9Params, contentType s
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
-		rawQueryFragments = append(rawQueryFragments, "foo="+url.QueryEscape(params.Foo))
+		{
+			var s_ string
+			s_ = url.QueryEscape(params.Foo)
+			rawQueryFragments = append(rawQueryFragments, "foo="+s_)
+		}
+		if err != nil {
+			return nil, err
+		}
 
 		if encoded := queryValues.Encode(); encoded != "" {
 			rawQueryFragments = append(rawQueryFragments, encoded)

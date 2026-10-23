@@ -298,6 +298,9 @@ func NewGetHttpPetRequest(server string, petId string) (*http.Request, error) {
 	var pathParam0 string
 
 	pathParam0 = url.PathEscape(petId)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {

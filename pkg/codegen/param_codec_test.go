@@ -50,15 +50,15 @@ components:
 	}
 	assert.Equal(t, map[string]bool{
 		"id":      true,
-		"label":   false, // label style
+		"label":   true,
 		"ids":     true,
 		"color":   true, // a named type over string
 		"on":      true,
 		"deep":    false, // deepObject style
-		"custom":  false, // x-go-type
+		"custom":  true,  // must implement encoding.TextMarshaler and TextUnmarshaler
 		"since":   true,
 		"session": true,
-		"blob":    false, // []byte
+		"blob":    true,
 	}, static)
 }
 

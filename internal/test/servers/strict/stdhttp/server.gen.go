@@ -811,14 +811,22 @@ func (response NoContentHeaders204Response) VisitNoContentHeadersResponse(w http
 	if response.Headers.NullableHeader != nil {
 		{
 			var v string
+			var err error
 			v = (*response.Headers.NullableHeader)
+			if err != nil {
+				return fmt.Errorf("error styling response header nullable-header: %w", err)
+			}
 			w.Header().Set("nullable-header", v)
 		}
 	}
 	if response.Headers.OptionalHeader != nil {
 		{
 			var v string
+			var err error
 			v = (*response.Headers.OptionalHeader)
+			if err != nil {
+				return fmt.Errorf("error styling response header optional-header: %w", err)
+			}
 			w.Header().Set("optional-header", v)
 		}
 	}
@@ -937,12 +945,20 @@ func (response ReusableResponses200JSONResponse) VisitReusableResponsesResponse(
 	w.Header().Set("Content-Type", "application/json")
 	{
 		var v string
+		var err error
 		v = response.Headers.Header1
+		if err != nil {
+			return fmt.Errorf("error styling response header header1: %w", err)
+		}
 		w.Header().Set("header1", v)
 	}
 	{
 		var v string
+		var err error
 		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
+		if err != nil {
+			return fmt.Errorf("error styling response header header2: %w", err)
+		}
 		w.Header().Set("header2", v)
 	}
 	w.WriteHeader(200)
@@ -1238,25 +1254,41 @@ func (response HeadersExample200JSONResponse) VisitHeadersExampleResponse(w http
 	w.Header().Set("Content-Type", "application/json")
 	{
 		var v string
+		var err error
 		v = response.Headers.Header1
+		if err != nil {
+			return fmt.Errorf("error styling response header header1: %w", err)
+		}
 		w.Header().Set("header1", v)
 	}
 	{
 		var v string
+		var err error
 		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
+		if err != nil {
+			return fmt.Errorf("error styling response header header2: %w", err)
+		}
 		w.Header().Set("header2", v)
 	}
 	if response.Headers.NullableHeader != nil {
 		{
 			var v string
+			var err error
 			v = (*response.Headers.NullableHeader)
+			if err != nil {
+				return fmt.Errorf("error styling response header nullable-header: %w", err)
+			}
 			w.Header().Set("nullable-header", v)
 		}
 	}
 	if response.Headers.OptionalHeader != nil {
 		{
 			var v string
+			var err error
 			v = (*response.Headers.OptionalHeader)
+			if err != nil {
+				return fmt.Errorf("error styling response header optional-header: %w", err)
+			}
 			w.Header().Set("optional-header", v)
 		}
 	}
@@ -1308,12 +1340,20 @@ func (response UnionExample200ApplicationAlternativePlusJSONResponse) VisitUnion
 	w.Header().Set("Content-Type", "application/alternative+json")
 	{
 		var v string
+		var err error
 		v = response.Headers.Header1
+		if err != nil {
+			return fmt.Errorf("error styling response header header1: %w", err)
+		}
 		w.Header().Set("header1", v)
 	}
 	{
 		var v string
+		var err error
 		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
+		if err != nil {
+			return fmt.Errorf("error styling response header header2: %w", err)
+		}
 		w.Header().Set("header2", v)
 	}
 	w.WriteHeader(200)
@@ -1335,12 +1375,20 @@ func (response UnionExample200JSONResponse) VisitUnionExampleResponse(w http.Res
 	w.Header().Set("Content-Type", "application/json")
 	{
 		var v string
+		var err error
 		v = response.Headers.Header1
+		if err != nil {
+			return fmt.Errorf("error styling response header header1: %w", err)
+		}
 		w.Header().Set("header1", v)
 	}
 	{
 		var v string
+		var err error
 		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
+		if err != nil {
+			return fmt.Errorf("error styling response header header2: %w", err)
+		}
 		w.Header().Set("header2", v)
 	}
 	w.WriteHeader(200)
