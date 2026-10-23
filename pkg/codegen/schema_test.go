@@ -1237,7 +1237,7 @@ components:
 }
 
 // A form response reached through $ref embeds the reusable envelope, and
-// runtime.MarshalForm would encode that untagged embedded field under an
+// encoding the wrapper would encode that untagged embedded field under an
 // empty name ("[value]=..."), so the visitor marshals the envelope itself.
 func TestStrictReusableFormResponseMarshalsEnvelope(t *testing.T) {
 	const spec = `
@@ -1328,10 +1328,10 @@ components:
 			require.NoError(t, err)
 
 			assert.Contains(t, code, "type LocalRef200FormdataResponse struct{ FormFormdataResponse }")
-			assert.Contains(t, visitor(t, code, "LocalRef200FormdataResponse"), "runtime.MarshalForm(response.FormFormdataResponse, nil)")
+			assert.Contains(t, visitor(t, code, "LocalRef200FormdataResponse"), "any(response.FormFormdataResponse).(url.Values)")
 			assert.Contains(t, code, "type ExternalRef200FormdataResponse struct {\n\texternalRef0.ExternalFormFormdataResponse\n}")
-			assert.Contains(t, visitor(t, code, "ExternalRef200FormdataResponse"), "runtime.MarshalForm(response.ExternalFormFormdataResponse, nil)")
-			assert.Contains(t, visitor(t, code, "Inline200FormdataResponse"), "runtime.MarshalForm(response, nil)")
+			assert.Contains(t, visitor(t, code, "ExternalRef200FormdataResponse"), "any(response.ExternalFormFormdataResponse).(url.Values)")
+			assert.Contains(t, visitor(t, code, "Inline200FormdataResponse"), "any(response).(url.Values)")
 		})
 	}
 }

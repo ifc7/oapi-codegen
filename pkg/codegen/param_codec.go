@@ -1046,6 +1046,8 @@ func (d *deepCodec) kind(s Schema, spec *openapi3.Schema, name string) string {
 				return "bool"
 			case kindAny, kindUnion:
 				return "any"
+			case kindFile:
+				return "skip"
 			default:
 				return "string"
 			}
@@ -1114,7 +1116,58 @@ func (d *deepCodec) kindsLiteral() string {
 // query, a url.Values, into dst, set found_ when any of its query parameters
 // is present, and set err when they can't be bound.
 func (d *deepCodec) bind(name, query, dst string) string {
+	collect := fmt.Sprintf(`for key_, values_ := range %[1]s {
+rest_, ok_ := strings.CutPrefix(key_, %[2]s)
+if !ok_ {
+continue
+}
+found_ = true
+path_ := strings.Split(strings.TrimRight(rest_, "]"), "][")
+if len(values_) == 1 {
+insert_(path_, values_[0])
+} else {
+for i_, value_ := range values_ {
+insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
+}
+}
+}`, query, StringToGoString(name+"["))
+	return d.bindTree(collect, dst, false)
+}
+
+// bindForm returns statements that bind form, a url.Values of an
+// application/x-www-form-urlencoded body, into dst, and set err when it can't
+// be bound. Keys name a property by its path, as in `a[b][0]`; an array's
+// values may also repeat its key, with or without a trailing `[]`. Unknown
+// properties are ignored.
+func (d *deepCodec) bindForm(form, dst string) string {
+	collect := fmt.Sprintf(`for key_, values_ := range %s {
+key_ = strings.TrimSuffix(key_, "[]")
+name_, rest_, _ := strings.Cut(key_, "[")
+path_ := []string{name_}
+if rest_ != "" {
+path_ = append(path_, strings.Split(strings.TrimRight(rest_, "]"), "][")...)
+}
+found_ = true
+if len(values_) == 1 {
+insert_(path_, values_[0])
+} else {
+for i_, value_ := range values_ {
+insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
+}
+}
+}`, form)
+	return fmt.Sprintf("{\nfound_ := false\n%s\n}", d.bindTree(collect, dst, true))
+}
+
+// bindTree returns statements that run collect, which fills tree_, by
+// insert_, with the values of the parameter or form by path, and sets found_
+// when there are any, then bind tree_ into dst, and set err when it can't be
+// bound. In a form, unknown properties are ignored, and a single value of an
+// array is an array of one.
+func (d *deepCodec) bindTree(collect, dst string, form bool) string {
 	return fmt.Sprintf(`{
+form_ := %[6]v
+_ = form_
 tree_ := map[string]any{}
 insert_ := func(path []string, value string) {
 node := tree_
@@ -1128,26 +1181,29 @@ node = next
 }
 node[path[len(path)-1]] = value
 }
-for key_, values_ := range %[2]s {
-rest_, ok_ := strings.CutPrefix(key_, %[3]s)
-if !ok_ {
-continue
-}
-found_ = true
-path_ := strings.Split(strings.TrimRight(rest_, "]"), "][")
-if len(values_) == 1 {
-insert_(path_, values_[0])
-} else {
-for i_, value_ := range values_ {
-insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
-}
-}
-}
+%[2]s
 if found_ {
 kinds_ := %[4]s
+// In a form, a value of the wrong shape is skipped, as the runtime
+// library skipped it.
+skip_ := &struct{}{}
 var convert_ func(node any, kind string) (any, error)
 convert_ = func(node any, kind string) (any, error) {
 fields, isMap := node.(map[string]any)
+if form_ {
+compound := strings.HasPrefix(kind, "object:") || strings.HasPrefix(kind, "map:") || strings.HasPrefix(kind, "array:")
+switch {
+case isMap && !compound && kind != "any":
+// A repeated value: the first one counts.
+first, ok := fields["0"]
+if !ok {
+return skip_, nil
+}
+return convert_(first, kind)
+case !isMap && compound && !strings.HasPrefix(kind, "array:"):
+return skip_, nil
+}
+}
 text, _ := node.(string)
 switch {
 case strings.HasPrefix(kind, "object:"):
@@ -1160,12 +1216,21 @@ for key, value := range fields {
 fieldKind, ok := object[key]
 if !ok {
 if fieldKind, ok = object["*"]; !ok {
+if form_ {
+continue
+}
 return nil, fmt.Errorf("field [%%s] is not present in destination object", key)
 }
+}
+if fieldKind == "skip" {
+continue
 }
 v, err := convert_(value, fieldKind)
 if err != nil {
 return nil, fmt.Errorf("error assigning field [%%s]: %%w", key, err)
+}
+if v == skip_ {
+continue
 }
 out[key] = v
 }
@@ -1180,22 +1245,48 @@ v, err := convert_(value, strings.TrimPrefix(kind, "map:"))
 if err != nil {
 return nil, err
 }
+if v == skip_ {
+continue
+}
 out[key] = v
 }
 return out, nil
 case strings.HasPrefix(kind, "array:"):
+if !isMap && form_ {
+v, err := convert_(node, strings.TrimPrefix(kind, "array:"))
+if err != nil {
+return nil, fmt.Errorf("error binding array element 0: %%w", err)
+}
+return []any{v}, nil
+}
 if !isMap {
 return nil, fmt.Errorf("expected an array, got %%q", text)
 }
-out := make([]any, len(fields))
+size := len(fields)
+if form_ {
+// Missing elements of a form's array are zero values.
+size = 0
+for key := range fields {
+if i, err := strconv.Atoi(key); err == nil && i >= size {
+size = i + 1
+}
+}
+}
+out := make([]any, size)
 for i := range out {
 value, ok := fields[strconv.Itoa(i)]
+if !ok && form_ {
+continue
+}
 if !ok {
 return nil, errors.New("array deepObjects must have consecutive indices")
 }
 v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
 if err != nil {
 return nil, fmt.Errorf("error binding array element %%d: %%w", i, err)
+}
+if v == skip_ {
+v = nil
 }
 out[i] = v
 }
@@ -1271,7 +1362,7 @@ err = err_
 err = json.Unmarshal(b_, &%[1]s)
 }
 }
-}`, dst, query, StringToGoString(name+"["), d.kindsLiteral(), StringToGoString(d.root))
+}`, dst, collect, "", d.kindsLiteral(), StringToGoString(d.root), form)
 }
 
 // style returns statements that append the query fragments of the
@@ -1309,4 +1400,57 @@ default:
 walk_(%[3]s, tree_)
 }
 }`, v, fragments, StringToGoString(url.QueryEscape(name)))
+}
+
+// formBind returns statements that bind form, the url.Values of an
+// application/x-www-form-urlencoded body, into dst, a value of the generated
+// schema s, and set err when it can't be bound.
+func formBind(s Schema, form, dst string) string {
+	return newDeepCodec(s, &openapi3.SchemaRef{Value: s.OAPISchema}).bindForm(form, dst)
+}
+
+// formEncode returns statements that add the properties of v to out, a
+// url.Values, as an application/x-www-form-urlencoded body, and set err when
+// v can't be encoded: `a`, `a[b]` and `a[0]` keys for each value v's JSON
+// holds, by path. Unset values are left out. A url.Values, such as an
+// untyped body may hold, is the form itself.
+func formEncode(v, out string) string {
+	return fmt.Sprintf(`if values_, ok_ := any(%[1]s).(url.Values); ok_ {
+for k_, vs_ := range values_ {
+%[2]s[k_] = append(%[2]s[k_], vs_...)
+}
+} else if b_, err_ := json.Marshal(%[1]s); err_ != nil {
+err = err_
+} else {
+var tree_ any
+dec_ := json.NewDecoder(bytes.NewReader(b_))
+dec_.UseNumber()
+if err = dec_.Decode(&tree_); err == nil {
+var walk_ func(key string, node any)
+walk_ = func(key string, node any) {
+child := func(name string) string {
+if key == "" {
+return name
+}
+return key + "[" + name + "]"
+}
+switch node := node.(type) {
+case map[string]any:
+for k, e := range node {
+walk_(child(k), e)
+}
+case []any:
+for i, e := range node {
+walk_(child(strconv.Itoa(i)), e)
+}
+case nil:
+case string:
+%[2]s.Add(key, node)
+default:
+%[2]s.Add(key, fmt.Sprint(node))
+}
+}
+walk_("", tree_)
+}
+}`, v, out)
 }

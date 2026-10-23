@@ -14,8 +14,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Example defines model for example.
@@ -1064,9 +1062,50 @@ func NewMultipleRequestAndResponseTypesRequest(server string, body MultipleReque
 // NewMultipleRequestAndResponseTypesRequestWithFormdataBody calls the generic MultipleRequestAndResponseTypes builder with application/x-www-form-urlencoded body
 func NewMultipleRequestAndResponseTypesRequestWithFormdataBody(server string, body MultipleRequestAndResponseTypesFormdataRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
-	bodyStr, err := runtime.MarshalForm(body, nil)
-	if err != nil {
-		return nil, err
+	bodyStr := url.Values{}
+	{
+		var err error
+		if values_, ok_ := any(body).(url.Values); ok_ {
+			for k_, vs_ := range values_ {
+				bodyStr[k_] = append(bodyStr[k_], vs_...)
+			}
+		} else if b_, err_ := json.Marshal(body); err_ != nil {
+			err = err_
+		} else {
+			var tree_ any
+			dec_ := json.NewDecoder(bytes.NewReader(b_))
+			dec_.UseNumber()
+			if err = dec_.Decode(&tree_); err == nil {
+				var walk_ func(key string, node any)
+				walk_ = func(key string, node any) {
+					child := func(name string) string {
+						if key == "" {
+							return name
+						}
+						return key + "[" + name + "]"
+					}
+					switch node := node.(type) {
+					case map[string]any:
+						for k, e := range node {
+							walk_(child(k), e)
+						}
+					case []any:
+						for i, e := range node {
+							walk_(child(strconv.Itoa(i)), e)
+						}
+					case nil:
+					case string:
+						bodyStr.Add(key, node)
+					default:
+						bodyStr.Add(key, fmt.Sprint(node))
+					}
+				}
+				walk_("", tree_)
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	bodyReader = strings.NewReader(bodyStr.Encode())
 	return NewMultipleRequestAndResponseTypesRequestWithBody(server, "application/x-www-form-urlencoded", bodyReader)
@@ -1296,9 +1335,50 @@ func NewReusableResponsesRequestWithBody(server string, contentType string, body
 // NewReusableURLEncodedResponseRequestWithFormdataBody calls the generic ReusableURLEncodedResponse builder with application/x-www-form-urlencoded body
 func NewReusableURLEncodedResponseRequestWithFormdataBody(server string, body ReusableURLEncodedResponseFormdataRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
-	bodyStr, err := runtime.MarshalForm(body, nil)
-	if err != nil {
-		return nil, err
+	bodyStr := url.Values{}
+	{
+		var err error
+		if values_, ok_ := any(body).(url.Values); ok_ {
+			for k_, vs_ := range values_ {
+				bodyStr[k_] = append(bodyStr[k_], vs_...)
+			}
+		} else if b_, err_ := json.Marshal(body); err_ != nil {
+			err = err_
+		} else {
+			var tree_ any
+			dec_ := json.NewDecoder(bytes.NewReader(b_))
+			dec_.UseNumber()
+			if err = dec_.Decode(&tree_); err == nil {
+				var walk_ func(key string, node any)
+				walk_ = func(key string, node any) {
+					child := func(name string) string {
+						if key == "" {
+							return name
+						}
+						return key + "[" + name + "]"
+					}
+					switch node := node.(type) {
+					case map[string]any:
+						for k, e := range node {
+							walk_(child(k), e)
+						}
+					case []any:
+						for i, e := range node {
+							walk_(child(strconv.Itoa(i)), e)
+						}
+					case nil:
+					case string:
+						bodyStr.Add(key, node)
+					default:
+						bodyStr.Add(key, fmt.Sprint(node))
+					}
+				}
+				walk_("", tree_)
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	bodyReader = strings.NewReader(bodyStr.Encode())
 	return NewReusableURLEncodedResponseRequestWithBody(server, "application/x-www-form-urlencoded", bodyReader)
@@ -1481,9 +1561,50 @@ func NewUnspecifiedContentTypeRequestWithBody(server string, contentType string,
 // NewURLEncodedExampleRequestWithFormdataBody calls the generic URLEncodedExample builder with application/x-www-form-urlencoded body
 func NewURLEncodedExampleRequestWithFormdataBody(server string, body URLEncodedExampleFormdataRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
-	bodyStr, err := runtime.MarshalForm(body, nil)
-	if err != nil {
-		return nil, err
+	bodyStr := url.Values{}
+	{
+		var err error
+		if values_, ok_ := any(body).(url.Values); ok_ {
+			for k_, vs_ := range values_ {
+				bodyStr[k_] = append(bodyStr[k_], vs_...)
+			}
+		} else if b_, err_ := json.Marshal(body); err_ != nil {
+			err = err_
+		} else {
+			var tree_ any
+			dec_ := json.NewDecoder(bytes.NewReader(b_))
+			dec_.UseNumber()
+			if err = dec_.Decode(&tree_); err == nil {
+				var walk_ func(key string, node any)
+				walk_ = func(key string, node any) {
+					child := func(name string) string {
+						if key == "" {
+							return name
+						}
+						return key + "[" + name + "]"
+					}
+					switch node := node.(type) {
+					case map[string]any:
+						for k, e := range node {
+							walk_(child(k), e)
+						}
+					case []any:
+						for i, e := range node {
+							walk_(child(strconv.Itoa(i)), e)
+						}
+					case nil:
+					case string:
+						bodyStr.Add(key, node)
+					default:
+						bodyStr.Add(key, fmt.Sprint(node))
+					}
+				}
+				walk_("", tree_)
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	bodyReader = strings.NewReader(bodyStr.Encode())
 	return NewURLEncodedExampleRequestWithBody(server, "application/x-www-form-urlencoded", bodyReader)

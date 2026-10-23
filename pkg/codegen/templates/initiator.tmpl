@@ -124,9 +124,13 @@ func New{{$opid}}{{$.Prefix}}Request{{.Suffix}}(targetURL string{{if $hasParams}
         }
         bodyReader = bytes.NewReader(buf)
     {{else if .IsFormdata -}}
-        bodyStr, err := runtime.MarshalForm(body, nil)
-        if err != nil {
-            return nil, err
+        bodyStr := url.Values{}
+        {
+            var err error
+            {{formEncode "body" "bodyStr"}}
+            if err != nil {
+                return nil, err
+            }
         }
         bodyReader = strings.NewReader(bodyStr.Encode())
     {{else if .IsText -}}

@@ -1416,6 +1416,8 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 		query_ := r.URL.Query()
 		_ = query_
 		{
+			form_ := false
+			_ = form_
 			tree_ := map[string]any{}
 			insert_ := func(path []string, value string) {
 				node := tree_
@@ -1449,9 +1451,26 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 					"ComplexObject": {"Id": "int", "IsAdmin": "bool", "Object": "object:Object"},
 					"Object":        {"firstName": "string", "role": "string"},
 				}
+				// In a form, a value of the wrong shape is skipped, as the runtime
+				// library skipped it.
+				skip_ := &struct{}{}
 				var convert_ func(node any, kind string) (any, error)
 				convert_ = func(node any, kind string) (any, error) {
 					fields, isMap := node.(map[string]any)
+					if form_ {
+						compound := strings.HasPrefix(kind, "object:") || strings.HasPrefix(kind, "map:") || strings.HasPrefix(kind, "array:")
+						switch {
+						case isMap && !compound && kind != "any":
+							// A repeated value: the first one counts.
+							first, ok := fields["0"]
+							if !ok {
+								return skip_, nil
+							}
+							return convert_(first, kind)
+						case !isMap && compound && !strings.HasPrefix(kind, "array:"):
+							return skip_, nil
+						}
+					}
 					text, _ := node.(string)
 					switch {
 					case strings.HasPrefix(kind, "object:"):
@@ -1464,12 +1483,21 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 							fieldKind, ok := object[key]
 							if !ok {
 								if fieldKind, ok = object["*"]; !ok {
+									if form_ {
+										continue
+									}
 									return nil, fmt.Errorf("field [%s] is not present in destination object", key)
 								}
+							}
+							if fieldKind == "skip" {
+								continue
 							}
 							v, err := convert_(value, fieldKind)
 							if err != nil {
 								return nil, fmt.Errorf("error assigning field [%s]: %w", key, err)
+							}
+							if v == skip_ {
+								continue
 							}
 							out[key] = v
 						}
@@ -1484,22 +1512,48 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 							if err != nil {
 								return nil, err
 							}
+							if v == skip_ {
+								continue
+							}
 							out[key] = v
 						}
 						return out, nil
 					case strings.HasPrefix(kind, "array:"):
+						if !isMap && form_ {
+							v, err := convert_(node, strings.TrimPrefix(kind, "array:"))
+							if err != nil {
+								return nil, fmt.Errorf("error binding array element 0: %w", err)
+							}
+							return []any{v}, nil
+						}
 						if !isMap {
 							return nil, fmt.Errorf("expected an array, got %q", text)
 						}
-						out := make([]any, len(fields))
+						size := len(fields)
+						if form_ {
+							// Missing elements of a form's array are zero values.
+							size = 0
+							for key := range fields {
+								if i, err := strconv.Atoi(key); err == nil && i >= size {
+									size = i + 1
+								}
+							}
+						}
+						out := make([]any, size)
 						for i := range out {
 							value, ok := fields[strconv.Itoa(i)]
+							if !ok && form_ {
+								continue
+							}
 							if !ok {
 								return nil, errors.New("array deepObjects must have consecutive indices")
 							}
 							v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
 							if err != nil {
 								return nil, fmt.Errorf("error binding array element %d: %w", i, err)
+							}
+							if v == skip_ {
+								v = nil
 							}
 							out[i] = v
 						}

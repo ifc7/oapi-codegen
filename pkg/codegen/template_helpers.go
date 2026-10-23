@@ -472,6 +472,8 @@ func withoutPkgName(typeName string) string {
 // function here by keyName from the template code.
 var TemplateFunctions = template.FuncMap{
 	"dict":                       dict,
+	"formBind":                   formBind,
+	"formEncode":                 formEncode,
 	"genParamArgs":               genParamArgs,
 	"genParamTypes":              genParamTypes,
 	"genParamNames":              genParamNames,

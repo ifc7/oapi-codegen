@@ -1527,7 +1527,7 @@ components:
 
 			assert.Contains(t, code, "type FormUntypedOp200FormdataResponse struct {\n\tBody any\n}")
 			assert.Contains(t, code, "type FormObjectOp200FormdataResponse struct {\n\tName *string")
-			assert.Contains(t, visitorOf(t, code, "FormUntypedOp200FormdataResponse"), "runtime.MarshalForm(response.Body, nil)")
+			assert.Contains(t, visitorOf(t, code, "FormUntypedOp200FormdataResponse"), "any(response.Body).(url.Values)")
 			// Only the shape of an embedded form envelope is pinned here, not
 			// how its visitor marshals it.
 			assert.Contains(t, code, "type UntypedFormFormdataResponse any\n")
