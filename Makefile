@@ -8,6 +8,7 @@ help:
 	@echo "    test:        run all tests"
 	@echo "    tidy         tidy go mod"
 	@echo "    lint         lint the project"
+	@echo "    install:     build and install the oapi-codegen-ifc7 binary"
 
 $(GOBIN)/golangci-lint:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/main/install.sh | sh -s -- -b $(GOBIN) v2.15.0
@@ -44,6 +45,17 @@ tidy:
 	go mod tidy
 	# then, for all child modules, use a module-managed `Makefile`
 	git ls-files '**/*go.mod' -z | xargs -0 -I{} bash -xc 'cd $$(dirname {}) && make tidy'
+
+# Install the local cmd as oapi-codegen-ifc7. Resolve the destination the same
+# way `go install` does (GOBIN, otherwise the first GOPATH entry's bin), and
+# do not use this Makefile's GOBIN, which points at ./bin for repo tools.
+.PHONY: install
+install:
+	@dest="$$(go env GOBIN)"; \
+	if [ -z "$$dest" ]; then dest="$$(go env GOPATH | cut -d: -f1)/bin"; fi; \
+	mkdir -p "$$dest" && \
+	go build -o "$$dest/oapi-codegen-ifc7" ./cmd/oapi-codegen && \
+	echo "installed $$dest/oapi-codegen-ifc7"
 
 $(GOBIN)/mdtoc:
 	env GOBIN=$(GOBIN) go install sigs.k8s.io/mdtoc@v1.4.0
