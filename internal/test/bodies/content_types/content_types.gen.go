@@ -17,7 +17,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/google/uuid"
 )
 
 // GenericObject defines model for GenericObject.
@@ -80,7 +80,7 @@ type CreateItem422ApplicationVndAPIPlusJSONResponseBody struct {
 }
 
 // PostPetTextBody defines body for PostPet for text/plain ContentType.
-type PostPetTextBody = openapi_types.UUID
+type PostPetTextBody = uuid.UUID
 
 // PostPet1234TextBody defines body for PostPet1234 for text/plain ContentType.
 type PostPet1234TextBody = float32

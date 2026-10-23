@@ -11,15 +11,15 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetUserById Get a user's details
 	// (GET /admin/user/{id})
-	GetUserById(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	GetUserById(w http.ResponseWriter, r *http.Request, id uuid.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -28,7 +28,7 @@ type Unimplemented struct{}
 
 // GetUserById Get a user's details
 // (GET /admin/user/{id})
-func (_ Unimplemented) GetUserById(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) GetUserById(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -48,7 +48,7 @@ func (siw *ServerInterfaceWrapper) GetUserById(w http.ResponseWriter, r *http.Re
 	_ = err
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id uuid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
 	if err != nil {
@@ -189,7 +189,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 }
 
 type GetUserByIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id uuid.UUID `json:"id"`
 }
 
 type GetUserByIdResponseObject interface {
@@ -257,7 +257,7 @@ type strictHandler struct {
 }
 
 // GetUserById operation middleware
-func (sh *strictHandler) GetUserById(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) GetUserById(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
 	var request GetUserByIdRequestObject
 
 	request.Id = id

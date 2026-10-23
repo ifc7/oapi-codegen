@@ -483,6 +483,11 @@ type OutputOptions struct {
 	SkipFmt bool `yaml:"skip-fmt,omitempty"`
 	// Whether to skip pruning unused components on the generated code
 	SkipPrune bool `yaml:"skip-prune,omitempty"`
+	// SkipFormatTypes stops the models from declaring the types that string
+	// formats map to by default (OpenAPIDate, OpenAPIDuration, OpenAPIEmail
+	// and OpenAPIFile). Set it when another generated file in the same
+	// package already declares them, so they aren't declared twice.
+	SkipFormatTypes bool `yaml:"skip-format-types,omitempty"`
 	// SkipEnumValidate disables the generation of the `Valid()` method on
 	// enum types. By default each generated enum type includes a `Valid()
 	// bool` method which returns true when the value matches one of the

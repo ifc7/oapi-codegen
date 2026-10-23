@@ -15,8 +15,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for RegisterWebhookParamsKind.
@@ -61,7 +61,7 @@ type WebhookRegistration struct {
 // WebhookRegistrationResponse defines model for WebhookRegistrationResponse.
 type WebhookRegistrationResponse struct {
 	// ID Unique identifier for this webhook registration
-	ID openapi_types.UUID `json:"id"`
+	ID uuid.UUID `json:"id"`
 }
 
 // RegisterWebhookParamsKind defines parameters for RegisterWebhook.
@@ -155,7 +155,7 @@ type ClientInterface interface {
 	// Removes a previously registered webhook by its ID.
 	//
 	// Corresponds with DELETE /api/webhook/{id} (the `DeregisterWebhook` operationId).
-	DeregisterWebhook(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeregisterWebhook(ctx context.Context, id uuid.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RegisterWebhookWithBody Register a webhook
 	//
@@ -183,7 +183,7 @@ type ClientInterface interface {
 // Removes a previously registered webhook by its ID.
 //
 // Corresponds with DELETE /api/webhook/{id} (the `DeregisterWebhook` operationId).
-func (c *Client) DeregisterWebhook(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DeregisterWebhook(ctx context.Context, id uuid.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeregisterWebhookRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -236,7 +236,7 @@ func (c *Client) RegisterWebhook(ctx context.Context, kind RegisterWebhookParams
 }
 
 // NewDeregisterWebhookRequest constructs an http.Request for the DeregisterWebhook method
-func NewDeregisterWebhookRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+func NewDeregisterWebhookRequest(server string, id uuid.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -367,7 +367,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /api/webhook/{id} (the `DeregisterWebhook` operationId).
-	DeregisterWebhookWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeregisterWebhookResponse, error)
+	DeregisterWebhookWithResponse(ctx context.Context, id uuid.UUID, reqEditors ...RequestEditorFn) (*DeregisterWebhookResponse, error)
 
 	// RegisterWebhookWithBodyWithResponse Register a webhook
 	//
@@ -486,7 +486,7 @@ func (r RegisterWebhookResponse) ContentType() string {
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /api/webhook/{id} (the `DeregisterWebhook` operationId).
-func (c *ClientWithResponses) DeregisterWebhookWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeregisterWebhookResponse, error) {
+func (c *ClientWithResponses) DeregisterWebhookWithResponse(ctx context.Context, id uuid.UUID, reqEditors ...RequestEditorFn) (*DeregisterWebhookResponse, error) {
 	rsp, err := c.DeregisterWebhook(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -779,7 +779,7 @@ func NewExitEventWebhookRequestWithBody(targetURL string, contentType string, bo
 type ServerInterface interface {
 	// DeregisterWebhook Deregister a webhook
 	// (DELETE /api/webhook/{id})
-	DeregisterWebhook(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	DeregisterWebhook(w http.ResponseWriter, r *http.Request, id uuid.UUID)
 	// RegisterWebhook Register a webhook
 	// (POST /api/webhook/{kind})
 	RegisterWebhook(w http.ResponseWriter, r *http.Request, kind RegisterWebhookParamsKind)
@@ -801,7 +801,7 @@ func (siw *ServerInterfaceWrapper) DeregisterWebhook(w http.ResponseWriter, r *h
 	_ = err
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id uuid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
 	if err != nil {

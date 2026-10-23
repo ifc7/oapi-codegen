@@ -25,6 +25,7 @@ With `oapi-codegen`, there are a few [Key Design Decisions](#key-design-decision
   - [Pinning to commits](#pinning-to-commits)
 - [Usage](#usage)
   - [Backwards compatibility](#backwards-compatibility)
+  - [Migrating from `openapi_types`](#migrating-from-openapi_types)
 - [Features](#features)
 - [What does it look like?](#what-does-it-look-like)
 - [Key design decisions](#key-design-decisions)
@@ -199,6 +200,41 @@ our code can be imported. So this is how we will try to maintain compatibility:
 Also note that - if a security vulnerability is found - we will opt for breaking all users if need be, if it is the most secure response.
 
 Unless explicitly called out above, your usage of `oapi-codegen` may be using unstable features, which may make it harder to upgrade over time.
+
+### Migrating from `openapi_types`
+
+Generated code no longer imports `github.com/oapi-codegen/runtime/types` (conventionally imported as `openapi_types`). The string formats that used to map to its types now map to types declared in the generated package itself, or to `github.com/google/uuid`:
+
+| Format | Before | After |
+| --- | --- | --- |
+| `date` | `openapi_types.Date` | `OpenAPIDate` |
+| `duration` | `openapi_types.Duration` | `OpenAPIDuration` |
+| `email` | `openapi_types.Email` | `OpenAPIEmail` |
+| `binary` | `openapi_types.File` | `OpenAPIFile` |
+| `uuid` | `openapi_types.UUID` | `uuid.UUID` (from `github.com/google/uuid`) |
+
+Each type keeps the fields, methods and wire format of the one it replaces, so only code that names the types changes. For a generated package `api`:
+
+| Before | After |
+| --- | --- |
+| `openapi_types.Date{Time: t}` | `api.OpenAPIDate{Time: t}` |
+| `openapi_types.Email("a@example.com")` | `api.OpenAPIEmail("a@example.com")` |
+| `openapi_types.ParseDuration(s)` | `api.ParseOpenAPIDuration(s)` |
+| `openapi_types.FromTimeDuration(d)` | `api.OpenAPIDurationFromTimeDuration(d)` |
+| `openapi_types.ErrValidationEmail` | `api.ErrOpenAPIEmailValidation` |
+| `var f openapi_types.File` | `var f api.OpenAPIFile` |
+| `openapi_types.UUID` | `uuid.UUID`, which `openapi_types.UUID` was already an alias for, so only the import changes |
+| `openapi_types.DateFormat` | `time.DateOnly` |
+
+Some other details changed at the same time:
+
+- The format types are declared alongside the models, and only those the spec uses. If you generate models for several specs into one package, set `output-options.skip-format-types: true` on all but one of them, so that each type is declared once. The one without it must use every format the others do.
+- Types from different generated packages are now distinct: `admin.OpenAPIDate` and `common.OpenAPIDate` are different types, as they're separate declarations. `OpenAPIDate`, `OpenAPIDuration` and `OpenAPIEmail` convert into their counterparts with a plain conversion, e.g. `common.OpenAPIDate(d)`; `OpenAPIFile` doesn't, as its fields are unexported.
+- The `import` of a `type-mapping` entry is now added to the generated code. Previously it was ignored and left for `goimports` to guess, which failed for packages it couldn't find.
+- A parameter named after a package used by the type mapping, such as `uuid` or `time`, is now given a `p` prefix in generated code (`pUuid`), the same as Go keywords are. It would otherwise shadow the package, and the code wouldn't compile when the same function used that package again.
+- The format types use `time.DateOnly`, so the generated models need Go 1.20+. This is lower than the Go 1.24+ that `github.com/oapi-codegen/runtime` requires, so the minimum Go version only changes for generated code that no longer imports the runtime at all, which is now the case for most models-only output.
+
+To keep using your own types instead, map the formats to them with [`type-mapping`](docs/configuration.md).
 
 ## Features
 
@@ -882,6 +918,9 @@ There is no currently planned work to change this behaviour.
 ## Generating API models
 
 If you're looking to only generate the models for interacting with a remote service, for instance if you need to hand-roll the API client for whatever reason, you can do this as-is.
+
+> [!NOTE]
+> Generated models need Go 1.20+. Models that use the `date` format declare an `OpenAPIDate` type built on `time.DateOnly`, and generated code that still imports `github.com/oapi-codegen/runtime` (such as parameter binding in servers and clients) needs Go 1.24+, as listed in [Supported Servers](#supported-servers). See [Migrating from `openapi_types`](#migrating-from-openapi_types).
 
 > [!TIP]
 > Try to define as much as possible within the `#/components/schemas` object, as `oapi-codegen` will generate all the types here.

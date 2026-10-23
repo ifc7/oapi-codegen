@@ -4,14 +4,14 @@
 package aggregatesallof
 
 import (
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/google/uuid"
 )
 
 // NewMergeFormatFromRef defines model for NewMergeFormatFromRef.
-type NewMergeFormatFromRef = openapi_types.UUID
+type NewMergeFormatFromRef = uuid.UUID
 
 // NewMergeFormatFromRefReversed Decorator first; type and format both come from the second member.
-type NewMergeFormatFromRefReversed = openapi_types.UUID
+type NewMergeFormatFromRefReversed = uuid.UUID
 
 // NewMergePerson This is a person, with mandatory first and last name, but optional ID
 // number. This would be returned by a `Get` style API. We merge the person
@@ -65,4 +65,4 @@ type NewMergeUnionTypeFromFirstMember = any
 type NewMergeUnionTypeFromSecondMember = any
 
 // NewMergeUuid defines model for NewMergeUuid.
-type NewMergeUuid = openapi_types.UUID
+type NewMergeUuid = uuid.UUID

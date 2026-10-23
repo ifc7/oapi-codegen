@@ -15,7 +15,7 @@ import (
 	"net/url"
 	"strings"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/google/uuid"
 )
 
 // Error defines model for Error.
@@ -52,7 +52,7 @@ type TreePlantingRequest struct {
 // TreePlantingResult The result of a tree planting operation, sent via callback
 type TreePlantingResult struct {
 	// ID Unique identifier for this planting request
-	ID openapi_types.UUID `json:"id"`
+	ID uuid.UUID `json:"id"`
 
 	// Kind What kind of tree to plant (e.g. "oak")
 	Kind string `json:"kind"`
@@ -67,7 +67,7 @@ type TreePlantingResult struct {
 // TreeWithID A tree with a server-assigned identifier
 type TreeWithID struct {
 	// ID Unique identifier for this planting request
-	ID openapi_types.UUID `json:"id"`
+	ID uuid.UUID `json:"id"`
 
 	// Kind What kind of tree to plant (e.g. "oak")
 	Kind string `json:"kind"`

@@ -64,6 +64,11 @@ var globalState struct {
 	initialismsMap map[string]string
 	// typeMapping is the merged type mapping (defaults + user overrides).
 	typeMapping TypeMapping
+	// typeMappingImports and usedFormatTypes record, as schemas resolve to
+	// typeMapping entries, the packages those entries import and the
+	// formatTypes they name. See useTypeSpec.
+	typeMappingImports map[string]goImport
+	usedFormatTypes    map[string]bool
 	// resolvedNames maps schema path strings (e.g. "components/schemas/Pet")
 	// to their resolved Go type names, assigned by the multi-pass name resolver.
 	resolvedNames map[string]string
@@ -185,6 +190,8 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 	} else {
 		globalState.typeMapping = DefaultTypeMapping
 	}
+	globalState.typeMappingImports = nil
+	globalState.usedFormatTypes = nil
 
 	// Build the struct tag generators eagerly so invalid user templates in
 	// output-options.struct-tags are reported as errors instead of being
@@ -742,7 +749,18 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 
+	// Format types are declared with the models, which every other part of
+	// the generated code in the package refers to.
+	var formatTypesOut string
+	if opts.Generate.Models && !opts.OutputOptions.SkipFormatTypes {
+		formatTypesOut, err = GenerateFormatTypes(t)
+		if err != nil {
+			return "", fmt.Errorf("error generating format types: %w", err)
+		}
+	}
+
 	externalImports := append(globalState.importMapping.GoImports(), importMap(xGoTypeImports).GoImports()...)
+	externalImports = append(externalImports, importMap(globalState.typeMappingImports).GoImports()...)
 	importsOut, err := GenerateImports(
 		t,
 		externalImports,
@@ -771,6 +789,10 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 	_, err = w.WriteString(typeDefinitions)
 	if err != nil {
 		return "", fmt.Errorf("error writing type definitions: %w", err)
+	}
+	_, err = w.WriteString(formatTypesOut)
+	if err != nil {
+		return "", fmt.Errorf("error writing format types: %w", err)
 	}
 
 	if opts.Generate.Client {
@@ -1801,6 +1823,18 @@ func GenerateAdditionalPropertyBoilerplate(t *template.Template, typeDefs []Type
 	}
 
 	return GenerateTemplates([]string{"additional-properties.tmpl"}, t, context)
+}
+
+// GenerateFormatTypes declares the formatTypes that schemas resolved to while
+// generating, in formatTypes order.
+func GenerateFormatTypes(t *template.Template) (string, error) {
+	var templates []string
+	for _, name := range formatTypes {
+		if globalState.usedFormatTypes[name] {
+			templates = append(templates, "format-type."+name)
+		}
+	}
+	return GenerateTemplates(templates, t, nil)
 }
 
 func GenerateUnionBoilerplate(t *template.Template, typeDefs []TypeDefinition) (string, error) {

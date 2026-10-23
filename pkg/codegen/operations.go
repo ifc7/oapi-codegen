@@ -233,7 +233,10 @@ func (pd ParameterDefinition) SanitizedParamName() string {
 
 func (pd ParameterDefinition) GoVariableName() string {
 	name := LowercaseFirstCharacters(pd.GoName())
-	if IsGoKeyword(name) {
+	// A variable named after a package the type mapping uses would shadow
+	// it, so a second parameter of that type in the same scope (as in
+	// `var uuid uuid.UUID; var other uuid.UUID`) wouldn't compile.
+	if IsGoKeyword(name) || globalState.typeMapping.usesPackage(name) {
 		name = "p" + UppercaseFirstCharacter(name)
 	}
 	if unicode.IsNumber([]rune(name)[0]) {

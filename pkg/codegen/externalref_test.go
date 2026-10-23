@@ -29,7 +29,7 @@ func TestQualifyExternalTypeNames(t *testing.T) {
 		{name: "map of models", typeExpr: "map[string]Foo", expected: "map[string]ext.Foo"},
 		{name: "map keyed by model", typeExpr: "map[Key]*Foo", expected: "map[ext.Key]*ext.Foo"},
 		{name: "qualified", typeExpr: "time.Time", expected: "time.Time"},
-		{name: "slice of qualified", typeExpr: "[]openapi_types.UUID", expected: "[]openapi_types.UUID"},
+		{name: "slice of qualified", typeExpr: "[]uuid.UUID", expected: "[]uuid.UUID"},
 		{name: "other external package", typeExpr: "externalRef1.Bar", expected: "externalRef1.Bar"},
 		{name: "generic", typeExpr: "Page[Foo, int]", expected: "ext.Page[ext.Foo, int]"},
 		{name: "interface methods", typeExpr: "interface{ M(Foo) Bar }", expected: "interface{ M(ext.Foo) ext.Bar }"},

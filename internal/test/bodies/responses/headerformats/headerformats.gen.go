@@ -16,8 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // RequestEditorFn is the function signature for the RequestEditor callback function
@@ -193,7 +193,7 @@ type GetThingResponse200Headers struct {
 	XExpiresAt         time.Time
 	XOptionalExpiresAt *time.Time
 	XPlain             string
-	XTraceId           openapi_types.UUID
+	XTraceId           uuid.UUID
 }
 
 type GetThingResponse struct {
@@ -304,7 +304,7 @@ func ParseGetThingResponse(rsp *http.Response) (*GetThingResponse, error) {
 			headers.XPlain = value
 		}
 		if values := rsp.Header.Values("X-Trace-Id"); len(values) > 0 {
-			var value openapi_types.UUID
+			var value uuid.UUID
 			if err := runtime.BindStyledParameterWithOptions("simple", "X-Trace-Id", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "uuid"}); err != nil {
 				return nil, err
 			}
@@ -482,7 +482,7 @@ type GetThing200ResponseHeaders struct {
 	XExpiresAt         time.Time
 	XOptionalExpiresAt *time.Time
 	XPlain             string
-	XTraceId           openapi_types.UUID
+	XTraceId           uuid.UUID
 }
 
 type GetThing200JSONResponse struct {

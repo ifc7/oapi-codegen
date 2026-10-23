@@ -14,12 +14,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Hd147675Id0 is a helper type for the shared "id" parameter of "/gadget/{id}", prefixed with a per-path hash to disambiguate it from the same-named parameter on another path.
-type Hd147675Id0 = openapi_types.UUID
+type Hd147675Id0 = uuid.UUID
 
 // Hd147675Id1 is a helper type for the shared "id" parameter of "/gadget/{id}", prefixed with a per-path hash to disambiguate it from the same-named parameter on another path.
 type Hd147675Id1 = string
@@ -30,7 +30,7 @@ type Hd147675IdParam struct {
 }
 
 // Hdf81445Id0 is a helper type for the shared "id" parameter of "/gadget/{id}/part", prefixed with a per-path hash to disambiguate it from the same-named parameter on another path.
-type Hdf81445Id0 = openapi_types.UUID
+type Hdf81445Id0 = uuid.UUID
 
 // Hdf81445Id1 is a helper type for the shared "id" parameter of "/gadget/{id}/part", prefixed with a per-path hash to disambiguate it from the same-named parameter on another path.
 type Hdf81445Id1 = string
@@ -41,7 +41,7 @@ type Hdf81445IdParam struct {
 }
 
 // Ref0 defines parameters for GetSprocket.
-type Ref0 = openapi_types.UUID
+type Ref0 = uuid.UUID
 
 // Ref1 defines parameters for GetSprocket.
 type Ref1 = string
@@ -52,7 +52,7 @@ type RefParam struct {
 }
 
 // Wid0 defines parameters for DeleteWidget.
-type Wid0 = openapi_types.UUID
+type Wid0 = uuid.UUID
 
 // Wid1 defines parameters for DeleteWidget.
 type Wid1 = string
@@ -68,7 +68,7 @@ type OnEventGetParams struct {
 }
 
 // Whid0 defines parameters for OnEventGet.
-type Whid0 = openapi_types.UUID
+type Whid0 = uuid.UUID
 
 // Whid1 defines parameters for OnEventGet.
 type Whid1 = string
@@ -89,7 +89,7 @@ type OnDataGetParams struct {
 }
 
 // Cbid0 defines parameters for OnDataGet.
-type Cbid0 = openapi_types.UUID
+type Cbid0 = uuid.UUID
 
 // Cbid1 defines parameters for OnDataGet.
 type Cbid1 = string

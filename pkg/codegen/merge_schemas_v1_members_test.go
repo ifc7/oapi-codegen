@@ -261,7 +261,7 @@ func TestV1GoTypeKind(t *testing.T) {
 		"map[string]string":       v1Value,
 		"error":                   v1Opaque,
 		"time.Time":               v1Opaque,
-		"openapi_types.UUID":      v1Opaque,
+		"uuid.UUID":               v1Opaque,
 		"LocalType":               v1Opaque,
 		"*string":                 v1Opaque,
 		"nullable.Nullable[int]":  v1Opaque,

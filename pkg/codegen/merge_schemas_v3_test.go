@@ -920,7 +920,7 @@ func TestOwnKeywordsV3(t *testing.T) {
 `, withV3)
 	assert.Contains(t, code, `A Letters = "a"`)
 	assert.Contains(t, code, "type Letters string")
-	assert.Contains(t, code, "type Day = openapi_types.Date")
+	assert.Contains(t, code, "type Day = OpenAPIDate")
 	assert.Contains(t, code, "type Counts = []int")
 
 	_, err := generateSpecErr(opaqueSpecHeader+`

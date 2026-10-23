@@ -161,6 +161,10 @@
           "type": "boolean",
           "description": "Whether to skip pruning unused components on the generated code"
         },
+        "skip-format-types": {
+          "type": "boolean",
+          "description": "Whether to skip declaring the types that string formats map to by default (OpenAPIDate, OpenAPIDuration, OpenAPIEmail, OpenAPIFile), because another generated file in the same package already declares them"
+        },
         "skip-enum-validate": {
           "type": "boolean",
           "description": "Whether to skip generation of the Valid() method on enum types"

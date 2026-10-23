@@ -4,16 +4,16 @@
 package namingidentifiers
 
 import (
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/google/uuid"
 )
 
 // Alarm Alarm Information
 type Alarm struct {
 	// UnderscoreId Identifier of the Alarm.
-	UnderscoreId *openapi_types.UUID `json:"_id,omitempty"`
+	UnderscoreId *uuid.UUID `json:"_id,omitempty"`
 
 	// Id Identifier of the Alarm.
-	Id *openapi_types.UUID `json:"id,omitempty"`
+	Id *uuid.UUID `json:"id,omitempty"`
 }
 
 type N200ResponseHeaders struct {

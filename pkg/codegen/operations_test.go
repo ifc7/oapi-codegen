@@ -1713,7 +1713,7 @@ components:
 	code := generateSpec(t, spec)
 	assert.Contains(t, code, "type Id struct {")
 	assert.Contains(t, code, "type IdParam struct {")
-	assert.Contains(t, code, "type Id0 = openapi_types.UUID", "members keep their names")
+	assert.Contains(t, code, "type Id0 = uuid.UUID", "members keep their names")
 	assert.Contains(t, code, "type GetOtherParamsQ struct {", "an operation's own parameters are prefixed by it")
 }
 

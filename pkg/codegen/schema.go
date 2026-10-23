@@ -1776,15 +1776,15 @@ func oapiSchemaToGoType(ctx genContext, schema *openapi3.Schema, path []string, 
 
 	} else if t.Is("integer") {
 		spec := globalState.typeMapping.Integer.Resolve(f)
-		outSchema.GoType = spec.Type
+		outSchema.GoType = useTypeSpec(spec)
 		outSchema.DefineViaAlias = true
 	} else if t.Is("number") {
 		spec := globalState.typeMapping.Number.Resolve(f)
-		outSchema.GoType = spec.Type
+		outSchema.GoType = useTypeSpec(spec)
 		outSchema.DefineViaAlias = true
 	} else if t.Is("boolean") {
 		spec := globalState.typeMapping.Boolean.Resolve(f)
-		outSchema.GoType = spec.Type
+		outSchema.GoType = useTypeSpec(spec)
 		outSchema.DefineViaAlias = true
 	} else if t.Is("string") {
 		// OpenAPI 3.1: `contentMediaType` and `contentEncoding` are the
@@ -1805,7 +1805,7 @@ func oapiSchemaToGoType(ctx genContext, schema *openapi3.Schema, path []string, 
 			switch {
 			case schema.ContentMediaType != "":
 				// Raw binary content of any media type -- equivalent to
-				// 3.0 `format: binary`. Routes to openapi_types.File in
+				// 3.0 `format: binary`. Routes to OpenAPIFile in
 				// the default mapping.
 				resolvedFormat = "binary"
 			case schema.ContentEncoding == "base64":
@@ -1830,7 +1830,7 @@ func oapiSchemaToGoType(ctx genContext, schema *openapi3.Schema, path []string, 
 			}
 		}
 		spec := globalState.typeMapping.String.Resolve(resolvedFormat)
-		outSchema.GoType = spec.Type
+		outSchema.GoType = useTypeSpec(spec)
 		// Preserve special behaviors for specific types
 		if outSchema.GoType == "[]byte" {
 			setSkipOptionalPointerForContainerType(outSchema)

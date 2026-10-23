@@ -14,9 +14,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Error defines model for Error.
@@ -40,7 +40,7 @@ type OneOf2Things0 struct {
 
 // OneOf2Things1 defines model for OneOf2Things.1.
 type OneOf2Things1 struct {
-	Id openapi_types.UUID `json:"id"`
+	Id uuid.UUID `json:"id"`
 }
 
 // Pet defines model for Pet.

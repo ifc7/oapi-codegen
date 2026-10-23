@@ -4,14 +4,15 @@
 package serversroutersbasic
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/mail"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for GetWithContentTypeParamsContentType.
@@ -34,14 +35,14 @@ func (e GetWithContentTypeParamsContentType) Valid() bool {
 
 // EveryTypeOptional defines model for EveryTypeOptional.
 type EveryTypeOptional struct {
-	ArrayInlineField     *[]int              `json:"array_inline_field,omitempty"`
-	ArrayReferencedField *[]SomeObject       `json:"array_referenced_field,omitempty"`
-	BoolField            *bool               `json:"bool_field,omitempty"`
-	ByteField            *[]byte             `json:"byte_field,omitempty"`
-	DateField            *openapi_types.Date `json:"date_field,omitempty"`
-	DateTimeField        *time.Time          `json:"date_time_field,omitempty"`
-	DoubleField          *float64            `json:"double_field,omitempty"`
-	FloatField           *float32            `json:"float_field,omitempty"`
+	ArrayInlineField     *[]int        `json:"array_inline_field,omitempty"`
+	ArrayReferencedField *[]SomeObject `json:"array_referenced_field,omitempty"`
+	BoolField            *bool         `json:"bool_field,omitempty"`
+	ByteField            *[]byte       `json:"byte_field,omitempty"`
+	DateField            *OpenAPIDate  `json:"date_field,omitempty"`
+	DateTimeField        *time.Time    `json:"date_time_field,omitempty"`
+	DoubleField          *float64      `json:"double_field,omitempty"`
+	FloatField           *float32      `json:"float_field,omitempty"`
 	InlineObjectField    *struct {
 		Name   string `json:"name"`
 		Number int    `json:"number"`
@@ -56,15 +57,15 @@ type EveryTypeOptional struct {
 
 // EveryTypeRequired defines model for EveryTypeRequired.
 type EveryTypeRequired struct {
-	ArrayInlineField     []int                `json:"array_inline_field"`
-	ArrayReferencedField []SomeObject         `json:"array_referenced_field"`
-	BoolField            bool                 `json:"bool_field"`
-	ByteField            []byte               `json:"byte_field"`
-	DateField            openapi_types.Date   `json:"date_field"`
-	DateTimeField        time.Time            `json:"date_time_field"`
-	DoubleField          float64              `json:"double_field"`
-	EmailField           *openapi_types.Email `json:"email_field,omitempty"`
-	FloatField           float32              `json:"float_field"`
+	ArrayInlineField     []int         `json:"array_inline_field"`
+	ArrayReferencedField []SomeObject  `json:"array_referenced_field"`
+	BoolField            bool          `json:"bool_field"`
+	ByteField            []byte        `json:"byte_field"`
+	DateField            OpenAPIDate   `json:"date_field"`
+	DateTimeField        time.Time     `json:"date_time_field"`
+	DoubleField          float64       `json:"double_field"`
+	EmailField           *OpenAPIEmail `json:"email_field,omitempty"`
+	FloatField           float32       `json:"float_field"`
 	InlineObjectField    struct {
 		Name   string `json:"name"`
 		Number int    `json:"number"`
@@ -139,6 +140,94 @@ type CreateResource2JSONRequestBody = Resource
 
 // UpdateResource3JSONRequestBody defines body for UpdateResource3 for application/json ContentType.
 type UpdateResource3JSONRequestBody UpdateResource3JSONBody
+
+// OpenAPIDate is a calendar date in the OpenAPI "date" format (RFC 3339
+// full-date, e.g. "2006-01-02"), without a time of day or time zone.
+type OpenAPIDate struct {
+	time.Time
+}
+
+func (d OpenAPIDate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.Format(time.DateOnly))
+}
+
+func (d *OpenAPIDate) UnmarshalJSON(data []byte) error {
+	var dateStr string
+	err := json.Unmarshal(data, &dateStr)
+	if err != nil {
+		return err
+	}
+	parsed, err := time.Parse(time.DateOnly, dateStr)
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+func (d OpenAPIDate) String() string {
+	return d.Format(time.DateOnly)
+}
+
+func (d *OpenAPIDate) UnmarshalText(data []byte) error {
+	parsed, err := time.Parse(time.DateOnly, string(data))
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+// Bind binds a parameter value, treating it as a scalar rather than a struct
+// of key-value pairs. An empty value leaves the date unchanged.
+func (d *OpenAPIDate) Bind(src string) error {
+	if src == "" {
+		return nil
+	}
+	parsed, err := time.Parse(time.DateOnly, src)
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+// ErrOpenAPIEmailValidation is returned when an OpenAPIEmail isn't a valid
+// email address.
+var ErrOpenAPIEmailValidation = errors.New("email: failed to pass regex validation")
+
+// OpenAPIEmail is an email address in the OpenAPI "email" format. It is
+// validated, and normalized to its bare address, when marshaled or
+// unmarshaled as JSON.
+type OpenAPIEmail string
+
+func (e OpenAPIEmail) MarshalJSON() ([]byte, error) {
+	m, err := mail.ParseAddress(string(e))
+	if err != nil {
+		return nil, ErrOpenAPIEmailValidation
+	}
+
+	return json.Marshal(m.Address)
+}
+
+func (e *OpenAPIEmail) UnmarshalJSON(data []byte) error {
+	if e == nil {
+		return nil
+	}
+
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	m, err := mail.ParseAddress(s)
+	if err != nil {
+		return ErrOpenAPIEmailValidation
+	}
+
+	*e = OpenAPIEmail(m.Address)
+	return nil
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {

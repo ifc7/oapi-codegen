@@ -75,6 +75,10 @@ output-options:
   exclude-schemas: []
   skip-fmt: false
   skip-prune: false
+  # Don't declare the types that string formats map to by default (OpenAPIDate,
+  # OpenAPIDuration, OpenAPIEmail, OpenAPIFile); set this when another
+  # generated file in the same package already declares them.
+  skip-format-types: false
   name-normalizer: ""
   initialism-overrides: false
   additional-initialisms: []
@@ -121,12 +125,13 @@ output-options:
         type: string
       formats:
         byte:      { type: "[]byte" }
-        email:     { type: openapi_types.Email }
-        date:      { type: openapi_types.Date }
+        email:     { type: OpenAPIEmail }
+        date:      { type: OpenAPIDate }
         date-time: { type: time.Time, import: time }
         json:      { type: json.RawMessage, import: encoding/json }
-        uuid:      { type: openapi_types.UUID }
-        binary:    { type: openapi_types.File }
+        duration:  { type: OpenAPIDuration }
+        uuid:      { type: uuid.UUID, import: github.com/google/uuid }
+        binary:    { type: OpenAPIFile }
   # Superseded by struct-tags: a `yaml` entry there takes precedence over this flag
   yaml-tags: false
   # Configure generated struct tags. Entries are merged by name on top of the
