@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -202,17 +203,23 @@ func TestFormdataEndpoint_MarshalError_ErrorHandlerCanSetStatus(t *testing.T) {
 		"Content-Type should not be set when marshalling fails before headers are written")
 }
 
+// unmarshalableJSON is a struct encoding/json accepts statically, but whose
+// MarshalJSON always fails. A channel would also fail at runtime, and
+// staticcheck SA1026 rejects marshaling one.
+type unmarshalableJSON struct{}
+
+func (unmarshalableJSON) MarshalJSON() ([]byte, error) {
+	return nil, errors.New("intentional JSON marshal failure")
+}
+
 // unmarshalableJSONResponse implements JsonEndpointResponseObject with a Visit
 // method that follows the exact same pattern as the generated code but
-// encodes a value that json.Encoder cannot marshal (a channel).
+// encodes a value whose MarshalJSON returns an error.
 type unmarshalableJSONResponse struct{}
 
 func (u *unmarshalableJSONResponse) VisitJsonEndpointResponse(w http.ResponseWriter) error {
 	var buf bytes.Buffer
-	// Channels cannot be JSON-encoded; this will return an error.
-	if err := json.NewEncoder(&buf).Encode(map[string]any{
-		"bad": make(chan int),
-	}); err != nil {
+	if err := json.NewEncoder(&buf).Encode(unmarshalableJSON{}); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -222,13 +229,13 @@ func (u *unmarshalableJSONResponse) VisitJsonEndpointResponse(w http.ResponseWri
 }
 
 // unmarshalableFormdataResponse implements FormdataEndpointResponseObject with
-// a Visit method that follows the generated code pattern but encodes a
-// channel, which always fails.
+// a Visit method that follows the generated code pattern but marshals a value
+// whose MarshalJSON returns an error.
 type unmarshalableFormdataResponse struct{}
 
 func (u *unmarshalableFormdataResponse) VisitFormdataEndpointResponse(w http.ResponseWriter) error {
-	// A channel is never a valid form body: encoding it returns an error.
-	if _, err := json.Marshal(make(chan int)); err != nil {
+	// Encoding fails before any headers are written.
+	if _, err := json.Marshal(unmarshalableJSON{}); err != nil {
 		return err
 	}
 	form := url.Values{}
