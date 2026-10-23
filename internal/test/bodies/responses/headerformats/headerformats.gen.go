@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,7 +18,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/oapi-codegen/runtime"
 )
 
 // RequestEditorFn is the function signature for the RequestEditor callback function
@@ -284,28 +284,48 @@ func ParseGetThingResponse(rsp *http.Response) (*GetThingResponse, error) {
 		var headers GetThingResponse200Headers
 		if values := rsp.Header.Values("X-Expires-At"); len(values) > 0 {
 			var value time.Time
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Expires-At", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "date-time"}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'X-Expires-At' is empty, can't bind its value")
+			} else {
+				err = value.UnmarshalText([]byte(values[0]))
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.XExpiresAt = value
 		}
 		if values := rsp.Header.Values("X-Optional-Expires-At"); len(values) > 0 {
 			var value time.Time
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Optional-Expires-At", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "date-time"}); err != nil {
+			var err error
+			err = value.UnmarshalText([]byte(values[0]))
+			if err != nil {
 				return nil, err
 			}
 			headers.XOptionalExpiresAt = &value
 		}
 		if values := rsp.Header.Values("X-Plain"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Plain", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'X-Plain' is empty, can't bind its value")
+			} else {
+				value = values[0]
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.XPlain = value
 		}
 		if values := rsp.Header.Values("X-Trace-Id"); len(values) > 0 {
 			var value uuid.UUID
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Trace-Id", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "uuid"}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'X-Trace-Id' is empty, can't bind its value")
+			} else {
+				err = value.UnmarshalText([]byte(values[0]))
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.XTraceId = value
@@ -501,33 +521,25 @@ func (response GetThing200JSONResponse) VisitGetThingResponse(w http.ResponseWri
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "X-Expires-At", response.Headers.XExpiresAt, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "date-time"})
-		if err != nil {
-			return fmt.Errorf("error styling response header X-Expires-At: %w", err)
-		}
+		var v string
+		v = response.Headers.XExpiresAt.Format(time.RFC3339Nano)
 		w.Header().Set("X-Expires-At", v)
 	}
 	if response.Headers.XOptionalExpiresAt != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "X-Optional-Expires-At", *response.Headers.XOptionalExpiresAt, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "date-time"})
-			if err != nil {
-				return fmt.Errorf("error styling response header X-Optional-Expires-At: %w", err)
-			}
+			var v string
+			v = (*response.Headers.XOptionalExpiresAt).Format(time.RFC3339Nano)
 			w.Header().Set("X-Optional-Expires-At", v)
 		}
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "X-Plain", response.Headers.XPlain, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header X-Plain: %w", err)
-		}
+		var v string
+		v = response.Headers.XPlain
 		w.Header().Set("X-Plain", v)
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "X-Trace-Id", response.Headers.XTraceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uuid"})
-		if err != nil {
-			return fmt.Errorf("error styling response header X-Trace-Id: %w", err)
-		}
+		var v string
+		v = response.Headers.XTraceId.String()
 		w.Header().Set("X-Trace-Id", v)
 	}
 	w.WriteHeader(200)

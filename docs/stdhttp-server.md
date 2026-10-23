@@ -144,4 +144,4 @@ func main() {
 go 1.24
 ```
 
-> (the `github.com/oapi-codegen/runtime` module imported by the generated code requires Go 1.24+.)
+> (the `github.com/oapi-codegen/runtime` module, which generated code still imports for form bodies and some parameter styles, requires Go 1.24+.)

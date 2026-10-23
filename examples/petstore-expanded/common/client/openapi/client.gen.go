@@ -10,9 +10,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Error defines model for Error.
@@ -296,25 +295,18 @@ func NewFindPetsRequest(server string, params *FindPetsParams) (*http.Request, e
 
 		if params.Tags != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "tags", *params.Tags, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
+			if len((*params.Tags)) == 0 {
+				rawQueryFragments = append(rawQueryFragments, "tags=")
+			}
+			for _, e_ := range *params.Tags {
+				rawQueryFragments = append(rawQueryFragments, "tags="+url.QueryEscape(e_))
 			}
 
 		}
 
 		if params.Limit != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
+			rawQueryFragments = append(rawQueryFragments, "limit="+url.QueryEscape(strconv.FormatInt(int64((*params.Limit)), 10)))
 
 		}
 
@@ -378,10 +370,7 @@ func NewDeletePetRequest(server string, id int64) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "integer", Format: "int64"})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(strconv.FormatInt(int64(id), 10))
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -412,10 +401,7 @@ func NewFindPetByIDRequest(server string, id int64) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "integer", Format: "int64"})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(strconv.FormatInt(int64(id), 10))
 
 	serverURL, err := url.Parse(server)
 	if err != nil {

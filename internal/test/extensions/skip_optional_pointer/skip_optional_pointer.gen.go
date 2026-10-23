@@ -389,12 +389,11 @@ func NewListThingsRequest(server string, params *ListThingsParams) (*http.Reques
 
 		if params.Labels != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "labels", params.Labels, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
+			if len(params.Labels) == 0 {
+				rawQueryFragments = append(rawQueryFragments, "labels=")
+			}
+			for _, e_ := range params.Labels {
+				rawQueryFragments = append(rawQueryFragments, "labels="+url.QueryEscape(e_))
 			}
 
 		}

@@ -13,8 +13,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Bar defines model for Bar.
@@ -1296,13 +1294,7 @@ func NewPostFooRequestWithBody(server string, params *PostFooParams, contentType
 
 		if params.Bar != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "bar", *params.Bar, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
+			rawQueryFragments = append(rawQueryFragments, "bar="+url.QueryEscape(string((*params.Bar))))
 
 		}
 
@@ -1811,10 +1803,7 @@ func NewPatchResourceRequestWithBody(server string, id string, contentType strin
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(id)
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -3301,7 +3290,13 @@ func ParsePostFooResponse(rsp *http.Response) (*PostFooResponse, error) {
 		var headers PostFooResponse200Headers
 		if values := rsp.Header.Values("X-Bar"); len(values) > 0 {
 			var value bool
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Bar", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "boolean", Format: ""}); err != nil {
+			var err error
+			if v_, err_ := strconv.ParseBool(values[0]); err_ != nil {
+				err = err_
+			} else {
+				value = v_
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.XBar = &value

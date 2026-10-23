@@ -9,14 +9,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Card defines model for Card.
@@ -5667,7 +5666,13 @@ func ParseBodyHeadersResponse(rsp *http.Response) (*BodyHeadersResponse, error) 
 		var headers BodyHeadersResponse200Headers
 		if values := rsp.Header.Values("X-Shape"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Shape", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'X-Shape' is empty, can't bind its value")
+			} else {
+				value = values[0]
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.XShape = value
@@ -6179,10 +6184,8 @@ func (response BodyHeaders200JSONResponse) VisitBodyHeadersResponse(w http.Respo
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "X-Shape", response.Headers.XShape, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header X-Shape: %w", err)
-		}
+		var v string
+		v = response.Headers.XShape
 		w.Header().Set("X-Shape", v)
 	}
 	w.WriteHeader(200)

@@ -11,9 +11,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
+	"strconv"
 	"time"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for GetWithContentTypeParamsContentType.
@@ -315,27 +314,44 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 
 	// ------------- Optional query parameter "optional_argument" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "optional_argument", r.URL.Query(), &params.OptionalArgument, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "optional_argument"})
+	if values_, found_ := r.URL.Query()["optional_argument"]; found_ {
+		var value_ int64
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'optional_argument'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "optional_argument", Err: err})
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 64); err_ != nil {
+				err = err_
+			} else {
+				value_ = v_
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "optional_argument", Err: err})
+			return
+		}
+		params.OptionalArgument = &value_
 	}
 
 	// ------------- Required query parameter "required_argument" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "required_argument", r.URL.Query(), &params.RequiredArgument, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "required_argument"})
+	if values_, found_ := r.URL.Query()["required_argument"]; found_ {
+		var value_ int64
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'required_argument'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "required_argument", Err: err})
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 64); err_ != nil {
+				err = err_
+			} else {
+				value_ = v_
+			}
 		}
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "required_argument", Err: err})
+			return
+		}
+		params.RequiredArgument = value_
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "required_argument"})
 		return
 	}
 
@@ -350,7 +366,11 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "header_argument", valueList[0], &HeaderArgument, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: "int32"})
+		if v_, err_ := strconv.ParseInt(valueList[0], 10, 32); err_ != nil {
+			err = err_
+		} else {
+			HeaderArgument = int32(v_)
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header_argument", Err: err})
 			return
@@ -381,7 +401,15 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	// ------------- Path parameter "global_argument" -------------
 	var globalArgument int64
 
-	err = runtime.BindStyledParameterWithOptions("simple", "global_argument", r.PathValue("global_argument"), &globalArgument, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if r.PathValue("global_argument") == "" {
+		err = errors.New("parameter 'global_argument' is empty, can't bind its value")
+	} else {
+		if v_, err_ := strconv.ParseInt(r.PathValue("global_argument"), 10, 64); err_ != nil {
+			err = err_
+		} else {
+			globalArgument = v_
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "global_argument", Err: err})
 		return
@@ -390,7 +418,11 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	// ------------- Path parameter "argument" -------------
 	var argument Argument
 
-	err = runtime.BindStyledParameterWithOptions("simple", "argument", r.PathValue("argument"), &argument, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("argument") == "" {
+		err = errors.New("parameter 'argument' is empty, can't bind its value")
+	} else {
+		argument = Argument(r.PathValue("argument"))
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "argument", Err: err})
 		return
@@ -417,7 +449,11 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 	// ------------- Path parameter "content_type" -------------
 	var contentType GetWithContentTypeParamsContentType
 
-	err = runtime.BindStyledParameterWithOptions("simple", "content_type", r.PathValue("content_type"), &contentType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("content_type") == "" {
+		err = errors.New("parameter 'content_type' is empty, can't bind its value")
+	} else {
+		contentType = GetWithContentTypeParamsContentType(r.PathValue("content_type"))
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "content_type", Err: err})
 		return
@@ -459,7 +495,11 @@ func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http
 	// ------------- Path parameter "argument" -------------
 	var argument Argument
 
-	err = runtime.BindStyledParameterWithOptions("simple", "argument", r.PathValue("argument"), &argument, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("argument") == "" {
+		err = errors.New("parameter 'argument' is empty, can't bind its value")
+	} else {
+		argument = Argument(r.PathValue("argument"))
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "argument", Err: err})
 		return
@@ -486,7 +526,15 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	// ------------- Path parameter "inline_argument" -------------
 	var inlineArgument int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "inline_argument", r.PathValue("inline_argument"), &inlineArgument, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("inline_argument") == "" {
+		err = errors.New("parameter 'inline_argument' is empty, can't bind its value")
+	} else {
+		if v_, err_ := strconv.ParseInt(r.PathValue("inline_argument"), 10, 0); err_ != nil {
+			err = err_
+		} else {
+			inlineArgument = int(v_)
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "inline_argument", Err: err})
 		return
@@ -497,15 +545,22 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 
 	// ------------- Optional query parameter "inline_query_argument" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "inline_query_argument", r.URL.Query(), &params.InlineQueryArgument, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "inline_query_argument"})
+	if values_, found_ := r.URL.Query()["inline_query_argument"]; found_ {
+		var value_ int
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'inline_query_argument'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "inline_query_argument", Err: err})
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 0); err_ != nil {
+				err = err_
+			} else {
+				value_ = int(v_)
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "inline_query_argument", Err: err})
+			return
+		}
+		params.InlineQueryArgument = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -529,7 +584,15 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 	// ------------- Path parameter "fallthrough" -------------
 	var pFallthrough int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "fallthrough", r.PathValue("fallthrough"), &pFallthrough, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("fallthrough") == "" {
+		err = errors.New("parameter 'fallthrough' is empty, can't bind its value")
+	} else {
+		if v_, err_ := strconv.ParseInt(r.PathValue("fallthrough"), 10, 0); err_ != nil {
+			err = err_
+		} else {
+			pFallthrough = int(v_)
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fallthrough", Err: err})
 		return

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,7 +17,6 @@ import (
 	"strings"
 
 	externalRef0 "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/header_ref/gen/common"
-	"github.com/oapi-codegen/runtime"
 )
 
 // RequestEditorFn is the function signature for the RequestEditor callback function
@@ -116,10 +116,7 @@ func NewGetThingRequest(server string, id string) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(id)
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -281,7 +278,9 @@ func ParseGetThingResponse(rsp *http.Response) (*GetThingResponse, error) {
 		var headers GetThingResponse200Headers
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value externalRef0.ETagSchema
-			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = externalRef0.ETagSchema(values[0])
+			if err != nil {
 				return nil, err
 			}
 			headers.ETag = &value
@@ -317,7 +316,11 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 	// ------------- Path parameter "id" -------------
 	var id string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		id = r.PathValue("id")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -486,10 +489,8 @@ func (response GetThing200JSONResponse) VisitGetThingResponse(w http.ResponseWri
 	w.Header().Set("Content-Type", "application/json")
 	if response.Headers.ETag != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "ETag", *response.Headers.ETag, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-			if err != nil {
-				return fmt.Errorf("error styling response header ETag: %w", err)
-			}
+			var v string
+			v = string((*response.Headers.ETag))
 			w.Header().Set("ETag", v)
 		}
 	}

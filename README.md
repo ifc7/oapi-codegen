@@ -210,26 +210,39 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 
 	// ------------- Optional query parameter "tags" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "tags", r.URL.Query(), &params.Tags)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tags", Err: err})
-		return
+	if values_, found_ := r.URL.Query()["tags"]; found_ {
+		var value_ []string
+		value_ = values_
+		params.Tags = &value_
 	}
 
 	// ------------- Optional query parameter "limit" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		return
+	if values_, found_ := r.URL.Query()["limit"]; found_ {
+		var value_ int32
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'limit'")
+		} else {
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value_ = int32(v_)
+			}
+		}
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+			return
+		}
+		params.Limit = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FindPets(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -839,7 +852,7 @@ There is no currently planned work to change this behaviour.
 If you're looking to only generate the models for interacting with a remote service, for instance if you need to hand-roll the API client for whatever reason, you can do this as-is.
 
 > [!NOTE]
-> Generated models need Go 1.20+. Models that use the `date` format declare an `OpenAPIDate` type built on `time.DateOnly`, and generated code that still imports `github.com/oapi-codegen/runtime` (such as parameter binding in servers and clients) needs Go 1.24+, as described in [Generating server-side boilerplate](#generating-server-side-boilerplate).
+> Generated models need Go 1.20+. Models that use the `date` format declare an `OpenAPIDate` type built on `time.DateOnly`, and generated code that still imports `github.com/oapi-codegen/runtime` (for form bodies, and parameters in styles or of types the generated code doesn't bind itself) needs Go 1.24+, as described in [Generating server-side boilerplate](#generating-server-side-boilerplate).
 
 > [!TIP]
 > Try to define as much as possible within the `#/components/schemas` object, as `oapi-codegen` will generate all the types here.

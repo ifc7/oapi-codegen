@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,7 +18,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/oapi-codegen/runtime"
 )
 
 // Error defines model for Error.
@@ -297,10 +297,7 @@ func NewGetHttpPetRequest(server string, petId string) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "petId", petId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(petId)
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -482,7 +479,11 @@ func (siw *ServerInterfaceWrapper) GetHttpPet(w http.ResponseWriter, r *http.Req
 	// ------------- Path parameter "petId" -------------
 	var petId string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "petId", r.PathValue("petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("petId") == "" {
+		err = errors.New("parameter 'petId' is empty, can't bind its value")
+	} else {
+		petId = r.PathValue("petId")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
 		return

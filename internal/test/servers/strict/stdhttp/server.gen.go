@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -203,7 +204,11 @@ func (siw *ServerInterfaceWrapper) ReservedGoKeywordParameters(w http.ResponseWr
 	// ------------- Path parameter "type" -------------
 	var pType string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "type", r.PathValue("type"), &pType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("type") == "" {
+		err = errors.New("parameter 'type' is empty, can't bind its value")
+	} else {
+		pType = r.PathValue("type")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
 		return
@@ -260,7 +265,11 @@ func (siw *ServerInterfaceWrapper) SameNameParamAndBodyProperty(w http.ResponseW
 	// ------------- Path parameter "name" -------------
 	var name string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("name") == "" {
+		err = errors.New("parameter 'name' is empty, can't bind its value")
+	} else {
+		name = r.PathValue("name")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
 		return
@@ -358,7 +367,11 @@ func (siw *ServerInterfaceWrapper) HeadersExample(w http.ResponseWriter, r *http
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "header1", valueList[0], &Header1, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if valueList[0] == "" {
+			err = errors.New("parameter 'header1' is empty, can't bind its value")
+		} else {
+			Header1 = valueList[0]
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header1", Err: err})
 			return
@@ -381,7 +394,11 @@ func (siw *ServerInterfaceWrapper) HeadersExample(w http.ResponseWriter, r *http
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "header2", valueList[0], &Header2, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""})
+		if v_, err_ := strconv.ParseInt(valueList[0], 10, 0); err_ != nil {
+			err = err_
+		} else {
+			Header2 = int(v_)
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header2", Err: err})
 			return
@@ -793,19 +810,15 @@ type NoContentHeaders204Response struct {
 func (response NoContentHeaders204Response) VisitNoContentHeadersResponse(w http.ResponseWriter) error {
 	if response.Headers.NullableHeader != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "nullable-header", *response.Headers.NullableHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-			if err != nil {
-				return fmt.Errorf("error styling response header nullable-header: %w", err)
-			}
+			var v string
+			v = (*response.Headers.NullableHeader)
 			w.Header().Set("nullable-header", v)
 		}
 	}
 	if response.Headers.OptionalHeader != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "optional-header", *response.Headers.OptionalHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-			if err != nil {
-				return fmt.Errorf("error styling response header optional-header: %w", err)
-			}
+			var v string
+			v = (*response.Headers.OptionalHeader)
 			w.Header().Set("optional-header", v)
 		}
 	}
@@ -923,17 +936,13 @@ func (response ReusableResponses200JSONResponse) VisitReusableResponsesResponse(
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header1", response.Headers.Header1, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header header1: %w", err)
-		}
+		var v string
+		v = response.Headers.Header1
 		w.Header().Set("header1", v)
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header2", response.Headers.Header2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header header2: %w", err)
-		}
+		var v string
+		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
 		w.Header().Set("header2", v)
 	}
 	w.WriteHeader(200)
@@ -1228,34 +1237,26 @@ func (response HeadersExample200JSONResponse) VisitHeadersExampleResponse(w http
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header1", response.Headers.Header1, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header header1: %w", err)
-		}
+		var v string
+		v = response.Headers.Header1
 		w.Header().Set("header1", v)
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header2", response.Headers.Header2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header header2: %w", err)
-		}
+		var v string
+		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
 		w.Header().Set("header2", v)
 	}
 	if response.Headers.NullableHeader != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "nullable-header", *response.Headers.NullableHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-			if err != nil {
-				return fmt.Errorf("error styling response header nullable-header: %w", err)
-			}
+			var v string
+			v = (*response.Headers.NullableHeader)
 			w.Header().Set("nullable-header", v)
 		}
 	}
 	if response.Headers.OptionalHeader != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "optional-header", *response.Headers.OptionalHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-			if err != nil {
-				return fmt.Errorf("error styling response header optional-header: %w", err)
-			}
+			var v string
+			v = (*response.Headers.OptionalHeader)
 			w.Header().Set("optional-header", v)
 		}
 	}
@@ -1306,17 +1307,13 @@ func (response UnionExample200ApplicationAlternativePlusJSONResponse) VisitUnion
 	}
 	w.Header().Set("Content-Type", "application/alternative+json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header1", response.Headers.Header1, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header header1: %w", err)
-		}
+		var v string
+		v = response.Headers.Header1
 		w.Header().Set("header1", v)
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header2", response.Headers.Header2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header header2: %w", err)
-		}
+		var v string
+		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
 		w.Header().Set("header2", v)
 	}
 	w.WriteHeader(200)
@@ -1337,17 +1334,13 @@ func (response UnionExample200JSONResponse) VisitUnionExampleResponse(w http.Res
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header1", response.Headers.Header1, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header header1: %w", err)
-		}
+		var v string
+		v = response.Headers.Header1
 		w.Header().Set("header1", v)
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header2", response.Headers.Header2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header header2: %w", err)
-		}
+		var v string
+		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
 		w.Header().Set("header2", v)
 	}
 	w.WriteHeader(200)

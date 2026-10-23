@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/oapi-codegen/runtime"
@@ -744,10 +745,7 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 		if params.P != nil {
 			var cookieParam0 string
 
-			cookieParam0, err = runtime.StyleParamWithOptions("simple", false, "p", *params.P, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "integer", Format: "int32"})
-			if err != nil {
-				return nil, err
-			}
+			cookieParam0 = strconv.FormatInt(int64((*params.P)), 10)
 
 			cookie0 := &http.Cookie{
 				Name:  "p",
@@ -759,10 +757,7 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 		if params.Ep != nil {
 			var cookieParam1 string
 
-			cookieParam1, err = runtime.StyleParamWithOptions("simple", true, "ep", *params.Ep, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "integer", Format: "int32"})
-			if err != nil {
-				return nil, err
-			}
+			cookieParam1 = strconv.FormatInt(int64((*params.Ep)), 10)
 
 			cookie1 := &http.Cookie{
 				Name:  "ep",
@@ -774,9 +769,12 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 		if params.Ea != nil {
 			var cookieParam2 string
 
-			cookieParam2, err = runtime.StyleParamWithOptions("simple", true, "ea", *params.Ea, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "array", Format: ""})
-			if err != nil {
-				return nil, err
+			{
+				parts_ := make([]string, len((*params.Ea)))
+				for i_, e_ := range *params.Ea {
+					parts_[i_] = strconv.FormatInt(int64(e_), 10)
+				}
+				cookieParam2 = strings.Join(parts_, ",")
 			}
 
 			cookie2 := &http.Cookie{
@@ -789,9 +787,12 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 		if params.A != nil {
 			var cookieParam3 string
 
-			cookieParam3, err = runtime.StyleParamWithOptions("simple", false, "a", *params.A, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "array", Format: ""})
-			if err != nil {
-				return nil, err
+			{
+				parts_ := make([]string, len((*params.A)))
+				for i_, e_ := range *params.A {
+					parts_[i_] = strconv.FormatInt(int64(e_), 10)
+				}
+				cookieParam3 = strings.Join(parts_, ",")
 			}
 
 			cookie3 := &http.Cookie{
@@ -851,10 +852,7 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 		if params.N1s != nil {
 			var cookieParam7 string
 
-			cookieParam7, err = runtime.StyleParamWithOptions("simple", true, "1s", *params.N1s, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "string", Format: ""})
-			if err != nil {
-				return nil, err
-			}
+			cookieParam7 = (*params.N1s)
 
 			cookie7 := &http.Cookie{
 				Name:  "1s",
@@ -896,13 +894,7 @@ func NewEnumParamsRequest(server string, params *EnumParamsParams) (*http.Reques
 
 		if params.EnumPathParam != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "enumPathParam", *params.EnumPathParam, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
+			rawQueryFragments = append(rawQueryFragments, "enumPathParam="+url.QueryEscape(strconv.FormatInt(int64((*params.EnumPathParam)), 10)))
 
 		}
 
@@ -949,10 +941,7 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 		if params.XPrimitive != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-Primitive", *params.XPrimitive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: "int32"})
-			if err != nil {
-				return nil, err
-			}
+			headerParam0 = strconv.FormatInt(int64((*params.XPrimitive)), 10)
 
 			req.Header.Set("X-Primitive", headerParam0)
 		}
@@ -960,10 +949,7 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 		if params.XPrimitiveExploded != nil {
 			var headerParam1 string
 
-			headerParam1, err = runtime.StyleParamWithOptions("simple", true, "X-Primitive-Exploded", *params.XPrimitiveExploded, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: "int32"})
-			if err != nil {
-				return nil, err
-			}
+			headerParam1 = strconv.FormatInt(int64((*params.XPrimitiveExploded)), 10)
 
 			req.Header.Set("X-Primitive-Exploded", headerParam1)
 		}
@@ -971,9 +957,12 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 		if params.XArrayExploded != nil {
 			var headerParam2 string
 
-			headerParam2, err = runtime.StyleParamWithOptions("simple", true, "X-Array-Exploded", *params.XArrayExploded, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "array", Format: ""})
-			if err != nil {
-				return nil, err
+			{
+				parts_ := make([]string, len((*params.XArrayExploded)))
+				for i_, e_ := range *params.XArrayExploded {
+					parts_[i_] = strconv.FormatInt(int64(e_), 10)
+				}
+				headerParam2 = strings.Join(parts_, ",")
 			}
 
 			req.Header.Set("X-Array-Exploded", headerParam2)
@@ -982,9 +971,12 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 		if params.XArray != nil {
 			var headerParam3 string
 
-			headerParam3, err = runtime.StyleParamWithOptions("simple", false, "X-Array", *params.XArray, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "array", Format: ""})
-			if err != nil {
-				return nil, err
+			{
+				parts_ := make([]string, len((*params.XArray)))
+				for i_, e_ := range *params.XArray {
+					parts_[i_] = strconv.FormatInt(int64(e_), 10)
+				}
+				headerParam3 = strings.Join(parts_, ",")
 			}
 
 			req.Header.Set("X-Array", headerParam3)
@@ -1036,10 +1028,7 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 		if params.N1StartingWithNumber != nil {
 			var headerParam8 string
 
-			headerParam8, err = runtime.StyleParamWithOptions("simple", false, "1-Starting-With-Number", *params.N1StartingWithNumber, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-			if err != nil {
-				return nil, err
-			}
+			headerParam8 = (*params.N1StartingWithNumber)
 
 			req.Header.Set("1-Starting-With-Number", headerParam8)
 		}
@@ -1634,24 +1623,23 @@ func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Re
 
 		if params.Ea != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "ea", *params.Ea, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
+			if len((*params.Ea)) == 0 {
+				rawQueryFragments = append(rawQueryFragments, "ea=")
+			}
+			for _, e_ := range *params.Ea {
+				rawQueryFragments = append(rawQueryFragments, "ea="+url.QueryEscape(strconv.FormatInt(int64(e_), 10)))
 			}
 
 		}
 
 		if params.A != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", false, "a", *params.A, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				parts_ := make([]string, len((*params.A)))
+				for i_, e_ := range *params.A {
+					parts_[i_] = url.QueryEscape(strconv.FormatInt(int64(e_), 10))
 				}
+				rawQueryFragments = append(rawQueryFragments, "a="+strings.Join(parts_, ","))
 			}
 
 		}
@@ -1682,37 +1670,19 @@ func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Re
 
 		if params.Ep != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "ep", *params.Ep, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
+			rawQueryFragments = append(rawQueryFragments, "ep="+url.QueryEscape(strconv.FormatInt(int64((*params.Ep)), 10)))
 
 		}
 
 		if params.P != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", false, "p", *params.P, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
+			rawQueryFragments = append(rawQueryFragments, "p="+url.QueryEscape(strconv.FormatInt(int64((*params.P)), 10)))
 
 		}
 
 		if params.Ps != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "ps", *params.Ps, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
+			rawQueryFragments = append(rawQueryFragments, "ps="+url.QueryEscape((*params.Ps)))
 
 		}
 
@@ -1728,13 +1698,7 @@ func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Re
 
 		if params.N1s != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "1s", *params.N1s, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
+			rawQueryFragments = append(rawQueryFragments, "1s="+url.QueryEscape((*params.N1s)))
 
 		}
 
@@ -1758,9 +1722,12 @@ func NewGetSimpleExplodeArrayRequest(server string, param []int32) (*http.Reques
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", true, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "array", Format: ""})
-	if err != nil {
-		return nil, err
+	{
+		parts_ := make([]string, len(param))
+		for i_, e_ := range param {
+			parts_[i_] = url.PathEscape(strconv.FormatInt(int64(e_), 10))
+		}
+		pathParam0 = strings.Join(parts_, ",")
 	}
 
 	serverURL, err := url.Parse(server)
@@ -1826,10 +1793,7 @@ func NewGetSimpleExplodePrimitiveRequest(server string, param int32) (*http.Requ
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", true, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "integer", Format: "int32"})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(strconv.FormatInt(int64(param), 10))
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -1860,9 +1824,12 @@ func NewGetSimpleNoExplodeArrayRequest(server string, param []int32) (*http.Requ
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "array", Format: ""})
-	if err != nil {
-		return nil, err
+	{
+		parts_ := make([]string, len(param))
+		for i_, e_ := range param {
+			parts_[i_] = url.PathEscape(strconv.FormatInt(int64(e_), 10))
+		}
+		pathParam0 = strings.Join(parts_, ",")
 	}
 
 	serverURL, err := url.Parse(server)
@@ -1928,10 +1895,7 @@ func NewGetSimplePrimitiveRequest(server string, param int32) (*http.Request, er
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "integer", Format: "int32"})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(strconv.FormatInt(int64(param), 10))
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -1962,10 +1926,7 @@ func NewGetSimpleStringRequest(server string, param string) (*http.Request, erro
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(param)
 
 	serverURL, err := url.Parse(server)
 	if err != nil {

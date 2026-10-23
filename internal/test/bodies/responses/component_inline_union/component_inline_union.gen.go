@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,8 +17,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Error defines model for Error.
@@ -726,7 +725,13 @@ func ParseListThingsResponse(rsp *http.Response) (*ListThingsResponse, error) {
 		var headers ListThingsResponse422Headers
 		if values := rsp.Header.Values("X-Request-Id"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'X-Request-Id' is empty, can't bind its value")
+			} else {
+				value = values[0]
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.XRequestId = value
@@ -981,10 +986,8 @@ func (response ListThings422JSONResponse) VisitListThingsResponse(w http.Respons
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "X-Request-Id", response.Headers.XRequestId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header X-Request-Id: %w", err)
-		}
+		var v string
+		v = response.Headers.XRequestId
 		w.Header().Set("X-Request-Id", v)
 	}
 	w.WriteHeader(422)

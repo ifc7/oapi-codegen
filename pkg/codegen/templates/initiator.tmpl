@@ -172,13 +172,7 @@ func New{{$opid}}{{$.Prefix}}Request{{$generic.Suffix}}(targetURL string{{$gener
             }
             {{end}}
             {{if .IsStyled}}
-            if queryFrag, err := runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if and .RequiresNilCheck .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"}); err != nil {
-                return nil, err
-            } else {
-                for _, qp := range strings.Split(queryFrag, "&") {
-                    rawQueryFragments = append(rawQueryFragments, qp)
-                }
-            }
+            {{template "client.styleQuery" .}}
             {{end}}
             {{if .RequiresNilCheck}}}{{end}}
         {{end}}

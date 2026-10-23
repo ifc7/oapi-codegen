@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -20,7 +21,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	externalRef0 "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/external/path_item_refs/bionicle"
 	externalRef1 "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/external/path_item_refs/common"
-	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -48,7 +48,11 @@ func (siw *ServerInterfaceWrapper) GetBionicleName(w http.ResponseWriter, r *htt
 	// ------------- Path parameter "name" -------------
 	var name externalRef0.BionicleName
 
-	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("name") == "" {
+		err = errors.New("parameter 'name' is empty, can't bind its value")
+	} else {
+		name = externalRef0.BionicleName(r.PathValue("name"))
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
 		return

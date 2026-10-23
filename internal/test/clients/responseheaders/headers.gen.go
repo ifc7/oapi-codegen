@@ -6,13 +6,14 @@ package responseheaders
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/oapi-codegen/nullable"
-	"github.com/oapi-codegen/runtime"
 )
 
 // Data defines model for data.
@@ -308,21 +309,35 @@ func ParseGetFooResponse(rsp *http.Response) (*GetFooResponse, error) {
 		var headers GetFooResponse200Headers
 		if values := rsp.Header.Values("bar"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "bar", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = values[0]
+			if err != nil {
 				return nil, err
 			}
 			headers.Bar = &value
 		}
 		if values := rsp.Header.Values("x-next-cursor"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "x-next-cursor", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = values[0]
+			if err != nil {
 				return nil, err
 			}
 			headers.XNextCursor.Set(value)
 		}
 		if values := rsp.Header.Values("x-request-id"); len(values) > 0 {
 			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "x-request-id", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'x-request-id' is empty, can't bind its value")
+			} else {
+				if v_, err_ := strconv.ParseInt(values[0], 10, 0); err_ != nil {
+					err = err_
+				} else {
+					value = int(v_)
+				}
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.XRequestId = value
@@ -332,7 +347,13 @@ func ParseGetFooResponse(rsp *http.Response) (*GetFooResponse, error) {
 		var headers GetFooResponse404Headers
 		if values := rsp.Header.Values("trace-id"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "trace-id", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'trace-id' is empty, can't bind its value")
+			} else {
+				value = values[0]
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.TraceId = value
@@ -342,7 +363,13 @@ func ParseGetFooResponse(rsp *http.Response) (*GetFooResponse, error) {
 		var headers GetFooResponseDefaultHeaders
 		if values := rsp.Header.Values("retry-after"); len(values) > 0 {
 			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "retry-after", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+			var err error
+			if v_, err_ := strconv.ParseInt(values[0], 10, 0); err_ != nil {
+				err = err_
+			} else {
+				value = int(v_)
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.RetryAfter = &value

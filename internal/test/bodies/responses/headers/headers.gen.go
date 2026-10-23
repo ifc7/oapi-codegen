@@ -9,8 +9,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -190,10 +188,8 @@ func (response GetPing200TextResponse) VisitGetPingResponse(w http.ResponseWrite
 	w.Header().Set("Content-Type", "text/plain")
 	if response.Headers.MyHeader != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "MyHeader", *response.Headers.MyHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-			if err != nil {
-				return fmt.Errorf("error styling response header MyHeader: %w", err)
-			}
+			var v string
+			v = (*response.Headers.MyHeader)
 			w.Header().Set("MyHeader", v)
 		}
 	}

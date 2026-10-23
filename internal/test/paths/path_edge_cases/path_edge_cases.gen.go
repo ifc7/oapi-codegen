@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/oapi-codegen/runtime"
 )
 
 // Error defines model for Error.
@@ -211,10 +211,7 @@ func NewGetPetRequest(server string, petId string) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "petId", petId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(petId)
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -285,10 +282,7 @@ func NewGetSimplePrimitiveRequest(server string, param string) (*http.Request, e
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "param", param, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "int32"})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(param)
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -663,7 +657,11 @@ func (siw *ServerInterfaceWrapper) GetPet(w http.ResponseWriter, r *http.Request
 	// ------------- Path parameter "petId" -------------
 	var petId string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "petId", r.PathValue("petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("petId") == "" {
+		err = errors.New("parameter 'petId' is empty, can't bind its value")
+	} else {
+		petId = r.PathValue("petId")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
 		return
@@ -705,7 +703,11 @@ func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *
 	// ------------- Path parameter "param" -------------
 	var param string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "int32", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		param = r.PathValue("param")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return

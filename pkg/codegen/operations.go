@@ -91,7 +91,7 @@ func (pd ParameterDefinition) ZeroValueIsNil() bool {
 // output-options.struct-tags are rendered too.
 // It also includes any additional struct tags from x-oapi-codegen-extra-tags
 // at the parameter or schema level (parameter-level takes precedence).
-func (pd *ParameterDefinition) JsonTag() string {
+func (pd ParameterDefinition) JsonTag() string {
 	fieldTags := fieldTagGenerator().generateTagsMap(StructTagInfo{
 		FieldName:  pd.ParamName,
 		IsOptional: !pd.Required,
@@ -127,7 +127,7 @@ func (pd *ParameterDefinition) JsonTag() string {
 	return "`" + strings.Join(tags, " ") + "`"
 }
 
-func (pd *ParameterDefinition) IsJson() bool {
+func (pd ParameterDefinition) IsJson() bool {
 	p := pd.Spec
 	if len(p.Content) == 1 {
 		for k := range p.Content {
@@ -139,7 +139,7 @@ func (pd *ParameterDefinition) IsJson() bool {
 	return false
 }
 
-func (pd *ParameterDefinition) IsPassThrough() bool {
+func (pd ParameterDefinition) IsPassThrough() bool {
 	p := pd.Spec
 	if len(p.Content) > 1 {
 		return true
@@ -150,12 +150,12 @@ func (pd *ParameterDefinition) IsPassThrough() bool {
 	return false
 }
 
-func (pd *ParameterDefinition) IsStyled() bool {
+func (pd ParameterDefinition) IsStyled() bool {
 	p := pd.Spec
 	return p.Schema != nil
 }
 
-func (pd *ParameterDefinition) Style() string {
+func (pd ParameterDefinition) Style() string {
 	style := pd.Spec.Style
 	if style == "" {
 		in := pd.Spec.In
@@ -171,7 +171,7 @@ func (pd *ParameterDefinition) Style() string {
 	return style
 }
 
-func (pd *ParameterDefinition) Explode() bool {
+func (pd ParameterDefinition) Explode() bool {
 	if pd.Spec.Explode == nil {
 		in := pd.Spec.In
 		switch in {
@@ -190,7 +190,7 @@ func (pd *ParameterDefinition) Explode() bool {
 // (e.g. "string", "integer") with the OpenAPI 3.1 "null" nullability marker
 // stripped, or empty string when the schema declares no type or a
 // multi-type union (unions are carried by SchemaTypes instead).
-func (pd *ParameterDefinition) SchemaType() string {
+func (pd ParameterDefinition) SchemaType() string {
 	if pd.Spec.Schema != nil && pd.Spec.Schema.Value != nil && pd.Spec.Schema.Value.Type != nil {
 		t := schemaPrimaryType(pd.Spec.Schema.Value.Type)
 		if s := t.Slice(); len(s) == 1 {
@@ -206,7 +206,7 @@ func (pd *ParameterDefinition) SchemaType() string {
 // type. Non-nil only for genuine unions, where the generated bind call
 // passes the list to the runtime (Types option, runtime v1.7.0+) so the
 // value can bind into the parameter's `any` destination.
-func (pd *ParameterDefinition) SchemaTypes() []string {
+func (pd ParameterDefinition) SchemaTypes() []string {
 	if pd.Spec.Schema == nil || pd.Spec.Schema.Value == nil {
 		return nil
 	}
@@ -215,7 +215,7 @@ func (pd *ParameterDefinition) SchemaTypes() []string {
 
 // SchemaFormat returns the OpenAPI format string for this parameter's schema (e.g. "byte", "date-time"),
 // or empty string if unavailable.
-func (pd *ParameterDefinition) SchemaFormat() string {
+func (pd ParameterDefinition) SchemaFormat() string {
 	if pd.Spec.Schema != nil && pd.Spec.Schema.Value != nil {
 		return pd.Spec.Schema.Value.Format
 	}

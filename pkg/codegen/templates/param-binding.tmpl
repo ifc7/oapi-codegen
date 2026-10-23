@@ -1,0 +1,82 @@
+{{/*
+Shared server-side parameter binding partials, used by the server wrappers
+(server-middleware.tmpl) and the webhook/callback receivers
+(receiver-stdlib.tmpl). Both call them with a dict: .Param is the
+ParameterDefinition and .Handler the expression of the error handler to call.
+
+A parameter with a Codec is bound by the code it generates; any other styled
+parameter is bound by the runtime library.
+*/}}
+
+{{/*
+"param.bindStyled" binds .Src, a `simple`-style value of a path, header or
+cookie parameter, into the variable .Dst, and sets err when it can't. A
+required parameter's value can't be empty.
+*/}}
+{{define "param.bindStyled" -}}
+{{- $p := .Param -}}
+{{- with $p.Codec -}}
+{{if $p.Required -}}
+if {{$.Src}} == "" {
+    err = errors.New({{printf "parameter '%s' is empty, can't bind its value" $p.ParamName | toGoString}})
+} else {
+{{.BindStyled $.Src $.Dst}}
+}
+{{- else -}}
+{{.BindStyled $.Src $.Dst}}
+{{- end}}
+{{- else -}}
+err = runtime.BindStyledParameterWithOptions("{{if eq $p.In "cookie"}}simple{{else}}{{$p.Style}}{{end}}", "{{$p.ParamName}}", {{.Src}}, &{{.Dst}}, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocation{{if eq $p.In "path"}}Path{{else if eq $p.In "header"}}Header{{else}}Cookie{{end}}, Explode: {{$p.Explode}}, Required: {{$p.Required}}, Type: "{{$p.SchemaType}}", Format: "{{$p.SchemaFormat}}"{{unionTypes $p.SchemaTypes}}{{if eq $p.In "path"}}, ValueIsUnescaped: true{{end}}})
+{{- end}}
+{{- end}}
+
+{{/*
+"param.bindQuery" binds a styled query parameter into params, calling the
+error handler and returning when it is missing but required, or invalid.
+*/}}
+{{define "param.bindQuery" -}}
+{{- $p := .Param -}}
+{{- with $p.Codec -}}
+if values_, found_ := r.URL.Query()["{{$p.ParamName}}"]; found_ {
+    var value_ {{$p.TypeDef}}
+    {{if $p.Explode -}}
+    {{if .IsArray -}}
+    {{.BindList "values_" "value_"}}
+    {{- else if .TimeLike -}}
+    {{.Scalar.Bind "values_[0]" "value_" false}}
+    {{- else -}}
+    if len(values_) != 1 {
+        err = errors.New({{printf "multiple values for single value parameter '%s'" $p.ParamName | toGoString}})
+    } else {
+        {{.Scalar.Bind "values_[0]" "value_" false}}
+    }
+    {{- end}}
+    {{- else -}}
+    if len(values_) != 1 {
+        err = errors.New({{printf "parameter '%s' is not exploded, but is specified multiple times" $p.ParamName | toGoString}})
+    } else {
+        {{.BindQueryValue "values_[0]" "value_"}}
+    }
+    {{- end}}
+    if err != nil {
+        {{$.Handler}}(w, r, &InvalidParamFormatError{ParamName: "{{$p.ParamName}}", Err: err})
+        return
+    }
+    params.{{$p.GoName}} = {{if $p.HasOptionalPointer}}&{{end}}value_
+}{{if $p.Required}} else {
+    {{$.Handler}}(w, r, &RequiredParamError{ParamName: "{{$p.ParamName}}"})
+    return
+}{{end}}
+{{- else -}}
+err = runtime.BindQueryParameterWithOptions("{{$p.Style}}", {{$p.Explode}}, {{$p.Required}}, "{{$p.ParamName}}", r.URL.Query(), &params.{{$p.GoName}}, runtime.BindQueryParameterOptions{Type: "{{$p.SchemaType}}", Format: "{{$p.SchemaFormat}}"{{unionTypes $p.SchemaTypes}}})
+if err != nil {
+    var requiredError *runtime.RequiredParameterError
+    if errors.As(err, &requiredError) {
+        {{$.Handler}}(w, r, &RequiredParamError{ParamName: "{{$p.ParamName}}"})
+    } else {
+        {{$.Handler}}(w, r, &InvalidParamFormatError{ParamName: "{{$p.ParamName}}", Err: err})
+    }
+    return
+}
+{{- end}}
+{{- end}}

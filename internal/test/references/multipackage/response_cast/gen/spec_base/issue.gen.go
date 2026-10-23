@@ -12,8 +12,6 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // EmptyPayload defines model for EmptyPayload.
@@ -305,10 +303,8 @@ func (response GetExample403JSONResponse) VisitGetExampleResponse(w http.Respons
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "X-Request-ID", response.Headers.XRequestID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header X-Request-ID: %w", err)
-		}
+		var v string
+		v = response.Headers.XRequestID
 		w.Header().Set("X-Request-ID", v)
 	}
 	w.WriteHeader(403)

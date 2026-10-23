@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // ExtraTagsObject defines model for ExtraTagsObject.
@@ -165,13 +163,7 @@ func NewListThingsRequest(server string, params *ListThingsParams) (*http.Reques
 
 		if params.Filter != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
+			rawQueryFragments = append(rawQueryFragments, "filter="+url.QueryEscape(string((*params.Filter))))
 
 		}
 

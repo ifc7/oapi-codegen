@@ -17,7 +17,6 @@ import (
 	uuid "github.com/google/uuid"
 	externalRef0 "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/response_cast/gen/spec_base"
 	support "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/response_cast/support"
-	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -262,10 +261,8 @@ func (response GetOtherExample403JSONResponse) VisitGetOtherExampleResponse(w ht
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "X-Request-ID", response.Headers.XRequestID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return fmt.Errorf("error styling response header X-Request-ID: %w", err)
-		}
+		var v string
+		v = response.Headers.XRequestID
 		w.Header().Set("X-Request-ID", v)
 	}
 	w.WriteHeader(403)

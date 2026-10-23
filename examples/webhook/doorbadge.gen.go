@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,7 +17,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for RegisterWebhookParamsKind.
@@ -241,10 +241,7 @@ func NewDeregisterWebhookRequest(server string, id uuid.UUID) (*http.Request, er
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(id.String())
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -286,10 +283,7 @@ func NewRegisterWebhookRequestWithBody(server string, kind RegisterWebhookParams
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "kind", kind, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
+	pathParam0 = url.PathEscape(string(kind))
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -803,7 +797,11 @@ func (siw *ServerInterfaceWrapper) DeregisterWebhook(w http.ResponseWriter, r *h
 	// ------------- Path parameter "id" -------------
 	var id uuid.UUID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		err = id.UnmarshalText([]byte(r.PathValue("id")))
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -830,7 +828,11 @@ func (siw *ServerInterfaceWrapper) RegisterWebhook(w http.ResponseWriter, r *htt
 	// ------------- Path parameter "kind" -------------
 	var kind RegisterWebhookParamsKind
 
-	err = runtime.BindStyledParameterWithOptions("simple", "kind", r.PathValue("kind"), &kind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("kind") == "" {
+		err = errors.New("parameter 'kind' is empty, can't bind its value")
+	} else {
+		kind = RegisterWebhookParamsKind(r.PathValue("kind"))
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
 		return
