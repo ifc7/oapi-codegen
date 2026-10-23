@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	multijson "github.com/oapi-codegen/oapi-codegen/v2/internal/test/bodies/content_types/multi_json"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,13 +27,10 @@ func (s *testStrictServerInterface) SuffixTest(ctx context.Context, request mult
 }
 
 // From issue-1298: a request body with a custom +json suffix content type must
-// round-trip through the gin strict server via the generated typed client method.
+// round-trip through the strict server via the generated typed client method.
 func TestIssue1298(t *testing.T) {
-	g := gin.Default()
-	multijson.RegisterHandlersWithOptions(g,
-		multijson.NewStrictHandler(&testStrictServerInterface{t: t}, nil),
-		multijson.GinServerOptions{})
-	ts := httptest.NewServer(g)
+	h := multijson.Handler(multijson.NewStrictHandler(&testStrictServerInterface{t: t}, nil))
+	ts := httptest.NewServer(h)
 	defer ts.Close()
 
 	c, err := multijson.NewClientWithResponses(ts.URL)

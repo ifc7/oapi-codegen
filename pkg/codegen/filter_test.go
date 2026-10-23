@@ -13,10 +13,10 @@ func TestFilterOperationsByTag(t *testing.T) {
 		opts := Configuration{
 			PackageName: packageName,
 			Generate: GenerateOptions{
-				EchoServer:   true,
-				Client:       true,
-				Models:       true,
-				EmbeddedSpec: true,
+				StdHTTPServer: true,
+				Client:        true,
+				Models:        true,
+				EmbeddedSpec:  true,
 			},
 			OutputOptions: OutputOptions{
 				IncludeTags: []string{"hippo", "giraffe", "cat"},
@@ -34,7 +34,7 @@ func TestFilterOperationsByTag(t *testing.T) {
 		code, err := Generate(swagger, opts)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, code)
-		assert.NotContains(t, code, `"/test/:name"`)
+		assert.NotContains(t, code, `"/test/{name}"`)
 		assert.Contains(t, code, `"/cat"`)
 	})
 
@@ -42,10 +42,10 @@ func TestFilterOperationsByTag(t *testing.T) {
 		opts := Configuration{
 			PackageName: packageName,
 			Generate: GenerateOptions{
-				EchoServer:   true,
-				Client:       true,
-				Models:       true,
-				EmbeddedSpec: true,
+				StdHTTPServer: true,
+				Client:        true,
+				Models:        true,
+				EmbeddedSpec:  true,
 			},
 			OutputOptions: OutputOptions{
 				ExcludeTags: []string{"hippo", "giraffe", "cat"},
@@ -63,7 +63,7 @@ func TestFilterOperationsByTag(t *testing.T) {
 		code, err := Generate(swagger, opts)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, code)
-		assert.Contains(t, code, `"/test/:name"`)
+		assert.Contains(t, code, `"/test/{name}"`)
 		assert.NotContains(t, code, `"/cat"`)
 	})
 }
@@ -74,10 +74,10 @@ func TestFilterOperationsByOperationID(t *testing.T) {
 		opts := Configuration{
 			PackageName: packageName,
 			Generate: GenerateOptions{
-				EchoServer:   true,
-				Client:       true,
-				Models:       true,
-				EmbeddedSpec: true,
+				StdHTTPServer: true,
+				Client:        true,
+				Models:        true,
+				EmbeddedSpec:  true,
 			},
 			OutputOptions: OutputOptions{
 				IncludeOperationIDs: []string{"getCatStatus"},
@@ -95,7 +95,7 @@ func TestFilterOperationsByOperationID(t *testing.T) {
 		code, err := Generate(swagger, opts)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, code)
-		assert.NotContains(t, code, `"/test/:name"`)
+		assert.NotContains(t, code, `"/test/{name}"`)
 		assert.Contains(t, code, `"/cat"`)
 	})
 
@@ -103,10 +103,10 @@ func TestFilterOperationsByOperationID(t *testing.T) {
 		opts := Configuration{
 			PackageName: packageName,
 			Generate: GenerateOptions{
-				EchoServer:   true,
-				Client:       true,
-				Models:       true,
-				EmbeddedSpec: true,
+				StdHTTPServer: true,
+				Client:        true,
+				Models:        true,
+				EmbeddedSpec:  true,
 			},
 			OutputOptions: OutputOptions{
 				ExcludeOperationIDs: []string{"getCatStatus"},
@@ -124,7 +124,7 @@ func TestFilterOperationsByOperationID(t *testing.T) {
 		code, err := Generate(swagger, opts)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, code)
-		assert.Contains(t, code, `"/test/:name"`)
+		assert.Contains(t, code, `"/test/{name}"`)
 		assert.NotContains(t, code, `"/cat"`)
 	})
 }

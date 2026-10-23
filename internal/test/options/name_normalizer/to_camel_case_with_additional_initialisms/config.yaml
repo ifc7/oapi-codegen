@@ -5,11 +5,11 @@ output: name_normalizer.gen.go
 # Builds on ToCamelCaseWithInitialisms so uuid → UUID, http → HTTP (GetHTTPPet),
 # id → ID, and the extra initialism NAME causes the "name" field to be rendered
 # as NAME.
-# gorilla-server + client so the tests can assert the operation-derived names
+# std-http-server + client so the tests can assert the operation-derived names
 # on both ServerInterfaceWrapper and Client.
 # skip-prune: retain the Error schema which is not referenced from any path.
 generate:
-  gorilla-server: true
+  std-http-server: true
   client: true
   models: true
 output-options:

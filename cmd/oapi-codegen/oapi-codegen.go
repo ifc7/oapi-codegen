@@ -113,10 +113,10 @@ func main() {
 		opts = configuration{
 			Configuration: codegen.Configuration{
 				Generate: codegen.GenerateOptions{
-					EchoServer:   true,
-					Client:       true,
-					Models:       true,
-					EmbeddedSpec: true,
+					StdHTTPServer: true,
+					Client:        true,
+					Models:        true,
+					EmbeddedSpec:  true,
 				},
 			},
 		}

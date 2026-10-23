@@ -90,20 +90,12 @@ In this example, we set up several components:
 
 ## Example
 
-You can run the example Echo server like so:
+You can run the example server like so:
 ```
-$ go run ./examples/authenticated-api/echo/main.go
+$ go run ./examples/authenticated-api/stdhttp/main.go
 2021/10/07 14:32:45 Reader token eyJhbGciOiJFUzI1NiIsImtpZCI6ImZha2Uta2V5LWlkIiwidHlwIjoiSldUIn0.eyJhdWQiOlsiZXhhbXBsZS11c2VycyJdLCJpc3MiOiJmYWtlLWlzc3VlciIsInBlcm0iOltdfQ.Hf9dCNJLa0HQfbtJi7ndASbkTfrLc6bZBJK8HaPqtzXiDkTH6sMRoiNhf6Kb1g6z3R1tN3XEpXsghxlMRO3OLA
 2021/10/07 14:32:45 Writer token eyJhbGciOiJFUzI1NiIsImtpZCI6ImZha2Uta2V5LWlkIiwidHlwIjoiSldUIn0.eyJhdWQiOlsiZXhhbXBsZS11c2VycyJdLCJpc3MiOiJmYWtlLWlzc3VlciIsInBlcm0iOlsidGhpbmdzOnciXX0.CbPT1hzWmyTt0lTyv-fiyUlnY1SGa0vrX52yFjeigx2PA1-78LVH0z5hukPKkLMPDMXL9AJrtNp0elWSD_qrBw
 
-   ____    __
-  / __/___/ /  ___
- / _// __/ _ \/ _ \
-/___/\__/_//_/\___/ v4.2.1
-High performance, minimalist Go web framework
-https://echo.labstack.com
-____________________________________O/_______
-                                    O\
 ```
 
 It prints out two tokens for you to use in http requests. Let's assign

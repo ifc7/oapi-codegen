@@ -46,39 +46,6 @@ func (o Configuration) Validate() error {
 		return errors.New("package name must be specified")
 	}
 
-	// Only one server type should be specified at a time.
-	nServers := 0
-	if o.Generate.IrisServer {
-		nServers++
-	}
-	if o.Generate.ChiServer {
-		nServers++
-	}
-	if o.Generate.FiberServer {
-		nServers++
-	}
-	if o.Generate.FiberV3Server {
-		nServers++
-	}
-	if o.Generate.EchoServer {
-		nServers++
-	}
-	if o.Generate.Echo5Server {
-		nServers++
-	}
-	if o.Generate.GorillaServer {
-		nServers++
-	}
-	if o.Generate.StdHTTPServer {
-		nServers++
-	}
-	if o.Generate.GinServer {
-		nServers++
-	}
-	if nServers > 1 {
-		return errors.New("only one server type is supported at a time")
-	}
-
 	var errs []error
 	if problems := o.Generate.Validate(); problems != nil {
 		for k, v := range problems {
@@ -142,9 +109,9 @@ func (o Configuration) Warnings() map[string]string {
 func (o Configuration) UpdateDefaults() Configuration {
 	if reflect.ValueOf(o.Generate).IsZero() {
 		o.Generate = GenerateOptions{
-			EchoServer:   true,
-			Models:       true,
-			EmbeddedSpec: true,
+			StdHTTPServer: true,
+			Models:        true,
+			EmbeddedSpec:  true,
 		}
 	}
 	return o
@@ -152,22 +119,6 @@ func (o Configuration) UpdateDefaults() Configuration {
 
 // GenerateOptions specifies which supported output formats to generate.
 type GenerateOptions struct {
-	// IrisServer specifies whether to generate iris server boilerplate
-	IrisServer bool `yaml:"iris-server,omitempty"`
-	// ChiServer specifies whether to generate chi server boilerplate
-	ChiServer bool `yaml:"chi-server,omitempty"`
-	// FiberServer specifies whether to generate fiber server boilerplate
-	FiberServer bool `yaml:"fiber-server,omitempty"`
-	// FiberV3Server specifies whether to generate fiber v3 server boilerplate
-	FiberV3Server bool `yaml:"fiber-v3-server,omitempty"`
-	// EchoServer specifies whether to generate echo server boilerplate
-	EchoServer bool `yaml:"echo-server,omitempty"`
-	// Echo5Server specifies whether to generate echo v5 server boilerplate
-	Echo5Server bool `yaml:"echo5-server,omitempty"`
-	// GinServer specifies whether to generate gin server boilerplate
-	GinServer bool `yaml:"gin-server,omitempty"`
-	// GorillaServer specifies whether to generate Gorilla server boilerplate
-	GorillaServer bool `yaml:"gorilla-server,omitempty"`
 	// StdHTTPServer specifies whether to generate stdlib http server boilerplate
 	StdHTTPServer bool `yaml:"std-http-server,omitempty"`
 	// Strict specifies whether to generate strict server wrapper
@@ -182,43 +133,12 @@ type GenerateOptions struct {
 	ServerURLs bool `yaml:"server-urls,omitempty"`
 }
 
-// RouterImports returns the framework-specific and strict middleware imports
-// needed based on which server type is selected.
-func (g GenerateOptions) RouterImports() []AdditionalImport {
-	var imports []AdditionalImport
-
-	switch {
-	case g.EchoServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/labstack/echo/v4"})
-	case g.Echo5Server:
-		imports = append(imports, AdditionalImport{Package: "github.com/labstack/echo/v5"})
-	case g.ChiServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/go-chi/chi/v5"})
-	case g.GinServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/gin-gonic/gin"})
-	case g.GorillaServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/gorilla/mux"})
-	case g.FiberServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/gofiber/fiber/v2"})
-	case g.FiberV3Server:
-		imports = append(imports, AdditionalImport{Package: "github.com/gofiber/fiber/v3"})
-	case g.IrisServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/kataras/iris/v12"})
-		imports = append(imports, AdditionalImport{Package: "github.com/kataras/iris/v12/core/router"})
-	case g.StdHTTPServer:
-	}
-
-	return imports
-}
-
 // AnyOperationGenerator returns true if any code generator that emits
 // per-operation Go code (clients, server frameworks, strict-server) is
 // enabled. Used to detect configurations where operation-derived type
 // references would be emitted without a corresponding declaration.
 func (g GenerateOptions) AnyOperationGenerator() bool {
-	return g.Client || g.IrisServer || g.EchoServer || g.Echo5Server ||
-		g.ChiServer || g.FiberServer || g.FiberV3Server || g.GinServer || g.GorillaServer ||
-		g.StdHTTPServer || g.Strict
+	return g.Client || g.StdHTTPServer || g.Strict
 }
 
 func (oo GenerateOptions) Validate() map[string]string {

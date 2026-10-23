@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=../../../../../configuration-schema.json
-package: colonpathsfiberv3
-generate:
-  fiber-v3-server: true
-  models: true
-output: fiberv3/colon.gen.go

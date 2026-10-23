@@ -2,6 +2,6 @@
 package: optionsfiltertags
 output: tags/server.gen.go
 generate:
-  echo-server: true
+  std-http-server: true
 output-options:
   include-tags: [included-tag1, included-tag2]

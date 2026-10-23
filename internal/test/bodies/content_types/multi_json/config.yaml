@@ -5,6 +5,6 @@ generate:
   client: true
   models: true
   embedded-spec: true
-  gin-server: true
+  std-http-server: true
   strict-server: true
 output: multi_json.gen.go

@@ -104,7 +104,7 @@ func TestParameters(t *testing.T) {
 func TestErrorHandlerFunc(t *testing.T) {
 	m := fakeServer{}
 
-	h := HandlerWithOptions(&m, ChiServerOptions{
+	h := HandlerWithOptions(&m, StdHTTPServerOptions{
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			w.Header().Set("Content-Type", "application/json")
 			var requiredParamError *RequiredParamError
@@ -123,7 +123,7 @@ func TestErrorHandlerFunc(t *testing.T) {
 func TestErrorHandlerFuncBackwardsCompatible(t *testing.T) {
 	m := fakeServer{}
 
-	h := HandlerWithOptions(&m, ChiServerOptions{})
+	h := HandlerWithOptions(&m, StdHTTPServerOptions{})
 
 	s := httptest.NewServer(h)
 	defer s.Close()

@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/labstack/echo/v4"
 	"github.com/oapi-codegen/testutil"
 	"github.com/stretchr/testify/assert"
 
-	. "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/echo/gen"
+	. "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp/gen"
 )
 
 type testServer struct {
@@ -42,144 +41,121 @@ func (t *testServer) reset() {
 }
 
 // (GET /contentObject/{param})
-func (t *testServer) GetContentObject(ctx echo.Context, param ComplexObject) error {
+func (t *testServer) GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) {
 	t.complexObject = &param
-	return nil
 }
 
 // (GET /labelExplodeArray/{.param*})
-func (t *testServer) GetLabelExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 // (GET /labelExplodeObject/{.param*})
-func (t *testServer) GetLabelExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 // (GET /labelNoExplodeArray/{.param})
-func (t *testServer) GetLabelNoExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 // (GET /labelNoExplodeObject/{.param})
-func (t *testServer) GetLabelNoExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 // (GET /matrixExplodeArray/{.param*})
-func (t *testServer) GetMatrixExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 // (GET /matrixExplodeObject/{.param*})
-func (t *testServer) GetMatrixExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 // (GET /matrixNoExplodeArray/{.param})
-func (t *testServer) GetMatrixNoExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 // (GET /matrixNoExplodeObject/{.param})
-func (t *testServer) GetMatrixNoExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 // (GET /simpleExplodeArray/{param*})
-func (t *testServer) GetSimpleExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 // (GET /simpleExplodeObject/{param*})
-func (t *testServer) GetSimpleExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 // (GET /simpleNoExplodeArray/{param})
-func (t *testServer) GetSimpleNoExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 // (GET /simpleNoExplodeObject/{param})
-func (t *testServer) GetSimpleNoExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 // (GET /passThrough/{param})
-func (t *testServer) GetPassThrough(ctx echo.Context, param string) error {
+func (t *testServer) GetPassThrough(w http.ResponseWriter, r *http.Request, param string) {
 	t.passThrough = &param
-	return nil
 }
 
 // (GET /startingWithjNumber/{param})
-func (t *testServer) GetStartingWithNumber(ctx echo.Context, n1param string) error {
+func (t *testServer) GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) {
 	t.n1param = &n1param
-	return nil
 }
 
 // (GET /queryDeepObject)
-func (t *testServer) GetDeepObject(ctx echo.Context, params GetDeepObjectParams) error {
+func (t *testServer) GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) {
 	t.complexObject = &params.DeepObj
-	return nil
 }
 
 // (GET /simplePrimitive/{param})
-func (t *testServer) GetSimplePrimitive(ctx echo.Context, param int32) error {
+func (t *testServer) GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
 	t.primitive = &param
-	return nil
 }
 
 // (GET /simpleString/{param})
-func (t *testServer) GetSimpleString(ctx echo.Context, param string) error {
-	return nil
+func (t *testServer) GetSimpleString(w http.ResponseWriter, r *http.Request, param string) {
 }
 
 // (GET /simpleExplodePrimitive/{param})
-func (t *testServer) GetSimpleExplodePrimitive(ctx echo.Context, param int32) error {
+func (t *testServer) GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
 	t.primitive = &param
-	return nil
 }
 
 // (GET /labelPrimitive/{.param})
-func (t *testServer) GetLabelPrimitive(ctx echo.Context, param int32) error {
+func (t *testServer) GetLabelPrimitive(w http.ResponseWriter, r *http.Request, param int32) {
 	t.primitive = &param
-	return nil
 }
 
 // (GET /labelExplodePrimitive/{.param*})
-func (t *testServer) GetLabelExplodePrimitive(ctx echo.Context, param int32) error {
+func (t *testServer) GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
 	t.primitive = &param
-	return nil
 }
 
 // (GET /matrixPrimitive/{;id})
-func (t *testServer) GetMatrixPrimitive(ctx echo.Context, id int32) error {
+func (t *testServer) GetMatrixPrimitive(w http.ResponseWriter, r *http.Request, id int32) {
 	t.primitive = &id
-	return nil
 }
 
 // (GET /matrixExplodePrimitive/{;id*})
-func (t *testServer) GetMatrixExplodePrimitive(ctx echo.Context, id int32) error {
+func (t *testServer) GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request, id int32) {
 	t.primitive = &id
-	return nil
 }
 
 // (GET /queryDelimited)
-func (t *testServer) GetQueryDelimited(ctx echo.Context, params GetQueryDelimitedParams) error {
+func (t *testServer) GetQueryDelimited(w http.ResponseWriter, r *http.Request, params GetQueryDelimitedParams) {
 	t.queryDelimitedParams = &params
 	if params.Sa != nil {
 		t.array = *params.Sa
@@ -187,11 +163,10 @@ func (t *testServer) GetQueryDelimited(ctx echo.Context, params GetQueryDelimite
 	if params.Pa != nil {
 		t.array = *params.Pa
 	}
-	return nil
 }
 
 // (GET /queryForm)
-func (t *testServer) GetQueryForm(ctx echo.Context, params GetQueryFormParams) error {
+func (t *testServer) GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) {
 	t.queryParams = &params
 	if params.Ea != nil {
 		t.array = *params.Ea
@@ -220,11 +195,10 @@ func (t *testServer) GetQueryForm(ctx echo.Context, params GetQueryFormParams) e
 	if params.N1s != nil {
 		t.n1param = params.N1s
 	}
-	return nil
 }
 
 // (GET /header)
-func (t *testServer) GetHeader(ctx echo.Context, params GetHeaderParams) error {
+func (t *testServer) GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) {
 	t.headerParams = &params
 	if params.XPrimitive != nil {
 		t.primitive = params.XPrimitive
@@ -250,11 +224,10 @@ func (t *testServer) GetHeader(ctx echo.Context, params GetHeaderParams) error {
 	if params.N1StartingWithNumber != nil {
 		t.n1param = params.N1StartingWithNumber
 	}
-	return nil
 }
 
 // (GET /cookie)
-func (t *testServer) GetCookie(ctx echo.Context, params GetCookieParams) error {
+func (t *testServer) GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) {
 	t.cookieParams = &params
 	if params.Ea != nil {
 		t.array = *params.Ea
@@ -280,18 +253,16 @@ func (t *testServer) GetCookie(ctx echo.Context, params GetCookieParams) error {
 	if params.N1s != nil {
 		t.n1param = params.N1s
 	}
-	return nil
 }
 
 // (GET /enums)
-func (t *testServer) EnumParams(ctx echo.Context, params EnumParamsParams) error {
-	return ctx.NoContent(http.StatusNotImplemented)
+func (t *testServer) EnumParams(w http.ResponseWriter, r *http.Request, params EnumParamsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
 }
 
 func TestParameterBinding(t *testing.T) {
 	var ts testServer
-	e := echo.New()
-	RegisterHandlers(e, &ts)
+	e := Handler(&ts)
 
 	expectedObject := Object{
 		FirstName: "Alex",

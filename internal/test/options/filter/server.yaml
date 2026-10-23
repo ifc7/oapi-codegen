@@ -1,7 +1,7 @@
 # ==========================================================================
 # Category: options/filter  (shared spec for the operations/ + tags/ sub-packages)
-# Tests:    output filtering by operationId (-include-operation-ids) and by tag
-#           (-include-tags). Each sub-package generates an echo ServerInterface from
+# Tests:    output filtering by operationId (include-operation-ids) and by tag
+#           (include-tags). Each sub-package generates a ServerInterface from
 #           THIS spec with a different filter, so the filtered-out operation must be
 #           absent from the generated interface. They are separate Go packages because
 #           each emits a ServerInterface and they would collide in one package.

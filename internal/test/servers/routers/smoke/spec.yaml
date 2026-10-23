@@ -1,5 +1,5 @@
-# From issue-1799: the same spec must compile when generated for every supported
-# server framework (chi, echo, fiber, gin, gorilla, iris, std-http) plus the client.
+# From issue-1799: the same spec must compile when generated for the net/http
+# server and the client.
 openapi: "3.0.0"
 
 info:

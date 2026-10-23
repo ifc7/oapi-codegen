@@ -938,10 +938,7 @@ func TestNewInitiatorTemplateDataRejectsPathParams(t *testing.T) {
 	assert.Equal(t, "callback", data.PrefixLower)
 }
 
-// buildStrictTestTrees loads the real embedded templates and per-framework
-// clones the same way Generate() does, for exercising GenerateStrictServer.
-func buildStrictTestTrees(t *testing.T) (*template.Template, map[string]*template.Template) {
-	t.Helper()
+func TestGenerateStrictServerInterface(t *testing.T) {
 	funcs := make(template.FuncMap, len(TemplateFunctions)+1)
 	for k, v := range TemplateFunctions {
 		funcs[k] = v
@@ -950,33 +947,13 @@ func buildStrictTestTrees(t *testing.T) (*template.Template, map[string]*templat
 	funcs["opts"] = func() Configuration { return Configuration{} }
 	base := template.New("codegen").Funcs(funcs)
 	require.NoError(t, LoadTemplates(templates, base))
-	clones, err := buildServerTemplates(templates, base)
-	require.NoError(t, err)
-	return base, clones
-}
-
-func TestGenerateStrictServerInterfaceDedup(t *testing.T) {
-	base, clones := buildStrictTestTrees(t)
 	ops := []OperationDefinition{{OperationId: "Ping"}}
 
-	// A single enabled server emits the interface exactly once.
-	out, err := GenerateStrictServer(base, clones, ops, Configuration{
-		Generate: GenerateOptions{ChiServer: true},
+	out, err := GenerateStrictServer(base, ops, Configuration{
+		Generate: GenerateOptions{StdHTTPServer: true},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 1, strings.Count(out, "type StrictServerInterface interface"))
-
-	// Configuration.Validate() permits only one server type; the strict
-	// generator enforces the same invariant for direct API callers, since
-	// every interface template declares the same package-level type names.
-	for name, generate := range map[string]GenerateOptions{
-		"fiber v2+v3": {FiberServer: true, FiberV3Server: true},
-		"echo+fiber":  {EchoServer: true, FiberServer: true},
-		"chi+gin":     {ChiServer: true, GinServer: true},
-	} {
-		_, err = GenerateStrictServer(base, clones, ops, Configuration{Generate: generate})
-		require.ErrorContains(t, err, "only one server type", name)
-	}
 }
 
 func TestStrictServerResponseReceiverCompatibility(t *testing.T) {
@@ -1089,9 +1066,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{ChiServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
+		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
 	}
 
 	for _, server := range servers {
@@ -1191,9 +1166,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{ChiServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
+		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
 	}
 
 	for _, server := range servers {
@@ -1311,9 +1284,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{ChiServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
+		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
 	}
 
 	for _, server := range servers {
@@ -1536,9 +1507,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{ChiServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
+		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
 	}
 
 	for _, server := range servers {

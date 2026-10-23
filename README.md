@@ -28,7 +28,6 @@ With `oapi-codegen`, there are a few [Key Design Decisions](#key-design-decision
 - [What does it look like?](#what-does-it-look-like)
 - [Key design decisions](#key-design-decisions)
 - [Generating server-side boilerplate](#generating-server-side-boilerplate)
-  - [Supported Servers](#supported-servers)
   - [Strict server](#strict-server)
 - [Generating API clients](#generating-api-clients)
   - [With Server URLs](#with-server-urls)
@@ -98,7 +97,7 @@ go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 
 ### Installing
 
-`oapi-codegen` requires Go 1.25+ to build and install. Note that the *generated* code has its own, lower requirements — see [Supported Servers](#supported-servers).
+`oapi-codegen` requires Go 1.25+ to build and install. Note that the *generated* code has its own, lower requirements — see [Generating server-side boilerplate](#generating-server-side-boilerplate).
 
 It is recommended to use [`go tool` support](https://www.jvt.me/posts/2025/01/27/go-tools-124/) for managing the dependency of `oapi-codegen` alongside your core application.
 
@@ -180,7 +179,7 @@ Note that it's recommended to pin to a specific version of the configuration sch
 
 At a high level, `oapi-codegen` supports:
 
-- Generating server-side boilerplate for [a number of servers](#supported-servers) ([docs](#generating-server-side-boilerplate))
+- Generating [`net/http`](https://pkg.go.dev/net/http) server-side boilerplate ([docs](#generating-server-side-boilerplate))
 - Generating client API boilerplate ([docs](#generating-api-clients))
 - Generating the types ([docs](#generating-api-models))
 - Splitting large OpenAPI specs across multiple packages([docs](#import-mapping))
@@ -432,28 +431,9 @@ We can see that this provides the best means to focus on the implementation of t
 
 `oapi-codegen` shines by making it fairly straightforward (note that this is a purposeful choice of wording here - we want to avoid words like "easy") to generate the server-side boilerplate for a backend API.
 
-You can find the supported HTTP server backends below, and more information about how to implement a server on top of each router.
+The generated server is built on the standard library's [`net/http`](https://pkg.go.dev/net/http): set `std-http-server: true`, and see the [`net/http` documentation](docs/stdhttp-server.md) for how to implement and run it. The generated `Handler` is an ordinary `http.Handler`, so it works with any router or middleware that accepts one. The generated code needs Go 1.24+.
 
 To provide you a fully Test Driven Development style test harness to confirm you are following the specification, you could use a tool such as [openapi.tanna.dev/go/validator](https://openapi.tanna.dev/go/validator/), or craft your own.
-
-### Supported Servers
-
-Right now, we support the following servers, and are supportive of adding new servers, too! Each
-server lists a minimum require Go version to compile the generated code, which may
-be different from that of oapi-codegen itself. While the code may compile on an
-older version of Go, we don't promise that it'll work.
-
-| Server | `generate` flag | Go Version | Documentation |
-| --- | --- |------------| --- |
-| [Chi](https://github.com/go-chi/chi) | `chi-server` | 1.24+      | [Chi documentation](docs/chi-server.md) |
-| [Echo](https://github.com/labstack/echo) | `echo-server` | 1.24+      | [Echo documentation](docs/echo-server.md) |
-| [Echo v5](https://github.com/labstack/echo) | `echo5-server` | 1.25+      | [Echo v5 documentation](docs/echo5-server.md) |
-| [Fiber](https://github.com/gofiber/fiber) | `fiber-server` | 1.24+      | [Fiber documentation](docs/fiber-server.md) |
-| [Fiber v3](https://github.com/gofiber/fiber) | `fiber-v3-server` | 1.25+      | [Fiber v3 documentation](docs/fiber-v3-server.md) |
-| [Gin](https://github.com/gin-gonic/gin) | `gin-server` | 1.25+      | [Gin documentation](docs/gin-server.md) |
-| [gorilla/mux](https://github.com/gorilla/mux) | `gorilla-server` | 1.24+      | [gorilla/mux documentation](docs/gorilla-server.md) |
-| [Iris](https://github.com/kataras/iris) | `iris-server` | 1.24+      | [Iris documentation](docs/iris-server.md) |
-| [`net/http`](https://pkg.go.dev/net/http) | `std-http-server` | 1.24+      | [`net/http` documentation](docs/stdhttp-server.md) |
 
 ### Strict server
 
@@ -479,14 +459,13 @@ The strict server has support for:
 You can see a little more detail of the generated code in the ["What does it look like"](#what-does-it-look-like-strict) section.
 
 > [!NOTE]
-> To configure the strict server generation, you must specify another server to be generated. For instance:
+> The strict server wraps the `net/http` server, so enable both:
 
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/v2.8.0/configuration-schema.json
 package: api
 generate:
-  # NOTE another server must be added!
-  chi-server: true
+  std-http-server: true
   strict-server: true
 output: server.gen.go
 ```
@@ -860,7 +839,7 @@ There is no currently planned work to change this behaviour.
 If you're looking to only generate the models for interacting with a remote service, for instance if you need to hand-roll the API client for whatever reason, you can do this as-is.
 
 > [!NOTE]
-> Generated models need Go 1.20+. Models that use the `date` format declare an `OpenAPIDate` type built on `time.DateOnly`, and generated code that still imports `github.com/oapi-codegen/runtime` (such as parameter binding in servers and clients) needs Go 1.24+, as listed in [Supported Servers](#supported-servers).
+> Generated models need Go 1.20+. Models that use the `date` format declare an `OpenAPIDate` type built on `time.DateOnly`, and generated code that still imports `github.com/oapi-codegen/runtime` (such as parameter binding in servers and clients) needs Go 1.24+, as described in [Generating server-side boilerplate](#generating-server-side-boilerplate).
 
 > [!TIP]
 > Try to define as much as possible within the `#/components/schemas` object, as `oapi-codegen` will generate all the types here.
@@ -1090,7 +1069,7 @@ package: samepackage
 output: server.gen.go
 generate:
   models: true
-  chi-server: true
+  std-http-server: true
   strict-server: true
 output-options:
   # to make sure that all types are generated
@@ -1138,7 +1117,7 @@ package: admin
 output: server.gen.go
 generate:
   models: true
-  chi-server: true
+  std-http-server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1159,7 +1138,7 @@ package: admin
 output: server.gen.go
 generate:
   models: true
-  chi-server: true
+  std-http-server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1271,7 +1250,7 @@ package: api
 output: ping.gen.go
 generate:
   models: true
-  gorilla-server: true
+  std-http-server: true
   embedded-spec: true
 output-options:
   overlay:
@@ -1362,130 +1341,7 @@ The generated code that `oapi-codegen` produces has some validation for some inc
 
 However, this leaves a lot of validation that needs to be done, which can be tedious to hand-write this logic, especially for large or complex OpenAPI specifications.
 
-To simplify this, we use a middleware, which provides the request validation. The middleware you want to use depends on the server you're using:
-
-<table>
-
-<tr>
-<th>
-Server
-</th>
-<th>
-Middleware library
-</th>
-</tr>
-
-<tr>
-<td>
-
-[Chi](https://github.com/go-chi/chi)
-
-</td>
-<td>
-
-[nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware)
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-[Echo](https://github.com/labstack/echo)
-
-</td>
-<td>
-
-[echo-middleware](https://github.com/oapi-codegen/echo-middleware)
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-[Fiber](https://github.com/gofiber/fiber)
-
-</td>
-<td>
-
-[fiber-middleware](https://github.com/oapi-codegen/fiber-middleware)
-
-</td>
-
-</tr>
-
-
-<tr>
-<td>
-
-[Gin](https://github.com/gin-gonic/gin)
-
-</td>
-<td>
-
-[gin-middleware](https://github.com/oapi-codegen/gin-middleware)
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-[gorilla/mux](https://github.com/gorilla/mux)
-
-</td>
-<td>
-
-[nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware)
-
-</td>
-
-</tr>
-
-<tr>
-<td>
-
-[Iris](https://github.com/kataras/iris)
-
-</td>
-<td>
-
-[iris-middleware](https://github.com/oapi-codegen/iris-middleware)
-
-</td>
-
-</tr>
-
-<tr>
-<td>
-
-[`net/http`](https://pkg.go.dev/net/http)
-
-</td>
-<td>
-
-[nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware)
-
-</td>
-
-</tr>
-
-<tr>
-<td>
-
-Any other server (which conforms to `net/http`)
-
-</td>
-<td>
-
-[nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware)
-
-</td>
-
-</tr>
-
-</table>
+To simplify this, use [nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware), which validates requests against the spec and wraps any `http.Handler`.
 
 > [!NOTE]
 > It is [not currently possible](https://github.com/oapi-codegen/oapi-codegen/issues/1038) to validate the HTTP response with a middleware.
@@ -1501,7 +1357,7 @@ If you're using a specification with [Security Schemes](https://spec.openapis.or
 >
 > To perform authentication, you will need to use the [validation middleware](#requestresponse-validation-middleware), which validates each request against the spec's security requirements and calls your `AuthenticationFunc` with the scheme name and required scopes.
 
-To see how this can work, check out the [authenticated API example](examples/authenticated-api/echo).
+To see how this can work, check out the [authenticated API example](examples/authenticated-api/stdhttp).
 
 ### On the client
 
@@ -2285,11 +2141,9 @@ We love reading posts by the community about how to use the project.
 Here are a few we've found around the Web:
 
 - [Building a Go RESTful API with design-first OpenAPI contracts](https://www.jvt.me/posts/2022/07/12/go-openapi-server/)
-- [A Practical Guide to Using oapi-codegen in Golang API Development with the Fiber Framework](https://medium.com/@fikihalan/a-practical-guide-to-using-oapi-codegen-in-golang-api-development-with-the-fiber-framework-bce2a59380ae)
 - [Generating Go server code from OpenAPI 3 definitions](https://ldej.nl/post/generating-go-from-openapi-3/)
 - [Go Client Code Generation from Swagger and OpenAPI](https://medium.com/@kyodo-tech/go-client-code-generation-from-swagger-and-openapi-a0576831836c)
 - [Go oapi-codegen + request validation](https://blog.commitsmart.com/go-oapi-codegen-request-validation-285398b37dc8)
-- [Streamlining Go + Chi Development: Generating Code from an OpenAPI Spec](https://i4o.dev/blog/oapi-codegen-with-chi-router)
 
 Got one to add? Please raise a PR!
 

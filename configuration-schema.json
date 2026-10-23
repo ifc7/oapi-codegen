@@ -13,38 +13,6 @@
       "additionalProperties": false,
       "description": "Generate specifies which supported output formats to generate",
       "properties": {
-        "iris-server": {
-          "type": "boolean",
-          "description": "IrisServer specifies whether to generate iris server boilerplate"
-        },
-        "chi-server": {
-          "type": "boolean",
-          "description": "ChiServer specifies whether to generate chi server boilerplate"
-        },
-        "fiber-server": {
-          "type": "boolean",
-          "description": "FiberServer specifies whether to generate fiber server boilerplate"
-        },
-        "fiber-v3-server": {
-          "type": "boolean",
-          "description": "FiberV3Server specifies whether to generate fiber-v3 server boilerplate"
-        },
-        "echo-server": {
-          "type": "boolean",
-          "description": "EchoServer specifies whether to generate echo server boilerplate"
-        },
-        "echo5-server": {
-          "type": "boolean",
-          "description": "Echo5Server specifies whether to generate echo v5 server boilerplate"
-        },
-        "gin-server": {
-          "type": "boolean",
-          "description": "GinServer specifies whether to generate gin server boilerplate"
-        },
-        "gorilla-server": {
-          "type": "boolean",
-          "description": "GorillaServer specifies whether to generate Gorilla server boilerplate"
-        },
         "std-http-server": {
           "type": "boolean",
           "description": "StdHTTPServer specifies whether to generate stdlib http server boilerplate"

@@ -20,36 +20,12 @@ Whenever `pkg/codegen/configuration.go` is modified — particularly the `Config
 
 Flag any PR that changes `pkg/codegen/configuration.go` without a corresponding edit to `configuration-schema.json`. The schema is consumed by IDEs and validation tooling; an out-of-sync schema silently breaks downstream users' configs.
 
-## 3. Template changes should be evaluated across all router backends
-
-The repo supports multiple server frameworks via separate template subdirectories under `pkg/codegen/templates/`:
-
-- `chi/`
-- `echo/`
-- `fiber/`
-- `gin/`
-- `gorilla/`
-- `iris/`
-- `stdhttp/` (net/http ServeMux, Go 1.22+)
-- `strict/` (the strict-server wrapper layer, applied on top of any backend)
-
-Plus shared templates at the top level: `client.tmpl`, `client-with-responses.tmpl`, `typedef.tmpl`, `param-types.tmpl`, `request-bodies.tmpl`, `inline.tmpl`, `imports.tmpl`, `constants.tmpl`, `server-urls.tmpl`, `additional-properties.tmpl`, `union.tmpl`, `union-and-additional-properties.tmpl`.
-
-When a PR modifies a template, ask:
-
-- **Does this change apply to other backends?** A bug fix or new feature in one backend's template often needs an analogous fix in the others. The implementation will not be identical — each framework has its own routing, middleware, and parameter-binding idioms — but the *intent* should usually be applied everywhere it is relevant.
-- **If only one backend is touched, is that intentional?** A change scoped to a single backend may be correct (e.g., a Fiber-specific bug, a Gin-specific middleware quirk). If so, the PR description should explain why. If there is no such explanation and the change looks generally applicable, flag it.
-- **Did the strict-server templates need a corresponding update?** Strict-mode wraps the per-backend handlers and frequently needs parallel changes.
-- **Were the integration tests in `internal/test/` updated?** This module imports every framework and is the primary place backend-parity bugs surface.
-
-Be pragmatic: do not demand identical changes in seven places. Do your best to assess whether a change is conceptually backend-agnostic (most template changes are) or genuinely backend-specific (some are), and flag missing parity only when the change looks generally applicable.
-
-## 4. Dependencies
+## 3. Dependencies
 
 - Watch out for users making `go.mod` changes which advance the Go version to a new minor release. We want these to be explicitly justified in the commit message. Maintenance version bumps are ok. Mention that the maintainers would prefer to do a minor version bump themselves.
 - Watch out for unnecessary dependency changes that creep into code reviews, just because people tend to do it out of habit. Every dependency update should have a reason if it's bundled with codegen changes.
 
-## 5. Test case placement in `internal/test/`
+## 4. Test case placement in `internal/test/`
 
 `internal/test/` is organized **by feature category**, not by GitHub issue. The top-level categories are:
 
@@ -61,8 +37,8 @@ Be pragmatic: do not demand identical changes in seven places. Do your best to a
 - `naming/` — identifier generation and type-name collision handling
 - `openapi31/` — OpenAPI 3.1-specific behavior
 - `options/` — output-options flags (name-normalizer, filters, skip-prune, struct-tags, …)
-- `parameters/` — parameter binding, styles, encoding, nil handling (incl. the cross-framework `roundtrip/` harness)
-- `paths/` — path-level routing edge cases: literal colons in paths, URL escaping of reserved characters, and path-parameter precedence. Because colon-in-path routing is backend-specific, leaves here may fan out into per-framework subpackages (`echo/`, `gin/`, `fiber/`, `fiberv3/`, …) each with its own `config.yaml` and generated server, driven by one shared `spec.yaml` and a single top-level routing test — mirroring `parameters/roundtrip/`. This multi-subpackage shape is expected for routing fixtures and is not the "standard leaf layout" churn to flag.
+- `parameters/` — parameter binding, styles, encoding, nil handling (incl. the `roundtrip/` harness)
+- `paths/` — path-level routing edge cases: URL escaping of reserved characters and path-parameter precedence
 - `references/` — external `$ref`s, import-mapping, multi-package generation, overlays
 - `schemas/` — schema-to-type mapping (primitives, objects, enums, nullable, recursive, …)
 - `servers/` — server codegen (routers, middleware, strict servers)
@@ -75,7 +51,7 @@ When a PR adds a test, enforce the following:
 - **A new leaf is fine when nothing matches.** A new subdirectory under the right category is the correct move when the scenario needs a *different generation config* (other `generate:` targets or `output-options:`) or inherently needs its own files (multi-file external-ref layouts, or per-framework routing fixtures like `paths/` and `parameters/roundtrip/`). It should follow the standard layout — `doc.go` (with the `//go:generate` line), `config.yaml`, `spec.yaml`, `<name>_test.go` — with a snake_case scenario-named directory (never an issue number) and the issue reference in a comment. Cross-framework fixtures legitimately depart from this by fanning out into per-framework subpackages; do not flag that shape.
 - **Regression tests for bug fixes are still expected** — they just live in the category matching the feature, not in an issue-named directory.
 
-## 6. General
+## 5. General
 
 - The repo is a multi-module monorepo. Cross-module changes (e.g., to `runtime/` consumers) deserve extra scrutiny.
 - Generated files are committed; CI fails if `make generate` produces a diff. If a PR's generated files look stale, that will fail CI regardless — but flagging it in review saves a round-trip.

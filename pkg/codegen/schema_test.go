@@ -1308,8 +1308,6 @@ components:
 		generate GenerateOptions
 	}{
 		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
 	} {
 		t.Run(server.name, func(t *testing.T) {
 			loader := openapi3.NewLoader()

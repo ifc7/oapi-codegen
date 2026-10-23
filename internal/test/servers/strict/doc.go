@@ -1,9 +1,7 @@
-// Package serversstrict is the multi-framework strict-server roundtrip harness: one
-// shared spec (strict-schema.yaml), one generated client, one table-driven test
-// (strict_test.go), and a thin per-framework strict server adapter + generated server
-// under each framework subdirectory (chi, echo, fiber, gin, gorilla, iris, stdhttp).
+// Package serversstrict is the strict-server roundtrip harness: one shared spec
+// (strict-schema.yaml), one generated client, one table-driven test
+// (strict_test.go), and a thin strict server adapter + generated server in stdhttp/.
 //
-// Folds in: strict-server/{chi,client,echo,fiber,gin,gorilla,iris,stdhttp}
-// (issue-1529 multi-framework strict and issue-1963 response buffering / error handler
-// are folded as additional cases — see below).
+// Folds in: strict-server/{client,stdhttp} (issue-1963 response buffering / error
+// handler is folded as an additional case — see below).
 package serversstrict

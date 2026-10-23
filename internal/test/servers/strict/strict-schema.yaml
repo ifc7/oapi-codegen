@@ -442,7 +442,7 @@ components:
       properties:
         name:
           type: string
-          # The param tag is what makes Echo's full Bind copy a same-named
-          # path parameter into this property; binders skip untagged fields.
+          # A `param` tag must not make the server copy a same-named path
+          # parameter into this property (issue #1757).
           x-oapi-codegen-extra-tags:
             param: name

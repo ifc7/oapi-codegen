@@ -296,16 +296,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		}
 	}
 
-	// Build per-framework clones of the base tree, layering each framework's
-	// hook overrides over the shared server-*.tmpl skeletons. Must happen after
-	// user templates are parsed (so user overrides propagate into the clones)
-	// and before any template is executed (Clone forbids cloning an executed
-	// tree).
-	serverTemplates, err := buildServerTemplates(templates, t)
-	if err != nil {
-		return "", fmt.Errorf("error building per-framework server templates: %w", err)
-	}
-
 	ops, err := OperationDefinitions(spec)
 	if err != nil {
 		return "", fmt.Errorf("error creating operation definitions: %w", err)
@@ -414,70 +404,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		serverURLsDefinitions = serverURLEnumTypeDecls + serverURLEnumConstants + serverURLsBody
 	}
 
-	var irisServerOut string
-	if opts.Generate.IrisServer {
-		irisServerOut, err = GenerateIrisServer(serverTemplates["iris"], ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
-	var echoServerOut string
-	if opts.Generate.EchoServer {
-		echoServerOut, err = GenerateEchoServer(serverTemplates["echo"], ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
-	var echo5ServerOut string
-	if opts.Generate.Echo5Server {
-		echo5ServerOut, err = GenerateEcho5Server(serverTemplates["echo5"], ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
-	var chiServerOut string
-	if opts.Generate.ChiServer {
-		chiServerOut, err = GenerateChiServer(serverTemplates["chi"], ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
-	var fiberServerOut string
-	if opts.Generate.FiberServer {
-		fiberServerOut, err = GenerateFiberServer(serverTemplates["fiber"], ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
-	var fiberV3ServerOut string
-	if opts.Generate.FiberV3Server {
-		fiberV3ServerOut, err = GenerateFiberV3Server(serverTemplates["fiberv3"], ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
-	var ginServerOut string
-	if opts.Generate.GinServer {
-		ginServerOut, err = GenerateGinServer(serverTemplates["gin"], ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
-	var gorillaServerOut string
-	if opts.Generate.GorillaServer {
-		gorillaServerOut, err = GenerateGorillaServer(serverTemplates["gorilla"], ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
 	var stdHTTPServerOut string
 	if opts.Generate.StdHTTPServer {
 		stdHTTPServerOut, err = GenerateStdHTTPServer(t, ops)
@@ -499,7 +425,7 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("error generation response definitions for schema: %w", err)
 		}
-		strictServerOut, err = GenerateStrictServer(t, serverTemplates, ops, opts)
+		strictServerOut, err = GenerateStrictServer(t, ops, opts)
 		if err != nil {
 			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
 		}
@@ -544,81 +470,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		}
 	}
 
-	// Webhook receiver (chi) -- chi shares stdhttp's (w, r) handler
-	// signature, so the receiver shape is identical; only the template
-	// path differs. Emitted only when Generate.ChiServer is on.
-	var chiWebhookReceiverOut string
-	if opts.Generate.ChiServer && len(webhookOps) > 0 {
-		chiWebhookReceiverOut, err = GenerateChiReceiver(t, "Webhook", webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating chi webhook receiver: %w", err)
-		}
-	}
-
-	// Webhook receiver (gorilla/mux) -- same (w, r) signature as
-	// stdhttp/chi.
-	var gorillaWebhookReceiverOut string
-	if opts.Generate.GorillaServer && len(webhookOps) > 0 {
-		gorillaWebhookReceiverOut, err = GenerateGorillaReceiver(t, "Webhook", webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating gorilla webhook receiver: %w", err)
-		}
-	}
-
-	// Webhook receiver (echo v4) -- (ctx echo.Context) error signature.
-	var echoWebhookReceiverOut string
-	if opts.Generate.EchoServer && len(webhookOps) > 0 {
-		echoWebhookReceiverOut, err = GenerateEchoReceiver(t, "Webhook", webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating echo webhook receiver: %w", err)
-		}
-	}
-
-	// Webhook receiver (echo v5) -- (ctx *echo.Context) error signature.
-	var echo5WebhookReceiverOut string
-	if opts.Generate.Echo5Server && len(webhookOps) > 0 {
-		echo5WebhookReceiverOut, err = GenerateEcho5Receiver(t, "Webhook", webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating echo5 webhook receiver: %w", err)
-		}
-	}
-
-	// Webhook receiver (gin) -- (c *gin.Context) signature.
-	var ginWebhookReceiverOut string
-	if opts.Generate.GinServer && len(webhookOps) > 0 {
-		ginWebhookReceiverOut, err = GenerateGinReceiver(t, "Webhook", webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating gin webhook receiver: %w", err)
-		}
-	}
-
-	// Webhook receiver (fiber v2) -- (c *fiber.Ctx) error signature.
-	var fiberWebhookReceiverOut string
-	if opts.Generate.FiberServer && len(webhookOps) > 0 {
-		fiberWebhookReceiverOut, err = GenerateFiberReceiver(t, "Webhook", webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating fiber webhook receiver: %w", err)
-		}
-	}
-
-	// Webhook receiver (fiber v3) -- (c fiber.Ctx) error signature.
-	var fiberV3WebhookReceiverOut string
-	if opts.Generate.FiberV3Server && len(webhookOps) > 0 {
-		fiberV3WebhookReceiverOut, err = GenerateFiberV3Receiver(t, "Webhook", webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating fiber v3 webhook receiver: %w", err)
-		}
-	}
-
-	// Webhook receiver (iris) -- (ctx iris.Context) signature.
-	var irisWebhookReceiverOut string
-	if opts.Generate.IrisServer && len(webhookOps) > 0 {
-		irisWebhookReceiverOut, err = GenerateIrisReceiver(t, "Webhook", webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating iris webhook receiver: %w", err)
-		}
-	}
-
 	// Callback initiator pairs with the path Client. Emitted whenever
 	// Generate.Client is on and the spec declares any callbacks --
 	// callbacks predate 3.1 so this is not version-gated.
@@ -638,78 +489,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		stdHTTPCallbackReceiverOut, err = GenerateStdHTTPReceiver(t, "Callback", callbackOps)
 		if err != nil {
 			return "", fmt.Errorf("error generating stdhttp callback receiver: %w", err)
-		}
-	}
-
-	// Callback receiver (chi).
-	var chiCallbackReceiverOut string
-	if opts.Generate.ChiServer && len(callbackOps) > 0 {
-		chiCallbackReceiverOut, err = GenerateChiReceiver(t, "Callback", callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating chi callback receiver: %w", err)
-		}
-	}
-
-	// Callback receiver (gorilla/mux).
-	var gorillaCallbackReceiverOut string
-	if opts.Generate.GorillaServer && len(callbackOps) > 0 {
-		gorillaCallbackReceiverOut, err = GenerateGorillaReceiver(t, "Callback", callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating gorilla callback receiver: %w", err)
-		}
-	}
-
-	// Callback receiver (echo v4).
-	var echoCallbackReceiverOut string
-	if opts.Generate.EchoServer && len(callbackOps) > 0 {
-		echoCallbackReceiverOut, err = GenerateEchoReceiver(t, "Callback", callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating echo callback receiver: %w", err)
-		}
-	}
-
-	// Callback receiver (echo v5).
-	var echo5CallbackReceiverOut string
-	if opts.Generate.Echo5Server && len(callbackOps) > 0 {
-		echo5CallbackReceiverOut, err = GenerateEcho5Receiver(t, "Callback", callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating echo5 callback receiver: %w", err)
-		}
-	}
-
-	// Callback receiver (gin).
-	var ginCallbackReceiverOut string
-	if opts.Generate.GinServer && len(callbackOps) > 0 {
-		ginCallbackReceiverOut, err = GenerateGinReceiver(t, "Callback", callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating gin callback receiver: %w", err)
-		}
-	}
-
-	// Callback receiver (fiber v2).
-	var fiberCallbackReceiverOut string
-	if opts.Generate.FiberServer && len(callbackOps) > 0 {
-		fiberCallbackReceiverOut, err = GenerateFiberReceiver(t, "Callback", callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating fiber callback receiver: %w", err)
-		}
-	}
-
-	// Callback receiver (fiber v3).
-	var fiberV3CallbackReceiverOut string
-	if opts.Generate.FiberV3Server && len(callbackOps) > 0 {
-		fiberV3CallbackReceiverOut, err = GenerateFiberV3Receiver(t, "Callback", callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating fiber v3 callback receiver: %w", err)
-		}
-	}
-
-	// Callback receiver (iris).
-	var irisCallbackReceiverOut string
-	if opts.Generate.IrisServer && len(callbackOps) > 0 {
-		irisCallbackReceiverOut, err = GenerateIrisReceiver(t, "Callback", callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating iris callback receiver: %w", err)
 		}
 	}
 
@@ -784,158 +563,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 			_, err = w.WriteString(callbackInitiatorOut)
 			if err != nil {
 				return "", fmt.Errorf("error writing callback initiator: %w", err)
-			}
-		}
-	}
-
-	if opts.Generate.IrisServer {
-		_, err = w.WriteString(irisServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
-		}
-		if irisWebhookReceiverOut != "" {
-			_, err = w.WriteString(irisWebhookReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing iris webhook receiver: %w", err)
-			}
-		}
-		if irisCallbackReceiverOut != "" {
-			_, err = w.WriteString(irisCallbackReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing iris callback receiver: %w", err)
-			}
-		}
-	}
-
-	if opts.Generate.EchoServer {
-		_, err = w.WriteString(echoServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
-		}
-		if echoWebhookReceiverOut != "" {
-			_, err = w.WriteString(echoWebhookReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing echo webhook receiver: %w", err)
-			}
-		}
-		if echoCallbackReceiverOut != "" {
-			_, err = w.WriteString(echoCallbackReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing echo callback receiver: %w", err)
-			}
-		}
-	}
-
-	if opts.Generate.Echo5Server {
-		_, err = w.WriteString(echo5ServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
-		}
-		if echo5WebhookReceiverOut != "" {
-			_, err = w.WriteString(echo5WebhookReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing echo5 webhook receiver: %w", err)
-			}
-		}
-		if echo5CallbackReceiverOut != "" {
-			_, err = w.WriteString(echo5CallbackReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing echo5 callback receiver: %w", err)
-			}
-		}
-	}
-
-	if opts.Generate.ChiServer {
-		_, err = w.WriteString(chiServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
-		}
-		if chiWebhookReceiverOut != "" {
-			_, err = w.WriteString(chiWebhookReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing chi webhook receiver: %w", err)
-			}
-		}
-		if chiCallbackReceiverOut != "" {
-			_, err = w.WriteString(chiCallbackReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing chi callback receiver: %w", err)
-			}
-		}
-	}
-
-	if opts.Generate.FiberServer {
-		_, err = w.WriteString(fiberServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
-		}
-		if fiberWebhookReceiverOut != "" {
-			_, err = w.WriteString(fiberWebhookReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing fiber webhook receiver: %w", err)
-			}
-		}
-		if fiberCallbackReceiverOut != "" {
-			_, err = w.WriteString(fiberCallbackReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing fiber callback receiver: %w", err)
-			}
-		}
-	}
-
-	if opts.Generate.FiberV3Server {
-		_, err = w.WriteString(fiberV3ServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
-		}
-		if fiberV3WebhookReceiverOut != "" {
-			_, err = w.WriteString(fiberV3WebhookReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing fiber v3 webhook receiver: %w", err)
-			}
-		}
-		if fiberV3CallbackReceiverOut != "" {
-			_, err = w.WriteString(fiberV3CallbackReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing fiber v3 callback receiver: %w", err)
-			}
-		}
-	}
-
-	if opts.Generate.GinServer {
-		_, err = w.WriteString(ginServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
-		}
-		if ginWebhookReceiverOut != "" {
-			_, err = w.WriteString(ginWebhookReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing gin webhook receiver: %w", err)
-			}
-		}
-		if ginCallbackReceiverOut != "" {
-			_, err = w.WriteString(ginCallbackReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing gin callback receiver: %w", err)
-			}
-		}
-	}
-
-	if opts.Generate.GorillaServer {
-		_, err = w.WriteString(gorillaServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
-		}
-		if gorillaWebhookReceiverOut != "" {
-			_, err = w.WriteString(gorillaWebhookReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing gorilla webhook receiver: %w", err)
-			}
-		}
-		if gorillaCallbackReceiverOut != "" {
-			_, err = w.WriteString(gorillaCallbackReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing gorilla callback receiver: %w", err)
 			}
 		}
 	}
@@ -1596,14 +1223,12 @@ func GenerateImports(t *template.Template, externalImports []string, packageName
 		ModuleName        string
 		Version           string
 		AdditionalImports []AdditionalImport
-		RouterImports     []AdditionalImport
 	}{
 		ExternalImports:   externalImports,
 		PackageName:       packageName,
 		ModuleName:        modulePath,
 		Version:           moduleVersion,
 		AdditionalImports: globalState.options.AdditionalImports,
-		RouterImports:     globalState.options.Generate.RouterImports(),
 	}
 
 	out, err := GenerateTemplates([]string{"imports.tmpl"}, t, context)
@@ -1810,16 +1435,6 @@ func LoadTemplates(src embed.FS, t *template.Template) error {
 		if d.IsDir() {
 			return nil
 		}
-		// hooks.tmpl files hold a framework's {{define}} overrides for the
-		// shared server-*.tmpl skeletons. They are intentionally NOT loaded
-		// into the shared base tree: buildServerTemplates parses each one into
-		// a per-framework clone instead. Loading them here would let one
-		// framework's overrides clobber the skeleton defaults that other
-		// frameworks (and unmigrated ones) rely on.
-		if d.Name() == "hooks.tmpl" {
-			return nil
-		}
-
 		buf, err := src.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("error reading file '%s': %w", path, err)
@@ -1833,50 +1448,6 @@ func LoadTemplates(src embed.FS, t *template.Template) error {
 		}
 		return nil
 	})
-}
-
-// serverTemplateHooks maps a server framework key to the embedded path of its
-// hooks file. A hooks file is a set of {{define "..."}} blocks that override the
-// {{block}} defaults in the shared server-*.tmpl skeletons.
-//
-// Only frameworks whose generated code deviates from the skeleton defaults need
-// an entry. The skeleton defaults ARE the stdhttp shape, so stdhttp (and the
-// frameworks not yet migrated to the layering: echo, gin, fiber, iris) run the
-// templates straight from the base tree with no clone.
-var serverTemplateHooks = map[string]string{
-	"chi":     "templates/chi/hooks.tmpl",
-	"gorilla": "templates/gorilla/hooks.tmpl",
-	"echo":    "templates/echo/hooks.tmpl",
-	"echo5":   "templates/echo/v5/hooks.tmpl",
-	"fiber":   "templates/fiber/hooks.tmpl",
-	"fiberv3": "templates/fiber-v3/hooks.tmpl",
-	"gin":     "templates/gin/hooks.tmpl",
-	"iris":    "templates/iris/hooks.tmpl",
-}
-
-// buildServerTemplates clones the base template tree once per framework in
-// serverTemplateHooks and parses that framework's hooks file into the clone.
-// text/template permits redefining a template that has not yet been executed,
-// so parsing the {{define}} overrides replaces the skeleton {{block}} defaults
-// in the clone (last definition wins). It must be called before the base tree
-// is executed, because a template cannot be cloned once it has run.
-func buildServerTemplates(src embed.FS, base *template.Template) (map[string]*template.Template, error) {
-	result := make(map[string]*template.Template, len(serverTemplateHooks))
-	for framework, path := range serverTemplateHooks {
-		clone, err := base.Clone()
-		if err != nil {
-			return nil, fmt.Errorf("cloning base templates for %s: %w", framework, err)
-		}
-		buf, err := src.ReadFile(path)
-		if err != nil {
-			return nil, fmt.Errorf("reading hooks file '%s': %w", path, err)
-		}
-		if _, err := clone.Parse(string(buf)); err != nil {
-			return nil, fmt.Errorf("parsing hooks file '%s': %w", path, err)
-		}
-		result[framework] = clone
-	}
-	return result, nil
 }
 
 func OperationSchemaImports(s *Schema) (map[string]goImport, error) {

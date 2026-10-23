@@ -23,21 +23,13 @@ Every setting is shown below with its default value. Each section links to the G
 # Required: Go package name
 package: api
 
-# What to generate (only one server type at a time).
+# What to generate.
 # If the `generate` block is omitted entirely, it defaults to generating
-# an Echo server with models and an embedded spec.
+# a net/http server with models and an embedded spec.
 # See <a href="https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#GenerateOptions">GenerateOptions</a>
 generate:
-  chi-server: false
-  echo-server: false
-  echo5-server: false      # requires Go 1.25+
-  fiber-server: false
-  fiber-v3-server: false   # requires Go 1.25+
-  gin-server: false
-  gorilla-server: false
-  iris-server: false
   std-http-server: false
-  strict-server: false     # used alongside one of the server types above
+  strict-server: false     # used alongside std-http-server
   client: false
   models: false
   embedded-spec: false

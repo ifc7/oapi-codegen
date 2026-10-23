@@ -76,7 +76,7 @@ func Authenticate(v JWSValidator, ctx context.Context, input *openapi3filter.Aut
 		return fmt.Errorf("token claims don't match: %w", err)
 	}
 
-	// Set the property on the echo context so the handler is able to
+	// Set the property on the request context so the handler is able to
 	// access the claims data we generate in here.
 	// TODO
 	// ctx.Set(JWTClaimsContextKey, token)

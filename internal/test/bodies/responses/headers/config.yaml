@@ -4,5 +4,5 @@ package: responseheaders
 output: headers.gen.go
 generate:
   models: true
-  gorilla-server: true
+  std-http-server: true
   strict-server: true

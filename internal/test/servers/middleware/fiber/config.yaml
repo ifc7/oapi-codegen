@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=../../../../../configuration-schema.json
-package: serversmiddlewarefiber
-generate:
-  fiber-server: true
-  models: true
-output: middleware.gen.go

@@ -2,7 +2,7 @@
 # child.yaml
 package: api
 generate:
-  gin-server: true
+  std-http-server: true
   embedded-spec: true
   strict-server: true
   models: true

@@ -41,7 +41,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DocumentStatus'
 
-  # issue #1397: x-go-type-name on nested object; echo-server and client generated
+  # issue #1397: x-go-type-name on nested object; std-http-server and client generated
   /test:
     get:
       operationId: test
