@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   A discriminated oneOf whose variants are each an allOf of the schema that
   lists them: the inheritance style some generators write, with the parent

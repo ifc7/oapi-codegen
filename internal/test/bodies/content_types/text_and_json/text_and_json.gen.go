@@ -288,8 +288,9 @@ func (siw *ServerInterfaceWrapper) GetTest(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetTest(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

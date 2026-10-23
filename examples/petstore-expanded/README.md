@@ -21,15 +21,8 @@ petstore-expanded/
 │           ├── generate.go         # go:generate for the client
 │           ├── client.cfg.yaml     # Codegen config: client + models
 │           └── client.gen.go       # Generated HTTP client (+ model types)
-├── chi/                            # Chi (net/http compatible)
-├── gorilla/                        # Gorilla/mux (net/http compatible)
-├── stdhttp/                        # stdlib net/http
-├── echo/                           # Echo v4
-├── echo-v5/                        # Echo v5
-├── gin/                            # Gin
-├── fiber/                          # Fiber
-├── iris/                           # Iris
-└── strict/                         # Strict server (Chi + typed request/response objects)
+├── stdhttp/                        # net/http server
+└── strict/                         # Strict server (typed request/response objects)
 ```
 
 Each server variant follows the same self-contained pattern:
@@ -48,7 +41,7 @@ single piece from the `examples/` directory:
 
 ```sh
 # Generate a specific server variant (server + models)
-cd examples/petstore-expanded/chi/api && go generate ./...
+cd examples/petstore-expanded/stdhttp/api && go generate ./...
 
 # Generate the shared test client
 cd examples/petstore-expanded/common/client/openapi && go generate ./...
@@ -57,11 +50,11 @@ cd examples/petstore-expanded/common/client/openapi && go generate ./...
 ## Running a Server
 
 ```sh
-cd examples/petstore-expanded/chi
+cd examples/petstore-expanded/stdhttp
 go run . --port 8080
 ```
 
-Replace `chi` with any variant: `gorilla`, `stdhttp`, `echo`, `echo-v5`, `gin`, `fiber`, `iris`, `strict`.
+Replace `stdhttp` with `strict` to run the strict server.
 
 ## Test Client
 
@@ -70,7 +63,7 @@ Start a server in one terminal, then point the client at it from another:
 
 ```sh
 # Terminal 1: start any server variant
-cd examples/petstore-expanded/chi && go run . --port 8080
+cd examples/petstore-expanded/stdhttp && go run . --port 8080
 
 # Terminal 2: run the test client against it
 cd examples && go run ./petstore-expanded/common/client/ --port 8080

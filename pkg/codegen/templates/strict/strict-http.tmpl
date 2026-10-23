@@ -80,9 +80,13 @@ type strictHandler struct {
                         return
                     }
                     var body {{$opid}}{{.NameTag}}RequestBody
-                    if err := runtime.BindForm(&body, r.Form, nil, nil); err != nil {
-                        sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
-                        return
+                    {
+                        var err error
+                        {{formBind .Schema "r.Form" "body"}}
+                        if err != nil {
+                            sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
+                            return
+                        }
                     }
                     request.{{if $multipleBodies}}{{.NameTag}}{{end}}Body = &body
                 {{else if .IsMultipart -}}

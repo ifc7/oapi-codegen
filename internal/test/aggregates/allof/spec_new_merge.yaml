@@ -4,15 +4,14 @@
 #           flat structs with required fields promoted from allOf members.
 #
 # Folds in (provenance):
-#   - all_of/v2 (new/default merge behavior — no old-merge-schemas flag)
+#   - all_of/v2 (the allOf merge behavior)
 # ==========================================================================
 openapi: "3.1.0"
 info:
   title: aggregates/allof — new-merge-schemas
   version: "1.0.0"
   description: |
-    allOf composition under the default merge behavior (all_of/v2).
-    Without old-merge-schemas, allOf members are inlined into a single flat
+    allOf composition (all_of/v2): allOf members are inlined into a single flat
     struct where required fields from inner schemas are promoted to required
     on the merged struct.
 paths:

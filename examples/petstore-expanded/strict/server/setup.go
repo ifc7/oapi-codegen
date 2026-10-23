@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	middleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/oapi-codegen/oapi-codegen/v2/examples/petstore-expanded/strict/api"
 )
@@ -23,9 +22,7 @@ func NewServer() (*http.Server, error) {
 	petStore := NewPetStore()
 	petStoreStrictHandler := api.NewStrictHandler(petStore, nil)
 
-	r := chi.NewRouter()
-	r.Use(middleware.OapiRequestValidator(swagger))
-	api.HandlerFromMux(petStoreStrictHandler, r)
+	h := api.Handler(petStoreStrictHandler)
 
-	return &http.Server{Handler: r}, nil
+	return &http.Server{Handler: middleware.OapiRequestValidator(swagger)(h)}, nil
 }

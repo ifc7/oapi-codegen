@@ -1,10 +1,8 @@
 package codegen
 
 // This file holds how the generator finds the schema a Go type was taken
-// from, when a schema's type is not its own but one it refers to. Two
-// classifications need it, each with a question of its own: whether a
-// strict-server response body can be its own type (operations.go), and what
-// schema-merging-behavior v1 makes of an allOf member (merge_schemas_v1.go).
+// from, when a schema's type is not its own but one it refers to: whether a
+// strict-server response body can be its own type (operations.go) needs it.
 
 import "github.com/getkin/kin-openapi/openapi3"
 
@@ -30,8 +28,8 @@ func (s Schema) namedTypeDef() (TypeDefinition, bool) {
 // the schema generate makes of that member: the member whose generated type
 // is decl, the composition's own type, such as the $ref of `allOf: [$ref X]`
 // or the branch a nullable oneOf collapsed to. Whether a composition is
-// lowered that way depends on the schema-merging behavior, so the generated
-// types are compared rather than the shape of the schema: a composition that
+// lowered that way depends on how it merges, so the generated types are
+// compared rather than the shape of the schema: a composition that
 // became a struct or union type of its own matches no member. A $ref
 // generates as its name without being followed, so generate is cheap here.
 func loweredToMember(schema *openapi3.Schema, decl string, generate func(*openapi3.SchemaRef) (Schema, error)) (*openapi3.SchemaRef, Schema, error) {

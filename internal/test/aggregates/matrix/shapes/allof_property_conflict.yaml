@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allOf over a $ref and a member that declares one of its properties with a
   different type, which no value satisfies. The sample is one that v2, where
@@ -17,5 +16,4 @@ components:
       age: {type: integer}
 samples:
   - '{"name": "rex", "age": "three"}'
-rejects:
-  v3: "allOf can't merge #/components/schemas/Base/properties/age (type integer) with allOf/1/properties/age (type string)"
+rejects: "allOf can't merge #/components/schemas/Base/properties/age (type integer) with allOf/1/properties/age (type string)"

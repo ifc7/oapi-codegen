@@ -134,8 +134,8 @@ paths:
 	assert.Contains(t, code, "LoginFormRequestBody")
 	assert.NotContains(t, code, "LoginFormdataRequestBody")
 	// ...but form handling is still derived from the media type.
-	assert.Contains(t, code, "runtime.BindForm")
-	assert.Contains(t, code, "runtime.MarshalForm")
+	assert.Contains(t, code, "can't bind formdata")
+	assert.Contains(t, code, "any(body).(url.Values)")
 
 	// Without disabling the default key, the media type matches under both
 	// short names.

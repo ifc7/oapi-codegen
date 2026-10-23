@@ -30,14 +30,14 @@ const (
 	extEnumNames         = "x-enumNames"
 	extDeprecationReason = "x-deprecated-reason"
 	extOrder             = "x-order"
-	// extOapiCodegenEnumMerge chooses how schema-merging-behavior v3 merges
-	// the enums of an allOf's members: "intersection", the default, allows
-	// the values every enum allows, which is what allOf means and what
-	// validators check; "union" allows the values of any of them, for a
-	// composition that adds values to an enum. v2 always takes the union.
+	// extOapiCodegenEnumMerge chooses how the enums of an allOf's members
+	// merge: "intersection", the default, allows the values every enum
+	// allows, which is what allOf means and what validators check; "union"
+	// allows the values of any of them, for a composition that adds values to
+	// an enum.
 	extOapiCodegenEnumMerge = "x-oapi-codegen-enum-merge"
 	// extOapiCodegenOnlyHonourGoName is to be used to explicitly enforce the generation of a field as the `x-go-name` extension has describe it.
-	// This is intended to be used alongside the `allow-unexported-struct-field-names` Compatibility option
+	// This is intended to be used alongside the `output-options.allow-unexported-struct-field-names` option
 	extOapiCodegenOnlyHonourGoName = "x-oapi-codegen-only-honour-go-name"
 )
 

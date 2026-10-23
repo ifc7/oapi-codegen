@@ -32,7 +32,7 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/5StartsWithNumber"
-  /issues/209/${str}:
+  /issues/209/{str}:
     parameters:
       - $ref: '#/components/parameters/StringInPath'
     get:

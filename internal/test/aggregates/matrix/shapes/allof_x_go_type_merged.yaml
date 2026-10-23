@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allOf over a $ref to a schema that x-go-type replaces, and a member with
   properties of its own.
@@ -17,5 +16,4 @@ components:
     x-go-type: map[string]any
 samples:
   - '{"name": "rex", "kind": "dog"}'
-rejects:
-  v3: "x-go-type replaces #/components/schemas/Typed with map[string]any"
+rejects: "x-go-type replaces #/components/schemas/Typed with map[string]any"

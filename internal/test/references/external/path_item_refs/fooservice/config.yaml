@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../../../../../configuration-schema.json
 package: fooservice
 generate:
-  gorilla-server: true
+  std-http-server: true
   embedded-spec: true
   strict-server: true
   models: true

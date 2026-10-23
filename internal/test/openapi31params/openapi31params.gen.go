@@ -8,15 +8,15 @@ package openapi31params
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // UpdateThingJSONBody defines body for UpdateThing for application/json ContentType.
@@ -160,7 +160,20 @@ func NewUpdateThingRequestWithBody(server string, id any, params *UpdateThingPar
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	switch v_ := id.(type) {
+	case string:
+		pathParam0 = url.PathEscape(v_)
+	case []byte:
+		pathParam0 = url.PathEscape(base64.StdEncoding.EncodeToString(v_))
+	case bool:
+		pathParam0 = url.PathEscape(strconv.FormatBool(v_))
+	case float32:
+		pathParam0 = url.PathEscape(strconv.FormatFloat(float64(v_), 'f', -1, 32))
+	case float64:
+		pathParam0 = url.PathEscape(strconv.FormatFloat(v_, 'f', -1, 64))
+	default:
+		pathParam0 = url.PathEscape(fmt.Sprint(v_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -191,24 +204,52 @@ func NewUpdateThingRequestWithBody(server string, id any, params *UpdateThingPar
 
 		if params.Filter != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				switch v_ := params.Filter.(type) {
+				case string:
+					s_ = url.QueryEscape(v_)
+				case []byte:
+					s_ = url.QueryEscape(base64.StdEncoding.EncodeToString(v_))
+				case bool:
+					s_ = url.QueryEscape(strconv.FormatBool(v_))
+				case float32:
+					s_ = url.QueryEscape(strconv.FormatFloat(float64(v_), 'f', -1, 32))
+				case float64:
+					s_ = url.QueryEscape(strconv.FormatFloat(v_, 'f', -1, 64))
+				default:
+					s_ = url.QueryEscape(fmt.Sprint(v_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "filter="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
 
 		if params.Limit != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				switch v_ := params.Limit.(type) {
+				case string:
+					s_ = url.QueryEscape(v_)
+				case []byte:
+					s_ = url.QueryEscape(base64.StdEncoding.EncodeToString(v_))
+				case bool:
+					s_ = url.QueryEscape(strconv.FormatBool(v_))
+				case float32:
+					s_ = url.QueryEscape(strconv.FormatFloat(float64(v_), 'f', -1, 32))
+				case float64:
+					s_ = url.QueryEscape(strconv.FormatFloat(v_, 'f', -1, 64))
+				default:
+					s_ = url.QueryEscape(fmt.Sprint(v_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "limit="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -231,7 +272,20 @@ func NewUpdateThingRequestWithBody(server string, id any, params *UpdateThingPar
 		if params.XTrace != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-Trace", params.XTrace, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "", Format: ""})
+			switch v_ := params.XTrace.(type) {
+			case string:
+				headerParam0 = v_
+			case []byte:
+				headerParam0 = base64.StdEncoding.EncodeToString(v_)
+			case bool:
+				headerParam0 = strconv.FormatBool(v_)
+			case float32:
+				headerParam0 = strconv.FormatFloat(float64(v_), 'f', -1, 32)
+			case float64:
+				headerParam0 = strconv.FormatFloat(v_, 'f', -1, 64)
+			default:
+				headerParam0 = fmt.Sprint(v_)
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -419,7 +473,19 @@ func (siw *ServerInterfaceWrapper) UpdateThing(w http.ResponseWriter, r *http.Re
 	// ------------- Path parameter "id" -------------
 	var id any
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "", Format: "", Types: []string{"string", "integer"}, ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			number_ := r.PathValue("id") != "" && (r.PathValue("id")[0] == '-' || (r.PathValue("id")[0] >= '0' && r.PathValue("id")[0] <= '9')) && strings.TrimSpace(r.PathValue("id")) == r.PathValue("id") && json.Valid([]byte(r.PathValue("id")))
+			switch {
+			case number_ && !strings.ContainsAny(r.PathValue("id"), ".eE") && func() bool { _, err_ := strconv.ParseInt(r.PathValue("id"), 10, 64); return err_ == nil }():
+				id, _ = strconv.ParseInt(r.PathValue("id"), 10, 64)
+			default:
+				id = r.PathValue("id")
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -430,28 +496,52 @@ func (siw *ServerInterfaceWrapper) UpdateThing(w http.ResponseWriter, r *http.Re
 
 	// ------------- Optional query parameter "filter" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "filter", r.URL.Query(), &params.Filter, runtime.BindQueryParameterOptions{Type: "", Format: "", Types: []string{"string", "number", "boolean"}})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "filter"})
+	if values_, found_ := r.URL.Query()["filter"]; found_ {
+		var value_ any
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'filter'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter", Err: err})
+			{
+				number_ := values_[0] != "" && (values_[0][0] == '-' || (values_[0][0] >= '0' && values_[0][0] <= '9')) && strings.TrimSpace(values_[0]) == values_[0] && json.Valid([]byte(values_[0]))
+				switch {
+				case values_[0] == "true" || values_[0] == "false":
+					value_ = values_[0] == "true"
+				case number_ && func() bool { _, err_ := strconv.ParseFloat(values_[0], 64); return err_ == nil }():
+					value_, _ = strconv.ParseFloat(values_[0], 64)
+				default:
+					value_ = values_[0]
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter", Err: err})
+			return
+		}
+		params.Filter = value_
 	}
 
 	// ------------- Optional query parameter "limit" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "", Format: "", Types: []string{"integer", "string"}})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+	if values_, found_ := r.URL.Query()["limit"]; found_ {
+		var value_ any
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'limit'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+			{
+				number_ := values_[0] != "" && (values_[0][0] == '-' || (values_[0][0] >= '0' && values_[0][0] <= '9')) && strings.TrimSpace(values_[0]) == values_[0] && json.Valid([]byte(values_[0]))
+				switch {
+				case number_ && !strings.ContainsAny(values_[0], ".eE") && func() bool { _, err_ := strconv.ParseInt(values_[0], 10, 64); return err_ == nil }():
+					value_, _ = strconv.ParseInt(values_[0], 10, 64)
+				default:
+					value_ = values_[0]
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+			return
+		}
+		params.Limit = value_
 	}
 
 	headers := r.Header
@@ -465,7 +555,15 @@ func (siw *ServerInterfaceWrapper) UpdateThing(w http.ResponseWriter, r *http.Re
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Trace", valueList[0], &XTrace, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "", Format: "", Types: []string{"integer", "string"}})
+		{
+			number_ := valueList[0] != "" && (valueList[0][0] == '-' || (valueList[0][0] >= '0' && valueList[0][0] <= '9')) && strings.TrimSpace(valueList[0]) == valueList[0] && json.Valid([]byte(valueList[0]))
+			switch {
+			case number_ && !strings.ContainsAny(valueList[0], ".eE") && func() bool { _, err_ := strconv.ParseInt(valueList[0], 10, 64); return err_ == nil }():
+				XTrace, _ = strconv.ParseInt(valueList[0], 10, 64)
+			default:
+				XTrace = valueList[0]
+			}
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Trace", Err: err})
 			return
@@ -479,8 +577,9 @@ func (siw *ServerInterfaceWrapper) UpdateThing(w http.ResponseWriter, r *http.Re
 		siw.Handler.UpdateThing(w, r, id, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

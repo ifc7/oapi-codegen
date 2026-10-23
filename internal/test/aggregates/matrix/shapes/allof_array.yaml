@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   allOf over a $ref to an array of objects plus a constraint. Used to drop the
   items and generate []any.

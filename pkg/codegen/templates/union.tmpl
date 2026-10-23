@@ -142,7 +142,7 @@ it declares one. */ -}}
                 if err != nil {
                     return err
                 }
-                b, err = runtime.JSONMerge(b, []byte(`{{$stamp.JSONPatch}}`))
+                b, err = {{$.JSONMergeFunc}}(b, []byte(`{{$stamp.JSONPatch}}`))
             {{end -}}
             {{if $schema.InUnionComponent . -}}
                 if err != nil {
@@ -173,7 +173,7 @@ it declares one. */ -}}
               return err
             }
             {{if $stamp -}}
-                b, err = runtime.JSONMerge(b, []byte(`{{$stamp.JSONPatch}}`))
+                b, err = {{$.JSONMergeFunc}}(b, []byte(`{{$stamp.JSONPatch}}`))
                 if err != nil {
                     return err
                 }
@@ -181,7 +181,7 @@ it declares one. */ -}}
             {{if $adopts -}}
                 previous := t.union
             {{end -}}
-            merged, err := runtime.JSONMerge(t.union, b)
+            merged, err := {{$.JSONMergeFunc}}(t.union, b)
             t.union = merged
             {{if $adopts -}}
                 if err == nil {
@@ -359,9 +359,20 @@ it declares one. */ -}}
             {{- end}}
         }
 
-        // Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+        // Bind sets the union from the text of a query parameter; see UnmarshalText.
         func (t *{{.TypeName}}) Bind(src string) error {
             return t.UnmarshalText([]byte(src))
+        }
+
+        // MarshalText returns the union as the text of a path, query, header or
+        // cookie parameter: a string without its quotes, or the JSON of any other
+        // value.
+        func (t {{.TypeName}}) MarshalText() ([]byte, error) {
+            var s string
+            if err := json.Unmarshal(t.union, &s); err == nil {
+                return []byte(s), nil
+            }
+            return t.union, nil
         }
     {{end}}
 

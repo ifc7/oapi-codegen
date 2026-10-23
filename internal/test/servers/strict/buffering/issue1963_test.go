@@ -10,10 +10,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/oapi-codegen/runtime"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -222,18 +222,18 @@ func (u *unmarshalableJSONResponse) VisitJsonEndpointResponse(w http.ResponseWri
 }
 
 // unmarshalableFormdataResponse implements FormdataEndpointResponseObject with
-// a Visit method that follows the generated code pattern but passes a channel
-// to runtime.MarshalForm, which will always fail (it expects a struct or map).
+// a Visit method that follows the generated code pattern but encodes a
+// channel, which always fails.
 type unmarshalableFormdataResponse struct{}
 
 func (u *unmarshalableFormdataResponse) VisitFormdataEndpointResponse(w http.ResponseWriter) error {
-	// A channel is never a valid form body; MarshalForm will return an error.
-	form, err := runtime.MarshalForm(make(chan int), nil)
-	if err != nil {
+	// A channel is never a valid form body: encoding it returns an error.
+	if _, err := json.Marshal(make(chan int)); err != nil {
 		return err
 	}
+	form := url.Values{}
 	w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
 	w.WriteHeader(200)
-	_, err = w.Write([]byte(form.Encode()))
+	_, err := w.Write([]byte(form.Encode()))
 	return err
 }

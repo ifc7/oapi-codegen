@@ -14,10 +14,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	externalRef0 "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/external_types/gen/common"
-	"github.com/oapi-codegen/runtime"
 )
 
 // UpdateThingParams defines parameters for UpdateThing.
@@ -258,7 +258,7 @@ func NewUpdateThingRequestWithBody(server string, id string, params *UpdateThing
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	pathParam0 = url.PathEscape(id)
 	if err != nil {
 		return nil, err
 	}
@@ -289,12 +289,13 @@ func NewUpdateThingRequestWithBody(server string, id string, params *UpdateThing
 
 		if params.Limit != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+			{
+				var s_ string
+				s_ = url.QueryEscape(strconv.FormatInt(int64((*params.Limit)), 10))
+				rawQueryFragments = append(rawQueryFragments, "limit="+s_)
+			}
+			if err != nil {
 				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
 			}
 
 		}
@@ -732,7 +733,13 @@ func ParseUpdateThingResponse(rsp *http.Response) (*UpdateThingResponse, error) 
 		var headers UpdateThingResponse200Headers
 		if values := rsp.Header.Values("X-Thing-ID"); len(values) > 0 {
 			var value externalRef0.ThingID
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Thing-ID", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'X-Thing-ID' is empty, can't bind its value")
+			} else {
+				value = externalRef0.ThingID(values[0])
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.XThingID = value
@@ -801,8 +808,9 @@ func (siw *ServerInterfaceWrapper) GetPointer(w http.ResponseWriter, r *http.Req
 		siw.Handler.GetPointer(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -815,8 +823,9 @@ func (siw *ServerInterfaceWrapper) ListThings(w http.ResponseWriter, r *http.Req
 		siw.Handler.ListThings(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -831,7 +840,11 @@ func (siw *ServerInterfaceWrapper) UpdateThing(w http.ResponseWriter, r *http.Re
 	// ------------- Path parameter "id" -------------
 	var id string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		id = r.PathValue("id")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -842,23 +855,31 @@ func (siw *ServerInterfaceWrapper) UpdateThing(w http.ResponseWriter, r *http.Re
 
 	// ------------- Optional query parameter "limit" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+	if values_, found_ := r.URL.Query()["limit"]; found_ {
+		var value_ int
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'limit'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 0); err_ != nil {
+				err = err_
+			} else {
+				value_ = int(v_)
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+			return
+		}
+		params.Limit = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateThing(w, r, id, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -871,8 +892,9 @@ func (siw *ServerInterfaceWrapper) GetUntyped(w http.ResponseWriter, r *http.Req
 		siw.Handler.GetUntyped(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1081,7 +1103,9 @@ func (response UpdateThing200JSONResponse) VisitUpdateThingResponse(w http.Respo
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "X-Thing-ID", response.Headers.XThingID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		var v string
+		var err error
+		v = string(response.Headers.XThingID)
 		if err != nil {
 			return fmt.Errorf("error styling response header X-Thing-ID: %w", err)
 		}

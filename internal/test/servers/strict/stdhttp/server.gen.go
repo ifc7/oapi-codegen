@@ -14,15 +14,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -96,8 +97,9 @@ func (siw *ServerInterfaceWrapper) JSONExample(w http.ResponseWriter, r *http.Re
 		siw.Handler.JSONExample(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -110,8 +112,9 @@ func (siw *ServerInterfaceWrapper) MultipartExample(w http.ResponseWriter, r *ht
 		siw.Handler.MultipartExample(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -124,8 +127,9 @@ func (siw *ServerInterfaceWrapper) MultipartRelatedExample(w http.ResponseWriter
 		siw.Handler.MultipartRelatedExample(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -138,8 +142,9 @@ func (siw *ServerInterfaceWrapper) MultipleRequestAndResponseTypes(w http.Respon
 		siw.Handler.MultipleRequestAndResponseTypes(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -152,8 +157,9 @@ func (siw *ServerInterfaceWrapper) NoContentHeaders(w http.ResponseWriter, r *ht
 		siw.Handler.NoContentHeaders(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -166,8 +172,9 @@ func (siw *ServerInterfaceWrapper) RequiredJSONBody(w http.ResponseWriter, r *ht
 		siw.Handler.RequiredJSONBody(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -180,8 +187,9 @@ func (siw *ServerInterfaceWrapper) RequiredTextBody(w http.ResponseWriter, r *ht
 		siw.Handler.RequiredTextBody(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -196,7 +204,11 @@ func (siw *ServerInterfaceWrapper) ReservedGoKeywordParameters(w http.ResponseWr
 	// ------------- Path parameter "type" -------------
 	var pType string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "type", r.PathValue("type"), &pType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("type") == "" {
+		err = errors.New("parameter 'type' is empty, can't bind its value")
+	} else {
+		pType = r.PathValue("type")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
 		return
@@ -206,8 +218,9 @@ func (siw *ServerInterfaceWrapper) ReservedGoKeywordParameters(w http.ResponseWr
 		siw.Handler.ReservedGoKeywordParameters(w, r, pType)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -220,8 +233,9 @@ func (siw *ServerInterfaceWrapper) ReusableResponses(w http.ResponseWriter, r *h
 		siw.Handler.ReusableResponses(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -234,8 +248,9 @@ func (siw *ServerInterfaceWrapper) ReusableURLEncodedResponse(w http.ResponseWri
 		siw.Handler.ReusableURLEncodedResponse(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -250,7 +265,11 @@ func (siw *ServerInterfaceWrapper) SameNameParamAndBodyProperty(w http.ResponseW
 	// ------------- Path parameter "name" -------------
 	var name string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("name") == "" {
+		err = errors.New("parameter 'name' is empty, can't bind its value")
+	} else {
+		name = r.PathValue("name")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
 		return
@@ -260,8 +279,9 @@ func (siw *ServerInterfaceWrapper) SameNameParamAndBodyProperty(w http.ResponseW
 		siw.Handler.SameNameParamAndBodyProperty(w, r, name)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -274,8 +294,9 @@ func (siw *ServerInterfaceWrapper) TextExample(w http.ResponseWriter, r *http.Re
 		siw.Handler.TextExample(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -288,8 +309,9 @@ func (siw *ServerInterfaceWrapper) UnknownExample(w http.ResponseWriter, r *http
 		siw.Handler.UnknownExample(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -302,8 +324,9 @@ func (siw *ServerInterfaceWrapper) UnspecifiedContentType(w http.ResponseWriter,
 		siw.Handler.UnspecifiedContentType(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -316,8 +339,9 @@ func (siw *ServerInterfaceWrapper) URLEncodedExample(w http.ResponseWriter, r *h
 		siw.Handler.URLEncodedExample(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -343,7 +367,11 @@ func (siw *ServerInterfaceWrapper) HeadersExample(w http.ResponseWriter, r *http
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "header1", valueList[0], &Header1, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if valueList[0] == "" {
+			err = errors.New("parameter 'header1' is empty, can't bind its value")
+		} else {
+			Header1 = valueList[0]
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header1", Err: err})
 			return
@@ -366,7 +394,11 @@ func (siw *ServerInterfaceWrapper) HeadersExample(w http.ResponseWriter, r *http
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "header2", valueList[0], &Header2, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""})
+		if v_, err_ := strconv.ParseInt(valueList[0], 10, 0); err_ != nil {
+			err = err_
+		} else {
+			Header2 = int(v_)
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header2", Err: err})
 			return
@@ -380,8 +412,9 @@ func (siw *ServerInterfaceWrapper) HeadersExample(w http.ResponseWriter, r *http
 		siw.Handler.HeadersExample(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -394,8 +427,9 @@ func (siw *ServerInterfaceWrapper) UnionExample(w http.ResponseWriter, r *http.R
 		siw.Handler.UnionExample(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -697,7 +731,46 @@ type MultipleRequestAndResponseTypes200FormdataResponse Example
 
 func (response MultipleRequestAndResponseTypes200FormdataResponse) VisitMultipleRequestAndResponseTypesResponse(w http.ResponseWriter) error {
 
-	form, err := runtime.MarshalForm(response, nil)
+	form := url.Values{}
+	var err error
+	if values_, ok_ := any(response).(url.Values); ok_ {
+		for k_, vs_ := range values_ {
+			form[k_] = append(form[k_], vs_...)
+		}
+	} else if b_, err_ := json.Marshal(response); err_ != nil {
+		err = err_
+	} else {
+		var tree_ any
+		dec_ := json.NewDecoder(bytes.NewReader(b_))
+		dec_.UseNumber()
+		if err = dec_.Decode(&tree_); err == nil {
+			var walk_ func(key string, node any)
+			walk_ = func(key string, node any) {
+				child := func(name string) string {
+					if key == "" {
+						return name
+					}
+					return key + "[" + name + "]"
+				}
+				switch node := node.(type) {
+				case map[string]any:
+					for k, e := range node {
+						walk_(child(k), e)
+					}
+				case []any:
+					for i, e := range node {
+						walk_(child(strconv.Itoa(i)), e)
+					}
+				case nil:
+				case string:
+					form.Add(key, node)
+				default:
+					form.Add(key, fmt.Sprint(node))
+				}
+			}
+			walk_("", tree_)
+		}
+	}
 	if err != nil {
 		return err
 	}
@@ -776,7 +849,9 @@ type NoContentHeaders204Response struct {
 func (response NoContentHeaders204Response) VisitNoContentHeadersResponse(w http.ResponseWriter) error {
 	if response.Headers.NullableHeader != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "nullable-header", *response.Headers.NullableHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			var v string
+			var err error
+			v = (*response.Headers.NullableHeader)
 			if err != nil {
 				return fmt.Errorf("error styling response header nullable-header: %w", err)
 			}
@@ -785,7 +860,9 @@ func (response NoContentHeaders204Response) VisitNoContentHeadersResponse(w http
 	}
 	if response.Headers.OptionalHeader != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "optional-header", *response.Headers.OptionalHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			var v string
+			var err error
+			v = (*response.Headers.OptionalHeader)
 			if err != nil {
 				return fmt.Errorf("error styling response header optional-header: %w", err)
 			}
@@ -906,14 +983,18 @@ func (response ReusableResponses200JSONResponse) VisitReusableResponsesResponse(
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header1", response.Headers.Header1, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		var v string
+		var err error
+		v = response.Headers.Header1
 		if err != nil {
 			return fmt.Errorf("error styling response header header1: %w", err)
 		}
 		w.Header().Set("header1", v)
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header2", response.Headers.Header2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: ""})
+		var v string
+		var err error
+		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
 		if err != nil {
 			return fmt.Errorf("error styling response header header2: %w", err)
 		}
@@ -954,7 +1035,46 @@ type ReusableURLEncodedResponse200FormdataResponse struct {
 
 func (response ReusableURLEncodedResponse200FormdataResponse) VisitReusableURLEncodedResponseResponse(w http.ResponseWriter) error {
 
-	form, err := runtime.MarshalForm(response.ReusableurlencodedresponseFormdataResponse, nil)
+	form := url.Values{}
+	var err error
+	if values_, ok_ := any(response.ReusableurlencodedresponseFormdataResponse).(url.Values); ok_ {
+		for k_, vs_ := range values_ {
+			form[k_] = append(form[k_], vs_...)
+		}
+	} else if b_, err_ := json.Marshal(response.ReusableurlencodedresponseFormdataResponse); err_ != nil {
+		err = err_
+	} else {
+		var tree_ any
+		dec_ := json.NewDecoder(bytes.NewReader(b_))
+		dec_.UseNumber()
+		if err = dec_.Decode(&tree_); err == nil {
+			var walk_ func(key string, node any)
+			walk_ = func(key string, node any) {
+				child := func(name string) string {
+					if key == "" {
+						return name
+					}
+					return key + "[" + name + "]"
+				}
+				switch node := node.(type) {
+				case map[string]any:
+					for k, e := range node {
+						walk_(child(k), e)
+					}
+				case []any:
+					for i, e := range node {
+						walk_(child(strconv.Itoa(i)), e)
+					}
+				case nil:
+				case string:
+					form.Add(key, node)
+				default:
+					form.Add(key, fmt.Sprint(node))
+				}
+			}
+			walk_("", tree_)
+		}
+	}
 	if err != nil {
 		return err
 	}
@@ -1156,7 +1276,46 @@ type URLEncodedExample200FormdataResponse Example
 
 func (response URLEncodedExample200FormdataResponse) VisitURLEncodedExampleResponse(w http.ResponseWriter) error {
 
-	form, err := runtime.MarshalForm(response, nil)
+	form := url.Values{}
+	var err error
+	if values_, ok_ := any(response).(url.Values); ok_ {
+		for k_, vs_ := range values_ {
+			form[k_] = append(form[k_], vs_...)
+		}
+	} else if b_, err_ := json.Marshal(response); err_ != nil {
+		err = err_
+	} else {
+		var tree_ any
+		dec_ := json.NewDecoder(bytes.NewReader(b_))
+		dec_.UseNumber()
+		if err = dec_.Decode(&tree_); err == nil {
+			var walk_ func(key string, node any)
+			walk_ = func(key string, node any) {
+				child := func(name string) string {
+					if key == "" {
+						return name
+					}
+					return key + "[" + name + "]"
+				}
+				switch node := node.(type) {
+				case map[string]any:
+					for k, e := range node {
+						walk_(child(k), e)
+					}
+				case []any:
+					for i, e := range node {
+						walk_(child(strconv.Itoa(i)), e)
+					}
+				case nil:
+				case string:
+					form.Add(key, node)
+				default:
+					form.Add(key, fmt.Sprint(node))
+				}
+			}
+			walk_("", tree_)
+		}
+	}
 	if err != nil {
 		return err
 	}
@@ -1211,14 +1370,18 @@ func (response HeadersExample200JSONResponse) VisitHeadersExampleResponse(w http
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header1", response.Headers.Header1, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		var v string
+		var err error
+		v = response.Headers.Header1
 		if err != nil {
 			return fmt.Errorf("error styling response header header1: %w", err)
 		}
 		w.Header().Set("header1", v)
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header2", response.Headers.Header2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: ""})
+		var v string
+		var err error
+		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
 		if err != nil {
 			return fmt.Errorf("error styling response header header2: %w", err)
 		}
@@ -1226,7 +1389,9 @@ func (response HeadersExample200JSONResponse) VisitHeadersExampleResponse(w http
 	}
 	if response.Headers.NullableHeader != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "nullable-header", *response.Headers.NullableHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			var v string
+			var err error
+			v = (*response.Headers.NullableHeader)
 			if err != nil {
 				return fmt.Errorf("error styling response header nullable-header: %w", err)
 			}
@@ -1235,7 +1400,9 @@ func (response HeadersExample200JSONResponse) VisitHeadersExampleResponse(w http
 	}
 	if response.Headers.OptionalHeader != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "optional-header", *response.Headers.OptionalHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			var v string
+			var err error
+			v = (*response.Headers.OptionalHeader)
 			if err != nil {
 				return fmt.Errorf("error styling response header optional-header: %w", err)
 			}
@@ -1289,14 +1456,18 @@ func (response UnionExample200ApplicationAlternativePlusJSONResponse) VisitUnion
 	}
 	w.Header().Set("Content-Type", "application/alternative+json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header1", response.Headers.Header1, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		var v string
+		var err error
+		v = response.Headers.Header1
 		if err != nil {
 			return fmt.Errorf("error styling response header header1: %w", err)
 		}
 		w.Header().Set("header1", v)
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header2", response.Headers.Header2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: ""})
+		var v string
+		var err error
+		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
 		if err != nil {
 			return fmt.Errorf("error styling response header header2: %w", err)
 		}
@@ -1320,14 +1491,18 @@ func (response UnionExample200JSONResponse) VisitUnionExampleResponse(w http.Res
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header1", response.Headers.Header1, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		var v string
+		var err error
+		v = response.Headers.Header1
 		if err != nil {
 			return fmt.Errorf("error styling response header header1: %w", err)
 		}
 		w.Header().Set("header1", v)
 	}
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "header2", response.Headers.Header2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: ""})
+		var v string
+		var err error
+		v = strconv.FormatInt(int64(response.Headers.Header2), 10)
 		if err != nil {
 			return fmt.Errorf("error styling response header header2: %w", err)
 		}
@@ -1569,9 +1744,230 @@ func (sh *strictHandler) MultipleRequestAndResponseTypes(w http.ResponseWriter, 
 			return
 		}
 		var body MultipleRequestAndResponseTypesFormdataRequestBody
-		if err := runtime.BindForm(&body, r.Form, nil, nil); err != nil {
-			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
-			return
+		{
+			var err error
+			{
+				found_ := false
+				{
+					form_ := true
+					_ = form_
+					tree_ := map[string]any{}
+					insert_ := func(path []string, value string) {
+						node := tree_
+						for _, key := range path[:len(path)-1] {
+							next, ok := node[key].(map[string]any)
+							if !ok {
+								next = map[string]any{}
+								node[key] = next
+							}
+							node = next
+						}
+						node[path[len(path)-1]] = value
+					}
+					for key_, values_ := range r.Form {
+						key_ = strings.TrimSuffix(key_, "[]")
+						name_, rest_, _ := strings.Cut(key_, "[")
+						path_ := []string{name_}
+						if rest_ != "" {
+							path_ = append(path_, strings.Split(strings.TrimRight(rest_, "]"), "][")...)
+						}
+						found_ = true
+						if len(values_) == 1 {
+							insert_(path_, values_[0])
+						} else {
+							for i_, value_ := range values_ {
+								insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
+							}
+						}
+					}
+					if found_ {
+						kinds_ := map[string]map[string]string{
+							"example": {"value": "string"},
+						}
+						// In a form, a value of the wrong shape is skipped, as the runtime
+						// library skipped it.
+						skip_ := &struct{}{}
+						var convert_ func(node any, kind string) (any, error)
+						convert_ = func(node any, kind string) (any, error) {
+							fields, isMap := node.(map[string]any)
+							if form_ {
+								compound := strings.HasPrefix(kind, "object:") || strings.HasPrefix(kind, "map:") || strings.HasPrefix(kind, "array:")
+								switch {
+								case isMap && !compound && kind != "any":
+									// A repeated value: the first one counts.
+									first, ok := fields["0"]
+									if !ok {
+										return skip_, nil
+									}
+									return convert_(first, kind)
+								case !isMap && compound && !strings.HasPrefix(kind, "array:"):
+									return skip_, nil
+								}
+							}
+							text, _ := node.(string)
+							switch {
+							case strings.HasPrefix(kind, "object:"):
+								if !isMap {
+									return nil, fmt.Errorf("expected an object, got %q", text)
+								}
+								object := kinds_[strings.TrimPrefix(kind, "object:")]
+								out := make(map[string]any, len(fields))
+								for key, value := range fields {
+									fieldKind, ok := object[key]
+									if !ok {
+										if fieldKind, ok = object["*"]; !ok {
+											if form_ {
+												continue
+											}
+											return nil, fmt.Errorf("field [%s] is not present in destination object", key)
+										}
+									}
+									if fieldKind == "skip" {
+										continue
+									}
+									v, err := convert_(value, fieldKind)
+									if err != nil {
+										return nil, fmt.Errorf("error assigning field [%s]: %w", key, err)
+									}
+									if v == skip_ {
+										continue
+									}
+									out[key] = v
+								}
+								return out, nil
+							case strings.HasPrefix(kind, "map:"):
+								if !isMap {
+									return nil, fmt.Errorf("expected an object, got %q", text)
+								}
+								out := make(map[string]any, len(fields))
+								for key, value := range fields {
+									v, err := convert_(value, strings.TrimPrefix(kind, "map:"))
+									if err != nil {
+										return nil, err
+									}
+									if v == skip_ {
+										continue
+									}
+									out[key] = v
+								}
+								return out, nil
+							case strings.HasPrefix(kind, "array:"):
+								if !isMap && form_ {
+									v, err := convert_(node, strings.TrimPrefix(kind, "array:"))
+									if err != nil {
+										return nil, fmt.Errorf("error binding array element 0: %w", err)
+									}
+									return []any{v}, nil
+								}
+								if !isMap {
+									return nil, fmt.Errorf("expected an array, got %q", text)
+								}
+								size := len(fields)
+								if form_ {
+									// Missing elements of a form's array are zero values.
+									size = 0
+									for key := range fields {
+										if i, err := strconv.Atoi(key); err == nil && i >= size {
+											size = i + 1
+										}
+									}
+								}
+								out := make([]any, size)
+								for i := range out {
+									value, ok := fields[strconv.Itoa(i)]
+									if !ok && form_ {
+										continue
+									}
+									if !ok {
+										return nil, errors.New("array deepObjects must have consecutive indices")
+									}
+									v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
+									if err != nil {
+										return nil, fmt.Errorf("error binding array element %d: %w", i, err)
+									}
+									if v == skip_ {
+										v = nil
+									}
+									out[i] = v
+								}
+								return out, nil
+							case isMap:
+								if kind != "any" {
+									return nil, fmt.Errorf("expected a value, got an object")
+								}
+								keys := make([]int, 0, len(fields))
+								for key := range fields {
+									if i, err := strconv.Atoi(key); err == nil && i >= 0 && i < len(fields) {
+										keys = append(keys, i)
+									}
+								}
+								out := make(map[string]any, len(fields))
+								for key, value := range fields {
+									v, err := convert_(value, "any")
+									if err != nil {
+										return nil, err
+									}
+									out[key] = v
+								}
+								if len(keys) != len(fields) {
+									return out, nil
+								}
+								array := make([]any, len(fields))
+								for key, value := range out {
+									i, _ := strconv.Atoi(key)
+									array[i] = value
+								}
+								return array, nil
+							case kind == "int":
+								i, err := strconv.ParseInt(text, 10, 64)
+								if err != nil {
+									return nil, fmt.Errorf("expected a valid int, got %s", text)
+								}
+								return i, nil
+							case kind == "float":
+								f, err := strconv.ParseFloat(text, 64)
+								if err != nil || math.IsInf(f, 0) || math.IsNaN(f) {
+									return nil, fmt.Errorf("expected a valid float, got %s", text)
+								}
+								return f, nil
+							case kind == "bool":
+								b, err := strconv.ParseBool(text)
+								if err != nil {
+									return nil, fmt.Errorf("expected a valid bool, got %s", text)
+								}
+								return b, nil
+							case kind == "any":
+								switch text {
+								case "true":
+									return true, nil
+								case "false":
+									return false, nil
+								case "null":
+									return nil, nil
+								}
+								var f float64
+								if err := json.Unmarshal([]byte(text), &f); err == nil {
+									return f, nil
+								}
+								return text, nil
+							default:
+								return text, nil
+							}
+						}
+						if v_, err_ := convert_(tree_, "object:example"); err_ != nil {
+							err = err_
+						} else if b_, err_ := json.Marshal(v_); err_ != nil {
+							err = err_
+						} else {
+							err = json.Unmarshal(b_, &body)
+						}
+					}
+				}
+			}
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
+				return
+			}
 		}
 		request.FormdataBody = &body
 	}
@@ -1774,9 +2170,230 @@ func (sh *strictHandler) ReusableURLEncodedResponse(w http.ResponseWriter, r *ht
 		return
 	}
 	var body ReusableURLEncodedResponseFormdataRequestBody
-	if err := runtime.BindForm(&body, r.Form, nil, nil); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
-		return
+	{
+		var err error
+		{
+			found_ := false
+			{
+				form_ := true
+				_ = form_
+				tree_ := map[string]any{}
+				insert_ := func(path []string, value string) {
+					node := tree_
+					for _, key := range path[:len(path)-1] {
+						next, ok := node[key].(map[string]any)
+						if !ok {
+							next = map[string]any{}
+							node[key] = next
+						}
+						node = next
+					}
+					node[path[len(path)-1]] = value
+				}
+				for key_, values_ := range r.Form {
+					key_ = strings.TrimSuffix(key_, "[]")
+					name_, rest_, _ := strings.Cut(key_, "[")
+					path_ := []string{name_}
+					if rest_ != "" {
+						path_ = append(path_, strings.Split(strings.TrimRight(rest_, "]"), "][")...)
+					}
+					found_ = true
+					if len(values_) == 1 {
+						insert_(path_, values_[0])
+					} else {
+						for i_, value_ := range values_ {
+							insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
+						}
+					}
+				}
+				if found_ {
+					kinds_ := map[string]map[string]string{
+						"example": {"value": "string"},
+					}
+					// In a form, a value of the wrong shape is skipped, as the runtime
+					// library skipped it.
+					skip_ := &struct{}{}
+					var convert_ func(node any, kind string) (any, error)
+					convert_ = func(node any, kind string) (any, error) {
+						fields, isMap := node.(map[string]any)
+						if form_ {
+							compound := strings.HasPrefix(kind, "object:") || strings.HasPrefix(kind, "map:") || strings.HasPrefix(kind, "array:")
+							switch {
+							case isMap && !compound && kind != "any":
+								// A repeated value: the first one counts.
+								first, ok := fields["0"]
+								if !ok {
+									return skip_, nil
+								}
+								return convert_(first, kind)
+							case !isMap && compound && !strings.HasPrefix(kind, "array:"):
+								return skip_, nil
+							}
+						}
+						text, _ := node.(string)
+						switch {
+						case strings.HasPrefix(kind, "object:"):
+							if !isMap {
+								return nil, fmt.Errorf("expected an object, got %q", text)
+							}
+							object := kinds_[strings.TrimPrefix(kind, "object:")]
+							out := make(map[string]any, len(fields))
+							for key, value := range fields {
+								fieldKind, ok := object[key]
+								if !ok {
+									if fieldKind, ok = object["*"]; !ok {
+										if form_ {
+											continue
+										}
+										return nil, fmt.Errorf("field [%s] is not present in destination object", key)
+									}
+								}
+								if fieldKind == "skip" {
+									continue
+								}
+								v, err := convert_(value, fieldKind)
+								if err != nil {
+									return nil, fmt.Errorf("error assigning field [%s]: %w", key, err)
+								}
+								if v == skip_ {
+									continue
+								}
+								out[key] = v
+							}
+							return out, nil
+						case strings.HasPrefix(kind, "map:"):
+							if !isMap {
+								return nil, fmt.Errorf("expected an object, got %q", text)
+							}
+							out := make(map[string]any, len(fields))
+							for key, value := range fields {
+								v, err := convert_(value, strings.TrimPrefix(kind, "map:"))
+								if err != nil {
+									return nil, err
+								}
+								if v == skip_ {
+									continue
+								}
+								out[key] = v
+							}
+							return out, nil
+						case strings.HasPrefix(kind, "array:"):
+							if !isMap && form_ {
+								v, err := convert_(node, strings.TrimPrefix(kind, "array:"))
+								if err != nil {
+									return nil, fmt.Errorf("error binding array element 0: %w", err)
+								}
+								return []any{v}, nil
+							}
+							if !isMap {
+								return nil, fmt.Errorf("expected an array, got %q", text)
+							}
+							size := len(fields)
+							if form_ {
+								// Missing elements of a form's array are zero values.
+								size = 0
+								for key := range fields {
+									if i, err := strconv.Atoi(key); err == nil && i >= size {
+										size = i + 1
+									}
+								}
+							}
+							out := make([]any, size)
+							for i := range out {
+								value, ok := fields[strconv.Itoa(i)]
+								if !ok && form_ {
+									continue
+								}
+								if !ok {
+									return nil, errors.New("array deepObjects must have consecutive indices")
+								}
+								v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
+								if err != nil {
+									return nil, fmt.Errorf("error binding array element %d: %w", i, err)
+								}
+								if v == skip_ {
+									v = nil
+								}
+								out[i] = v
+							}
+							return out, nil
+						case isMap:
+							if kind != "any" {
+								return nil, fmt.Errorf("expected a value, got an object")
+							}
+							keys := make([]int, 0, len(fields))
+							for key := range fields {
+								if i, err := strconv.Atoi(key); err == nil && i >= 0 && i < len(fields) {
+									keys = append(keys, i)
+								}
+							}
+							out := make(map[string]any, len(fields))
+							for key, value := range fields {
+								v, err := convert_(value, "any")
+								if err != nil {
+									return nil, err
+								}
+								out[key] = v
+							}
+							if len(keys) != len(fields) {
+								return out, nil
+							}
+							array := make([]any, len(fields))
+							for key, value := range out {
+								i, _ := strconv.Atoi(key)
+								array[i] = value
+							}
+							return array, nil
+						case kind == "int":
+							i, err := strconv.ParseInt(text, 10, 64)
+							if err != nil {
+								return nil, fmt.Errorf("expected a valid int, got %s", text)
+							}
+							return i, nil
+						case kind == "float":
+							f, err := strconv.ParseFloat(text, 64)
+							if err != nil || math.IsInf(f, 0) || math.IsNaN(f) {
+								return nil, fmt.Errorf("expected a valid float, got %s", text)
+							}
+							return f, nil
+						case kind == "bool":
+							b, err := strconv.ParseBool(text)
+							if err != nil {
+								return nil, fmt.Errorf("expected a valid bool, got %s", text)
+							}
+							return b, nil
+						case kind == "any":
+							switch text {
+							case "true":
+								return true, nil
+							case "false":
+								return false, nil
+							case "null":
+								return nil, nil
+							}
+							var f float64
+							if err := json.Unmarshal([]byte(text), &f); err == nil {
+								return f, nil
+							}
+							return text, nil
+						default:
+							return text, nil
+						}
+					}
+					if v_, err_ := convert_(tree_, "object:example"); err_ != nil {
+						err = err_
+					} else if b_, err_ := json.Marshal(v_); err_ != nil {
+						err = err_
+					} else {
+						err = json.Unmarshal(b_, &body)
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
+			return
+		}
 	}
 	request.Body = &body
 
@@ -1933,9 +2550,230 @@ func (sh *strictHandler) URLEncodedExample(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	var body URLEncodedExampleFormdataRequestBody
-	if err := runtime.BindForm(&body, r.Form, nil, nil); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
-		return
+	{
+		var err error
+		{
+			found_ := false
+			{
+				form_ := true
+				_ = form_
+				tree_ := map[string]any{}
+				insert_ := func(path []string, value string) {
+					node := tree_
+					for _, key := range path[:len(path)-1] {
+						next, ok := node[key].(map[string]any)
+						if !ok {
+							next = map[string]any{}
+							node[key] = next
+						}
+						node = next
+					}
+					node[path[len(path)-1]] = value
+				}
+				for key_, values_ := range r.Form {
+					key_ = strings.TrimSuffix(key_, "[]")
+					name_, rest_, _ := strings.Cut(key_, "[")
+					path_ := []string{name_}
+					if rest_ != "" {
+						path_ = append(path_, strings.Split(strings.TrimRight(rest_, "]"), "][")...)
+					}
+					found_ = true
+					if len(values_) == 1 {
+						insert_(path_, values_[0])
+					} else {
+						for i_, value_ := range values_ {
+							insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
+						}
+					}
+				}
+				if found_ {
+					kinds_ := map[string]map[string]string{
+						"example": {"value": "string"},
+					}
+					// In a form, a value of the wrong shape is skipped, as the runtime
+					// library skipped it.
+					skip_ := &struct{}{}
+					var convert_ func(node any, kind string) (any, error)
+					convert_ = func(node any, kind string) (any, error) {
+						fields, isMap := node.(map[string]any)
+						if form_ {
+							compound := strings.HasPrefix(kind, "object:") || strings.HasPrefix(kind, "map:") || strings.HasPrefix(kind, "array:")
+							switch {
+							case isMap && !compound && kind != "any":
+								// A repeated value: the first one counts.
+								first, ok := fields["0"]
+								if !ok {
+									return skip_, nil
+								}
+								return convert_(first, kind)
+							case !isMap && compound && !strings.HasPrefix(kind, "array:"):
+								return skip_, nil
+							}
+						}
+						text, _ := node.(string)
+						switch {
+						case strings.HasPrefix(kind, "object:"):
+							if !isMap {
+								return nil, fmt.Errorf("expected an object, got %q", text)
+							}
+							object := kinds_[strings.TrimPrefix(kind, "object:")]
+							out := make(map[string]any, len(fields))
+							for key, value := range fields {
+								fieldKind, ok := object[key]
+								if !ok {
+									if fieldKind, ok = object["*"]; !ok {
+										if form_ {
+											continue
+										}
+										return nil, fmt.Errorf("field [%s] is not present in destination object", key)
+									}
+								}
+								if fieldKind == "skip" {
+									continue
+								}
+								v, err := convert_(value, fieldKind)
+								if err != nil {
+									return nil, fmt.Errorf("error assigning field [%s]: %w", key, err)
+								}
+								if v == skip_ {
+									continue
+								}
+								out[key] = v
+							}
+							return out, nil
+						case strings.HasPrefix(kind, "map:"):
+							if !isMap {
+								return nil, fmt.Errorf("expected an object, got %q", text)
+							}
+							out := make(map[string]any, len(fields))
+							for key, value := range fields {
+								v, err := convert_(value, strings.TrimPrefix(kind, "map:"))
+								if err != nil {
+									return nil, err
+								}
+								if v == skip_ {
+									continue
+								}
+								out[key] = v
+							}
+							return out, nil
+						case strings.HasPrefix(kind, "array:"):
+							if !isMap && form_ {
+								v, err := convert_(node, strings.TrimPrefix(kind, "array:"))
+								if err != nil {
+									return nil, fmt.Errorf("error binding array element 0: %w", err)
+								}
+								return []any{v}, nil
+							}
+							if !isMap {
+								return nil, fmt.Errorf("expected an array, got %q", text)
+							}
+							size := len(fields)
+							if form_ {
+								// Missing elements of a form's array are zero values.
+								size = 0
+								for key := range fields {
+									if i, err := strconv.Atoi(key); err == nil && i >= size {
+										size = i + 1
+									}
+								}
+							}
+							out := make([]any, size)
+							for i := range out {
+								value, ok := fields[strconv.Itoa(i)]
+								if !ok && form_ {
+									continue
+								}
+								if !ok {
+									return nil, errors.New("array deepObjects must have consecutive indices")
+								}
+								v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
+								if err != nil {
+									return nil, fmt.Errorf("error binding array element %d: %w", i, err)
+								}
+								if v == skip_ {
+									v = nil
+								}
+								out[i] = v
+							}
+							return out, nil
+						case isMap:
+							if kind != "any" {
+								return nil, fmt.Errorf("expected a value, got an object")
+							}
+							keys := make([]int, 0, len(fields))
+							for key := range fields {
+								if i, err := strconv.Atoi(key); err == nil && i >= 0 && i < len(fields) {
+									keys = append(keys, i)
+								}
+							}
+							out := make(map[string]any, len(fields))
+							for key, value := range fields {
+								v, err := convert_(value, "any")
+								if err != nil {
+									return nil, err
+								}
+								out[key] = v
+							}
+							if len(keys) != len(fields) {
+								return out, nil
+							}
+							array := make([]any, len(fields))
+							for key, value := range out {
+								i, _ := strconv.Atoi(key)
+								array[i] = value
+							}
+							return array, nil
+						case kind == "int":
+							i, err := strconv.ParseInt(text, 10, 64)
+							if err != nil {
+								return nil, fmt.Errorf("expected a valid int, got %s", text)
+							}
+							return i, nil
+						case kind == "float":
+							f, err := strconv.ParseFloat(text, 64)
+							if err != nil || math.IsInf(f, 0) || math.IsNaN(f) {
+								return nil, fmt.Errorf("expected a valid float, got %s", text)
+							}
+							return f, nil
+						case kind == "bool":
+							b, err := strconv.ParseBool(text)
+							if err != nil {
+								return nil, fmt.Errorf("expected a valid bool, got %s", text)
+							}
+							return b, nil
+						case kind == "any":
+							switch text {
+							case "true":
+								return true, nil
+							case "false":
+								return false, nil
+							case "null":
+								return nil, nil
+							}
+							var f float64
+							if err := json.Unmarshal([]byte(text), &f); err == nil {
+								return f, nil
+							}
+							return text, nil
+						default:
+							return text, nil
+						}
+					}
+					if v_, err_ := convert_(tree_, "object:example"); err_ != nil {
+						err = err_
+					} else if b_, err_ := json.Marshal(v_); err_ != nil {
+						err = err_
+					} else {
+						err = json.Unmarshal(b_, &body)
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
+			return
+		}
 	}
 	request.Body = &body
 
@@ -2140,14 +2978,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

@@ -134,20 +134,6 @@ func (v *specValidator) checkGoImportPath(value, what string) {
 	v.checkNoControl(value, what)
 }
 
-// checkSecurity validates the scopes named in security requirements. The
-// provider names are emitted only after identifier sanitization, but scopes are
-// copied verbatim into a generated `[]string` literal (via toStringArray), so
-// they are checked as text.
-func (v *specValidator) checkSecurity(reqs openapi3.SecurityRequirements, where string) {
-	for _, req := range reqs {
-		for _, provider := range SortedMapKeys(req) {
-			for _, scope := range req[provider] {
-				v.checkText(scope, fmt.Sprintf("security scope for %q in %s", provider, where))
-			}
-		}
-	}
-}
-
 func describeRune(r rune) string {
 	switch r {
 	case '"':
@@ -221,7 +207,6 @@ func (v *specValidator) checkExtensions(ext map[string]any, where string) {
 }
 
 func (v *specValidator) walkDocument(spec *openapi3.T) {
-	v.checkSecurity(spec.Security, "the root security requirements")
 	if spec.Paths != nil {
 		paths := spec.Paths.Map()
 		for _, path := range SortedMapKeys(paths) {
@@ -278,9 +263,6 @@ func (v *specValidator) walkOperation(op *openapi3.Operation, where string) {
 		return
 	}
 	v.checkExtensions(op.Extensions, where)
-	if op.Security != nil {
-		v.checkSecurity(*op.Security, where)
-	}
 	for _, p := range op.Parameters {
 		v.walkParameterRef(p, where)
 	}

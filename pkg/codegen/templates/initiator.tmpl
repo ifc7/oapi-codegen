@@ -124,9 +124,13 @@ func New{{$opid}}{{$.Prefix}}Request{{.Suffix}}(targetURL string{{if $hasParams}
         }
         bodyReader = bytes.NewReader(buf)
     {{else if .IsFormdata -}}
-        bodyStr, err := runtime.MarshalForm(body, nil)
-        if err != nil {
-            return nil, err
+        bodyStr := url.Values{}
+        {
+            var err error
+            {{formEncode "body" "bodyStr"}}
+            if err != nil {
+                return nil, err
+            }
         }
         bodyReader = strings.NewReader(bodyStr.Encode())
     {{else if .IsText -}}
@@ -172,13 +176,7 @@ func New{{$opid}}{{$.Prefix}}Request{{$generic.Suffix}}(targetURL string{{$gener
             }
             {{end}}
             {{if .IsStyled}}
-            if queryFrag, err := runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if and .RequiresNilCheck .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"}); err != nil {
-                return nil, err
-            } else {
-                for _, qp := range strings.Split(queryFrag, "&") {
-                    rawQueryFragments = append(rawQueryFragments, qp)
-                }
-            }
+            {{template "client.styleQuery" .}}
             {{end}}
             {{if .RequiresNilCheck}}}{{end}}
         {{end}}

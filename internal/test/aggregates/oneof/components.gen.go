@@ -9,8 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-
-	"github.com/oapi-codegen/runtime"
+	"strconv"
 )
 
 // AnyOfObject1 simple anyOf case
@@ -28,14 +27,7 @@ type OneOfObject10 struct {
 	One   *string `json:"one,omitempty"`
 	Three *bool   `json:"three,omitempty"`
 	Two   *int    `json:"two,omitempty"`
-	union json.RawMessage
 }
-
-// OneOfObject100 defines model for OneOfObject10.0.
-type OneOfObject100 = any
-
-// OneOfObject101 defines model for OneOfObject10.1.
-type OneOfObject101 = any
 
 // OneOfObject11 additional properties of oneOf
 type OneOfObject11 map[string]OneOfObject11_AdditionalProperties
@@ -59,11 +51,11 @@ type OneOfObject12 struct {
 	union json.RawMessage
 }
 
-// OneOfObject120 defines model for OneOfObject12.0.
-type OneOfObject120 = string
+// OneOfObject12OneOf00 defines model for OneOfObject12.OneOf0.0.
+type OneOfObject12OneOf00 = string
 
-// OneOfObject121 defines model for OneOfObject12.1.
-type OneOfObject121 = float32
+// OneOfObject12OneOf01 defines model for OneOfObject12.OneOf0.1.
+type OneOfObject12OneOf01 = float32
 
 // OneOfObject13 oneOf with fixed discriminator and other fields allowed
 type OneOfObject13 struct {
@@ -216,7 +208,7 @@ func (t *AnyOfObject1) MergeOneOfVariant4(v OneOfVariant4) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -242,7 +234,7 @@ func (t *AnyOfObject1) MergeOneOfVariant5(v OneOfVariant5) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -278,7 +270,7 @@ func (t *OneOfObject1) MergeOneOfVariant1(v OneOfVariant1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -304,7 +296,7 @@ func (t *OneOfObject1) MergeOneOfVariant2(v OneOfVariant2) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -330,7 +322,7 @@ func (t *OneOfObject1) MergeOneOfVariant3(v OneOfVariant3) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -342,130 +334,6 @@ func (t OneOfObject1) MarshalJSON() ([]byte, error) {
 
 func (t *OneOfObject1) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsOneOfObject100 returns the union data inside the OneOfObject10 as a OneOfObject100
-func (t OneOfObject10) AsOneOfObject100() (OneOfObject100, error) {
-	var body OneOfObject100
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromOneOfObject100 overwrites any union data inside the OneOfObject10 as the provided OneOfObject100
-func (t *OneOfObject10) FromOneOfObject100(v OneOfObject100) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeOneOfObject100 performs a merge with any union data inside the OneOfObject10, using the provided OneOfObject100
-func (t *OneOfObject10) MergeOneOfObject100(v OneOfObject100) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsOneOfObject101 returns the union data inside the OneOfObject10 as a OneOfObject101
-func (t OneOfObject10) AsOneOfObject101() (OneOfObject101, error) {
-	var body OneOfObject101
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromOneOfObject101 overwrites any union data inside the OneOfObject10 as the provided OneOfObject101
-func (t *OneOfObject10) FromOneOfObject101(v OneOfObject101) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeOneOfObject101 performs a merge with any union data inside the OneOfObject10, using the provided OneOfObject101
-func (t *OneOfObject10) MergeOneOfObject101(v OneOfObject101) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t OneOfObject10) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	object := make(map[string]json.RawMessage)
-	if t.union != nil {
-		err = json.Unmarshal(b, &object)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if t.One != nil {
-		object["one"], err = json.Marshal(t.One)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'one': %w", err)
-		}
-	}
-
-	if t.Three != nil {
-		object["three"], err = json.Marshal(t.Three)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'three': %w", err)
-		}
-	}
-
-	if t.Two != nil {
-		object["two"], err = json.Marshal(t.Two)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'two': %w", err)
-		}
-	}
-	b, err = json.Marshal(object)
-	return b, err
-}
-
-func (t *OneOfObject10) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	if err != nil {
-		return err
-	}
-	object := make(map[string]json.RawMessage)
-	err = json.Unmarshal(b, &object)
-	if err != nil {
-		return err
-	}
-
-	if raw, found := object["one"]; found {
-		err = json.Unmarshal(raw, &t.One)
-		if err != nil {
-			return fmt.Errorf("error reading 'one': %w", err)
-		}
-	}
-
-	if raw, found := object["three"]; found {
-		err = json.Unmarshal(raw, &t.Three)
-		if err != nil {
-			return fmt.Errorf("error reading 'three': %w", err)
-		}
-	}
-
-	if raw, found := object["two"]; found {
-		err = json.Unmarshal(raw, &t.Two)
-		if err != nil {
-			return fmt.Errorf("error reading 'two': %w", err)
-		}
-	}
-
 	return err
 }
 
@@ -490,7 +358,7 @@ func (t *OneOfObject11_AdditionalProperties) MergeOneOfObject110(v OneOfObject11
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -516,7 +384,7 @@ func (t *OneOfObject11_AdditionalProperties) MergeOneOfObject111(v OneOfObject11
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -542,7 +410,7 @@ func (t *OneOfObject11_AdditionalProperties) MergeOneOfObject112(v OneOfObject11
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -572,9 +440,20 @@ func (t *OneOfObject11_AdditionalProperties) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *OneOfObject11_AdditionalProperties) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t OneOfObject11_AdditionalProperties) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t OneOfObject11_AdditionalProperties) MarshalJSON() ([]byte, error) {
@@ -587,54 +466,98 @@ func (t *OneOfObject11_AdditionalProperties) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// AsOneOfObject120 returns the union data inside the OneOfObject12 as a OneOfObject120
-func (t OneOfObject12) AsOneOfObject120() (OneOfObject120, error) {
-	var body OneOfObject120
+// AsOneOfObject12OneOf00 returns the union data inside the OneOfObject12 as a OneOfObject12OneOf00
+func (t OneOfObject12) AsOneOfObject12OneOf00() (OneOfObject12OneOf00, error) {
+	var body OneOfObject12OneOf00
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromOneOfObject120 overwrites any union data inside the OneOfObject12 as the provided OneOfObject120
-func (t *OneOfObject12) FromOneOfObject120(v OneOfObject120) error {
+// FromOneOfObject12OneOf00 sets the union data inside the OneOfObject12 to the provided OneOfObject12OneOf00. It replaces
+// the data of OneOfObject12OneOf00's own union and keeps the other unions' data.
+func (t *OneOfObject12) FromOneOfObject12OneOf00(v OneOfObject12OneOf00) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var object, kept map[string]json.RawMessage
+	if json.Unmarshal(b, &object) == nil && json.Unmarshal(t.union, &kept) == nil && kept != nil {
+		added := object == nil
+		if added {
+			object = make(map[string]json.RawMessage)
+		}
+		for key, value := range kept {
+			if _, found := object[key]; !found {
+				object[key] = value
+				added = true
+			}
+		}
+		if added {
+			if b, err = json.Marshal(object); err != nil {
+				return err
+			}
+		}
+	}
 	t.union = b
 	return err
 }
 
-// MergeOneOfObject120 performs a merge with any union data inside the OneOfObject12, using the provided OneOfObject120
-func (t *OneOfObject12) MergeOneOfObject120(v OneOfObject120) error {
+// MergeOneOfObject12OneOf00 performs a merge with any union data inside the OneOfObject12, using the provided OneOfObject12OneOf00
+func (t *OneOfObject12) MergeOneOfObject12OneOf00(v OneOfObject12OneOf00) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
 
-// AsOneOfObject121 returns the union data inside the OneOfObject12 as a OneOfObject121
-func (t OneOfObject12) AsOneOfObject121() (OneOfObject121, error) {
-	var body OneOfObject121
+// AsOneOfObject12OneOf01 returns the union data inside the OneOfObject12 as a OneOfObject12OneOf01
+func (t OneOfObject12) AsOneOfObject12OneOf01() (OneOfObject12OneOf01, error) {
+	var body OneOfObject12OneOf01
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromOneOfObject121 overwrites any union data inside the OneOfObject12 as the provided OneOfObject121
-func (t *OneOfObject12) FromOneOfObject121(v OneOfObject121) error {
+// FromOneOfObject12OneOf01 sets the union data inside the OneOfObject12 to the provided OneOfObject12OneOf01. It replaces
+// the data of OneOfObject12OneOf01's own union and keeps the other unions' data.
+func (t *OneOfObject12) FromOneOfObject12OneOf01(v OneOfObject12OneOf01) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var object, kept map[string]json.RawMessage
+	if json.Unmarshal(b, &object) == nil && json.Unmarshal(t.union, &kept) == nil && kept != nil {
+		added := object == nil
+		if added {
+			object = make(map[string]json.RawMessage)
+		}
+		for key, value := range kept {
+			if _, found := object[key]; !found {
+				object[key] = value
+				added = true
+			}
+		}
+		if added {
+			if b, err = json.Marshal(object); err != nil {
+				return err
+			}
+		}
+	}
 	t.union = b
 	return err
 }
 
-// MergeOneOfObject121 performs a merge with any union data inside the OneOfObject12, using the provided OneOfObject121
-func (t *OneOfObject12) MergeOneOfObject121(v OneOfObject121) error {
+// MergeOneOfObject12OneOf01 performs a merge with any union data inside the OneOfObject12, using the provided OneOfObject12OneOf01
+func (t *OneOfObject12) MergeOneOfObject12OneOf01(v OneOfObject12OneOf01) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -646,9 +569,33 @@ func (t OneOfObject12) AsOneOfVariant3() (OneOfVariant3, error) {
 	return body, err
 }
 
-// FromOneOfVariant3 overwrites any union data inside the OneOfObject12 as the provided OneOfVariant3
+// FromOneOfVariant3 sets the union data inside the OneOfObject12 to the provided OneOfVariant3. It replaces
+// the data of OneOfVariant3's own union and keeps the other unions' data.
 func (t *OneOfObject12) FromOneOfVariant3(v OneOfVariant3) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var object, kept map[string]json.RawMessage
+	if json.Unmarshal(b, &object) == nil && json.Unmarshal(t.union, &kept) == nil && kept != nil {
+		delete(kept, "discriminator")
+		delete(kept, "name")
+		added := object == nil
+		if added {
+			object = make(map[string]json.RawMessage)
+		}
+		for key, value := range kept {
+			if _, found := object[key]; !found {
+				object[key] = value
+				added = true
+			}
+		}
+		if added {
+			if b, err = json.Marshal(object); err != nil {
+				return err
+			}
+		}
+	}
 	t.union = b
 	return err
 }
@@ -660,7 +607,7 @@ func (t *OneOfObject12) MergeOneOfVariant3(v OneOfVariant3) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -672,9 +619,33 @@ func (t OneOfObject12) AsOneOfVariant4() (OneOfVariant4, error) {
 	return body, err
 }
 
-// FromOneOfVariant4 overwrites any union data inside the OneOfObject12 as the provided OneOfVariant4
+// FromOneOfVariant4 sets the union data inside the OneOfObject12 to the provided OneOfVariant4. It replaces
+// the data of OneOfVariant4's own union and keeps the other unions' data.
 func (t *OneOfObject12) FromOneOfVariant4(v OneOfVariant4) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var object, kept map[string]json.RawMessage
+	if json.Unmarshal(b, &object) == nil && json.Unmarshal(t.union, &kept) == nil && kept != nil {
+		delete(kept, "discriminator")
+		delete(kept, "name")
+		added := object == nil
+		if added {
+			object = make(map[string]json.RawMessage)
+		}
+		for key, value := range kept {
+			if _, found := object[key]; !found {
+				object[key] = value
+				added = true
+			}
+		}
+		if added {
+			if b, err = json.Marshal(object); err != nil {
+				return err
+			}
+		}
+	}
 	t.union = b
 	return err
 }
@@ -686,7 +657,7 @@ func (t *OneOfObject12) MergeOneOfVariant4(v OneOfVariant4) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -746,7 +717,7 @@ func (t *OneOfObject13) FromOneOfVariant1(v OneOfVariant1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"v1"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"type":"v1"}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -762,13 +733,13 @@ func (t *OneOfObject13) MergeOneOfVariant1(v OneOfVariant1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"v1"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"type":"v1"}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -790,7 +761,7 @@ func (t *OneOfObject13) FromOneOfVariant6(v OneOfVariant6) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"v6"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"type":"v6"}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -806,13 +777,13 @@ func (t *OneOfObject13) MergeOneOfVariant6(v OneOfVariant6) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"v6"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"type":"v6"}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -864,7 +835,7 @@ func (t *OneOfObject2) MergeOneOfObject20(v OneOfObject20) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -890,7 +861,7 @@ func (t *OneOfObject2) MergeOneOfObject21(v OneOfObject21) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -916,7 +887,7 @@ func (t *OneOfObject2) MergeOneOfObject22(v OneOfObject22) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -952,7 +923,7 @@ func (t *OneOfObject3_Union) MergeOneOfVariant1(v OneOfVariant1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -978,7 +949,7 @@ func (t *OneOfObject3_Union) MergeOneOfVariant2(v OneOfVariant2) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1004,7 +975,7 @@ func (t *OneOfObject3_Union) MergeOneOfVariant3(v OneOfVariant3) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1040,7 +1011,7 @@ func (t *OneOfObject4) MergeOneOfVariant1(v OneOfVariant1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1066,7 +1037,7 @@ func (t *OneOfObject4) MergeOneOfVariant2(v OneOfVariant2) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1092,7 +1063,7 @@ func (t *OneOfObject4) MergeOneOfVariant3(v OneOfVariant3) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1154,7 +1125,7 @@ func (t *OneOfObject5) FromOneOfVariant4(v OneOfVariant4) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"OneOfVariant4"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"OneOfVariant4"}`))
 	t.union = b
 	return err
 }
@@ -1165,12 +1136,12 @@ func (t *OneOfObject5) MergeOneOfVariant4(v OneOfVariant4) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"OneOfVariant4"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"OneOfVariant4"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1188,7 +1159,7 @@ func (t *OneOfObject5) FromOneOfVariant5(v OneOfVariant5) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"OneOfVariant5"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"OneOfVariant5"}`))
 	t.union = b
 	return err
 }
@@ -1199,12 +1170,12 @@ func (t *OneOfObject5) MergeOneOfVariant5(v OneOfVariant5) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"OneOfVariant5"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"OneOfVariant5"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1255,7 +1226,7 @@ func (t *OneOfObject6) FromOneOfVariant4(v OneOfVariant4) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"v4"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"v4"}`))
 	t.union = b
 	return err
 }
@@ -1266,12 +1237,12 @@ func (t *OneOfObject6) MergeOneOfVariant4(v OneOfVariant4) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"v4"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"v4"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1289,7 +1260,7 @@ func (t *OneOfObject6) FromOneOfVariant5(v OneOfVariant5) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"v5"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"v5"}`))
 	t.union = b
 	return err
 }
@@ -1300,12 +1271,12 @@ func (t *OneOfObject6) MergeOneOfVariant5(v OneOfVariant5) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"v5"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"v5"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1356,7 +1327,7 @@ func (t *OneOfObject61) FromOneOfVariant4(v OneOfVariant4) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"v4"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"v4"}`))
 	t.union = b
 	return err
 }
@@ -1367,12 +1338,12 @@ func (t *OneOfObject61) MergeOneOfVariant4(v OneOfVariant4) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"v4"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"v4"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1390,7 +1361,7 @@ func (t *OneOfObject61) FromOneOfVariant5(v OneOfVariant5) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"OneOfVariant5"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"OneOfVariant5"}`))
 	t.union = b
 	return err
 }
@@ -1401,12 +1372,12 @@ func (t *OneOfObject61) MergeOneOfVariant5(v OneOfVariant5) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"OneOfVariant5"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"OneOfVariant5"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1457,7 +1428,7 @@ func (t *OneOfObject62) FromOneOfVariant4(v OneOfVariant4) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"variant_four"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"variant_four"}`))
 	t.union = b
 	return err
 }
@@ -1468,12 +1439,12 @@ func (t *OneOfObject62) MergeOneOfVariant4(v OneOfVariant4) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"variant_four"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"variant_four"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1491,7 +1462,7 @@ func (t *OneOfObject62) FromOneOfVariant51(v OneOfVariant51) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"one_of_variant51"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"one_of_variant51"}`))
 	t.union = b
 	return err
 }
@@ -1502,12 +1473,12 @@ func (t *OneOfObject62) MergeOneOfVariant51(v OneOfVariant51) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"discriminator":"one_of_variant51"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"discriminator":"one_of_variant51"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1566,7 +1537,7 @@ func (t *OneOfObject7_Item) MergeOneOfVariant1(v OneOfVariant1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1592,7 +1563,7 @@ func (t *OneOfObject7_Item) MergeOneOfVariant2(v OneOfVariant2) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1628,7 +1599,7 @@ func (t *OneOfObject8) MergeOneOfVariant1(v OneOfVariant1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1654,7 +1625,7 @@ func (t *OneOfObject8) MergeOneOfVariant2(v OneOfVariant2) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	return err
 }
@@ -1740,7 +1711,7 @@ func (t *OneOfObject9) FromOneOfVariant1(v OneOfVariant1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"v1"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"type":"v1"}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1756,13 +1727,13 @@ func (t *OneOfObject9) MergeOneOfVariant1(v OneOfVariant1) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"v1"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"type":"v1"}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1784,7 +1755,7 @@ func (t *OneOfObject9) FromOneOfVariant6(v OneOfVariant6) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"v6"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"type":"v6"}`))
 	previous := t.union
 	t.union = b
 	if err == nil {
@@ -1800,13 +1771,13 @@ func (t *OneOfObject9) MergeOneOfVariant6(v OneOfVariant6) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"v6"}`))
+	b, err = oapiJSONMergeForAnyOfObject1(b, []byte(`{"type":"v6"}`))
 	if err != nil {
 		return err
 	}
 
 	previous := t.union
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForAnyOfObject1(t.union, b)
 	t.union = merged
 	if err == nil {
 		t.adoptUnion(previous, b)
@@ -1878,6 +1849,87 @@ func (t *OneOfObject9) UnmarshalJSON(b []byte) error {
 	}
 
 	return err
+}
+
+// oapiJSONMergeForAnyOfObject1 merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForAnyOfObject1(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }
 
 // Override default JSON handling for OneOfObject13 to handle AdditionalProperties and union

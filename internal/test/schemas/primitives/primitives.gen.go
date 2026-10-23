@@ -4,11 +4,12 @@
 package schemasprimitives
 
 import (
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"encoding/json"
+	"time"
 )
 
 // AliasedDate defines model for AliasedDate.
-type AliasedDate = openapi_types.Date
+type AliasedDate = OpenAPIDate
 
 // AnyType1 defines model for AnyType1.
 type AnyType1 = any
@@ -23,11 +24,62 @@ type CustomStringType = string
 
 // Pet defines model for Pet.
 type Pet struct {
-	Born   *AliasedDate        `json:"born,omitempty"`
-	BornAt *openapi_types.Date `json:"born_at,omitempty"`
+	Born   *AliasedDate `json:"born,omitempty"`
+	BornAt *OpenAPIDate `json:"born_at,omitempty"`
 }
 
 // ResponseBody defines model for ResponseBody.
 type ResponseBody struct {
 	Unknown any `json:"unknown,omitempty"`
+}
+
+// OpenAPIDate is a calendar date in the OpenAPI "date" format (RFC 3339
+// full-date, e.g. "2006-01-02"), without a time of day or time zone.
+type OpenAPIDate struct {
+	time.Time
+}
+
+func (d OpenAPIDate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.Format(time.DateOnly))
+}
+
+func (d *OpenAPIDate) UnmarshalJSON(data []byte) error {
+	var dateStr string
+	err := json.Unmarshal(data, &dateStr)
+	if err != nil {
+		return err
+	}
+	parsed, err := time.Parse(time.DateOnly, dateStr)
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+func (d OpenAPIDate) String() string {
+	return d.Format(time.DateOnly)
+}
+
+func (d *OpenAPIDate) UnmarshalText(data []byte) error {
+	parsed, err := time.Parse(time.DateOnly, string(data))
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+// Bind binds a parameter value, treating it as a scalar rather than a struct
+// of key-value pairs. An empty value leaves the date unchanged.
+func (d *OpenAPIDate) Bind(src string) error {
+	if src == "" {
+		return nil
+	}
+	parsed, err := time.Parse(time.DateOnly, src)
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
 }

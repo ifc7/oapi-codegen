@@ -1,9 +1,9 @@
 package schemassecurity
 
 import (
+	"net/http"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +15,7 @@ import (
 // would not be reachable if that regression returned.
 type stubServer struct{}
 
-func (stubServer) GetHello(c *gin.Context) {}
+func (stubServer) GetHello(w http.ResponseWriter, r *http.Request) {}
 
 // issue #2367: code generated from a spec whose global security block names
 // a scheme absent from components/securitySchemes must compile and the

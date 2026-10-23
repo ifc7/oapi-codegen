@@ -2,9 +2,7 @@ package serversstrict
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -13,99 +11,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/go-chi/chi/v5"
-	fiberv3 "github.com/gofiber/fiber/v3"
-	fiberv3adaptor "github.com/gofiber/fiber/v3/middleware/adaptor"
-	"github.com/kataras/iris/v12"
-	"github.com/labstack/echo/v4"
-	echov5 "github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 
-	chiAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/chi"
 	clientAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/client"
-	echoAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/echo"
-	echo5API "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/echo5"
-	fiberv3API "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/fiberv3"
-	ginAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/gin"
-	irisAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/iris"
+	stdhttpAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/stdhttp"
 
-	"github.com/oapi-codegen/runtime"
 	"github.com/oapi-codegen/testutil"
 )
 
-func TestIrisServer(t *testing.T) {
-	server := irisAPI.StrictServer{}
-	strictHandler := irisAPI.NewStrictHandler(server, nil)
-	i := iris.New()
-	irisAPI.RegisterHandlers(i, strictHandler)
-	testImpl(t, i)
-}
-
-func TestChiServer(t *testing.T) {
-	server := chiAPI.StrictServer{}
-	strictHandler := chiAPI.NewStrictHandler(server, nil)
-	r := chi.NewRouter()
-	handler := chiAPI.HandlerFromMux(strictHandler, r)
-	testImpl(t, handler)
-}
-
-func TestEchoServer(t *testing.T) {
-	server := echoAPI.StrictServer{}
-	strictHandler := echoAPI.NewStrictHandler(server, nil)
-	e := echo.New()
-	echoAPI.RegisterHandlers(e, strictHandler)
-	testImpl(t, e)
-}
-
-func TestEcho5Server(t *testing.T) {
-	server := echo5API.StrictServer{}
-	strictHandler := echo5API.NewStrictHandler(server, nil)
-	e := echov5.New()
-	echo5API.RegisterHandlers(e, strictHandler)
-	testImpl(t, e)
-}
-
-func TestGinServer(t *testing.T) {
-	server := ginAPI.StrictServer{}
-	strictHandler := ginAPI.NewStrictHandler(server, nil)
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.New()
-	ginAPI.RegisterHandlers(r, strictHandler)
-	testImpl(t, r)
-}
-
-// Fiber v3 specializes the shared strict Fiber template through the hooks in
-// templates/fiber-v3/hooks.tmpl: bodies bind via ctx.Bind().Body rather than
-// v2's ctx.BodyParser, and the handler context is ctx.Context() rather than
-// ctx.UserContext(). Exercising the same suite as v2 keeps those overrides
-// honest.
-func TestFiberV3Server(t *testing.T) {
-	server := fiberv3API.StrictServer{}
-	strictHandler := fiberv3API.NewStrictHandler(server, nil)
-	app := fiberv3.New()
-	fiberv3API.RegisterHandlers(app, strictHandler)
-	testImpl(t, fiberv3adaptor.FiberApp(app))
-}
-
-type erroringFiberV3Server struct{ fiberv3API.StrictServer }
-
-func (erroringFiberV3Server) JSONExample(ctx context.Context, request fiberv3API.JSONExampleRequestObject) (fiberv3API.JSONExampleResponseObject, error) {
-	return nil, errors.New("handler failure")
-}
-
-// Errors returned by strict handlers must reach fiber's error chain untouched,
-// where the default handler reports them as 500 rather than being wrapped as a
-// 400. This mirrors TestFiberHandlerErrorIsServerError on the v2 side.
-func TestFiberV3HandlerErrorIsServerError(t *testing.T) {
-	strictHandler := fiberv3API.NewStrictHandler(erroringFiberV3Server{}, nil)
-	app := fiberv3.New()
-	fiberv3API.RegisterHandlers(app, strictHandler)
-
-	value := "123"
-	requestBody := clientAPI.Example{Value: &value}
-	rr := testutil.NewRequest().Post("/json").WithJsonBody(requestBody).GoWithHTTPHandler(t, fiberv3adaptor.FiberApp(app)).Recorder
-	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+func TestStdHTTPServer(t *testing.T) {
+	server := stdhttpAPI.StrictServer{}
+	strictHandler := stdhttpAPI.NewStrictHandler(server, nil)
+	m := http.NewServeMux()
+	stdhttpAPI.HandlerFromMux(strictHandler, m)
+	testImpl(t, m)
 }
 
 func testImpl(t *testing.T, handler http.Handler) {
@@ -132,18 +51,13 @@ func testImpl(t *testing.T, handler http.Handler) {
 	})
 	t.Run("URLEncodedExample", func(t *testing.T) {
 		value := "456"
-		requestBody := clientAPI.Example{Value: &value}
-		requestBodyEncoded, err := runtime.MarshalForm(&requestBody, nil)
-		assert.NoError(t, err)
+		requestBodyEncoded := url.Values{"value": {value}}
 		rr := testutil.NewRequest().Post("/urlencoded").WithContentType("application/x-www-form-urlencoded").WithBody([]byte(requestBodyEncoded.Encode())).GoWithHTTPHandler(t, handler).Recorder
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, "application/x-www-form-urlencoded", rr.Header().Get("Content-Type"))
 		values, err := url.ParseQuery(rr.Body.String())
 		assert.NoError(t, err)
-		var responseBody clientAPI.Example
-		err = runtime.BindForm(&responseBody, values, nil, nil)
-		assert.NoError(t, err)
-		assert.Equal(t, requestBody, responseBody)
+		assert.Equal(t, url.Values{"value": {value}}, values)
 	})
 	t.Run("MultipartExample", func(t *testing.T) {
 		value := "789"
@@ -220,18 +134,13 @@ func testImpl(t *testing.T, handler http.Handler) {
 	})
 	t.Run("MultipleRequestAndResponseTypesFormdata", func(t *testing.T) {
 		value := "456"
-		requestBody := clientAPI.Example{Value: &value}
-		requestBodyEncoded, err := runtime.MarshalForm(&requestBody, nil)
-		assert.NoError(t, err)
+		requestBodyEncoded := url.Values{"value": {value}}
 		rr := testutil.NewRequest().Post("/multiple").WithContentType("application/x-www-form-urlencoded").WithBody([]byte(requestBodyEncoded.Encode())).GoWithHTTPHandler(t, handler).Recorder
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, "application/x-www-form-urlencoded", rr.Header().Get("Content-Type"))
 		values, err := url.ParseQuery(rr.Body.String())
 		assert.NoError(t, err)
-		var responseBody clientAPI.Example
-		err = runtime.BindForm(&responseBody, values, nil, nil)
-		assert.NoError(t, err)
-		assert.Equal(t, requestBody, responseBody)
+		assert.Equal(t, url.Values{"value": {value}}, values)
 	})
 	t.Run("MultipleRequestAndResponseTypesMultipart", func(t *testing.T) {
 		value := "789"
@@ -315,9 +224,7 @@ func testImpl(t *testing.T, handler http.Handler) {
 		// The operation embeds the reusable form envelope, which must be
 		// encoded itself rather than as a field of the operation's struct.
 		value := "zxcv"
-		requestBody := clientAPI.Example{Value: &value}
-		requestBodyEncoded, err := runtime.MarshalForm(&requestBody, nil)
-		assert.NoError(t, err)
+		requestBodyEncoded := url.Values{"value": {value}}
 		rr := testutil.NewRequest().Post("/reusable-urlencoded-response").WithContentType("application/x-www-form-urlencoded").WithBody([]byte(requestBodyEncoded.Encode())).GoWithHTTPHandler(t, handler).Recorder
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, "application/x-www-form-urlencoded", rr.Header().Get("Content-Type"))

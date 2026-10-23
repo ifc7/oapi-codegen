@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allOf over a $ref and a member that refines one of its properties, here to
   make it nullable, the way a JSON Merge Patch body reuses a resource's schema

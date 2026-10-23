@@ -1,8 +1,0 @@
-package: fiber
-generate:
-  fiber-server: true
-  strict-server: true
-  models: true
-output: fiber/out.gen.go
-output-options:
-  skip-prune: true

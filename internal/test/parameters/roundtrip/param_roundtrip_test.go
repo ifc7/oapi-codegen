@@ -6,114 +6,25 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/go-chi/chi/v5"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
-	fiberv3 "github.com/gofiber/fiber/v3"
-	adaptorv3 "github.com/gofiber/fiber/v3/middleware/adaptor"
-	"github.com/gorilla/mux"
-	"github.com/kataras/iris/v12"
-	"github.com/labstack/echo/v4"
-	echov5 "github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	chiparams "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/chi"
-	chigen "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/chi/gen"
 	paramclient "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/client/gen"
-	echoparams "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/echo"
-	echogen "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/echo/gen"
-	echov5params "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/echov5"
-	echov5gen "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/echov5/gen"
-	fiberparams "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/fiber"
-	fibergen "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/fiber/gen"
-	fiberv3params "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/fiberv3"
-	fiberv3gen "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/fiberv3/gen"
-	ginparams "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/gin"
-	gingen "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/gin/gen"
-	gorillaparams "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/gorilla"
-	gorillgen "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/gorilla/gen"
-	irisparams "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/iris"
-	irisgen "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/iris/gen"
 	stdhttpparams "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp"
 	stdhttpgen "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp/gen"
 )
 
-func TestEchoParameterRoundTrip(t *testing.T) {
-	var s echoparams.Server
-	e := echo.New()
-	echogen.RegisterHandlers(e, &s)
-	testImpl(t, e, true)
-}
-
-func TestEchoV5ParameterRoundTrip(t *testing.T) {
-	var s echov5params.Server
-	e := echov5.New()
-	echov5gen.RegisterHandlers(e, &s)
-	testImpl(t, e, true)
-}
-
-func TestChiParameterRoundTrip(t *testing.T) {
-	var s chiparams.Server
-	r := chi.NewRouter()
-	handler := chigen.HandlerFromMux(&s, r)
-	testImpl(t, handler, true)
-}
-
-func TestGinParameterRoundTrip(t *testing.T) {
-	var s ginparams.Server
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.New()
-	gingen.RegisterHandlers(r, &s)
-	testImpl(t, r, false)
-}
-
-func TestGorillaParameterRoundTrip(t *testing.T) {
-	var s gorillaparams.Server
-	r := mux.NewRouter()
-	handler := gorillgen.HandlerFromMux(&s, r)
-	testImpl(t, handler, false)
-}
-
-func TestIrisParameterRoundTrip(t *testing.T) {
-	var s irisparams.Server
-	app := iris.New()
-	irisgen.RegisterHandlers(app, &s)
-	testImpl(t, app, false)
-}
-
-func TestFiberParameterRoundTrip(t *testing.T) {
-	var s fiberparams.Server
-	app := fiber.New()
-	fibergen.RegisterHandlers(app, &s)
-	testImpl(t, adaptor.FiberApp(app), true)
-}
-
-func TestFiberV3ParameterRoundTrip(t *testing.T) {
-	var s fiberv3params.Server
-	app := fiberv3.New()
-	fiberv3gen.RegisterHandlers(app, &s)
-	testImpl(t, adaptorv3.FiberApp(app), true)
-}
-
 func TestStdHttpParameterRoundTrip(t *testing.T) {
-	// The OpenAPI spec includes a path parameter named "1param" which starts
-	// with a digit. Go's stdlib ServeMux requires wildcard names to be valid
-	// Go identifiers, so registering this route panics. This is a known
-	// stdhttp panics because net/http.ServeMux rejects wildcard names
-	// starting with a digit ("1param"). Skip until codegen sanitizes the name.
-	t.Skip("stdhttp panics on path param name starting with digit (1param) — see #2306")
 	var s stdhttpparams.Server
 	handler := stdhttpgen.Handler(&s)
-	testImpl(t, handler, true)
+	testImpl(t, handler)
 }
 
 // testImpl runs the full parameter roundtrip test suite against any http.Handler.
 // The generated client serializes Go values into an HTTP request, the server
 // deserializes them and echoes them back as JSON, and we compare the response
 // body against the original values.
-func testImpl(t *testing.T, handler http.Handler, routesEncodedSlash bool) {
+func testImpl(t *testing.T, handler http.Handler) {
 	t.Helper()
 
 	server := "http://example.com"
@@ -136,9 +47,6 @@ func testImpl(t *testing.T, handler http.Handler, routesEncodedSlash bool) {
 	// doRoundTrip sends a request to the handler, asserts 200, and decodes the JSON response.
 	doRoundTrip := func(t *testing.T, req *http.Request, target interface{}) {
 		t.Helper()
-		// The generated client produces requests via http.NewRequest which
-		// leaves RequestURI empty. Some adapters (notably Fiber) need it
-		// set to route correctly.
 		req.RequestURI = req.URL.RequestURI()
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
@@ -305,7 +213,7 @@ func testImpl(t *testing.T, handler http.Handler, routesEncodedSlash bool) {
 		})
 
 		t.Run("string escaping", func(t *testing.T) {
-			testStringEscaping(t, handler, routesEncodedSlash)
+			testStringEscaping(t, handler)
 		})
 
 		t.Run("content-based", func(t *testing.T) {
@@ -418,7 +326,7 @@ func testImpl(t *testing.T, handler http.Handler, routesEncodedSlash bool) {
 		})
 
 		// Regression for oapi-codegen/runtime#131: with the v2.7.0 client
-		// no longer re-encoding query fragments, the runtime marshaller must
+		// no longer re-encoding query fragments, the deepObject encoder must
 		// percent-encode reserved URI characters and non-ASCII bytes inside
 		// deepObject values. Without the fix, '&' splits the value into two
 		// query params (silent corruption) and non-ASCII bytes produce
@@ -582,10 +490,9 @@ func testImpl(t *testing.T, handler http.Handler, routesEncodedSlash bool) {
 // testStringEscaping verifies that string path parameter values survive the
 // round trip byte-for-byte, including values containing literal percent
 // signs and characters that require percent-encoding on the wire
-// (issue-2455 / runtime issue-35). The client escapes the value; the
-// generated wrapper must tell the runtime whether this framework's router
-// delivers the raw or the decoded form, or the value gets decoded twice.
-func testStringEscaping(t *testing.T, handler http.Handler, routesEncodedSlash bool) {
+// (issue-2455). The client escapes the value; the server must read the
+// decoded value ServeMux delivers without decoding it again.
+func testStringEscaping(t *testing.T, handler http.Handler) {
 	t.Helper()
 
 	roundTrip := func(t *testing.T, value string, wantCode int) {
@@ -621,28 +528,14 @@ func testStringEscaping(t *testing.T, handler http.Handler, routesEncodedSlash b
 	}
 
 	// An encoded slash (%2F on the wire) is the one escape net/url preserves
-	// in RawPath, which flips RawPath-routing frameworks (echo, chi) from
-	// decoded to raw delivery on the same route — the generated wrappers
-	// pass ValueIsUnescaped dynamically to cover both. Frameworks that
-	// route on the decoded path (gin, gorilla, iris) see %2F as a real path
-	// separator and reject the request outright; pin that as a 404 so a
-	// framework change shows up here.
+	// in RawPath; ServeMux matches it as part of one path segment.
 	t.Run("id1/id2", func(t *testing.T) {
-		wantCode := http.StatusOK
-		if !routesEncodedSlash {
-			wantCode = http.StatusNotFound
-		}
-		roundTrip(t, "id1/id2", wantCode)
+		roundTrip(t, "id1/id2", http.StatusOK)
 	})
 
 	// The cross-term of the two hard classes: a literal percent AND an
-	// encoded slash in one value, so RawPath-routing frameworks take the
-	// raw branch on a value that also needs percent-unescaping.
+	// encoded slash in one value.
 	t.Run("50% off/sale", func(t *testing.T) {
-		wantCode := http.StatusOK
-		if !routesEncodedSlash {
-			wantCode = http.StatusNotFound
-		}
-		roundTrip(t, "50% off/sale", wantCode)
+		roundTrip(t, "50% off/sale", http.StatusOK)
 	})
 }

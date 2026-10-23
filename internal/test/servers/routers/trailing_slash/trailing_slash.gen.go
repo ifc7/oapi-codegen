@@ -6,10 +6,9 @@
 package serversrouterstrailingslash
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -38,8 +37,9 @@ func (siw *ServerInterfaceWrapper) Test2(w http.ResponseWriter, r *http.Request)
 		siw.Handler.Test2(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -54,7 +54,11 @@ func (siw *ServerInterfaceWrapper) Test1(w http.ResponseWriter, r *http.Request)
 	// ------------- Path parameter "id" -------------
 	var id string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		id = r.PathValue("id")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -64,8 +68,9 @@ func (siw *ServerInterfaceWrapper) Test1(w http.ResponseWriter, r *http.Request)
 		siw.Handler.Test1(w, r, id)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

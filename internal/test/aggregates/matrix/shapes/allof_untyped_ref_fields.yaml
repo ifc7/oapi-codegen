@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   allOf over a $ref to an untyped schema and a member with properties. The
   untyped member places no constraint and carries no value of its own, so the

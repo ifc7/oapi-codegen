@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=../../../../../configuration-schema.json
 package: spec_ext
 generate:
-  chi-server: true
+  std-http-server: true
   strict-server: true
   models: true
 output: gen/spec_ext/issue.gen.go

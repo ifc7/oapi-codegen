@@ -336,10 +336,9 @@ components:
 	assertField(t, code, "W", "*int")
 }
 
-// TestMergeSchemasNonRecursiveAllOfUnaffected pins the property this change
-// depends on for backwards compatibility: a composition nothing refers back
-// to is still emitted as the inline anonymous struct it always was, with no
-// named type invented for it.
+// TestMergeSchemasNonRecursiveAllOfUnaffected: a composition nothing refers
+// back to is emitted as an inline anonymous struct, with no named type
+// invented for it.
 func TestMergeSchemasNonRecursiveAllOfUnaffected(t *testing.T) {
 	const spec = `openapi: 3.0.0
 info: {title: repro, version: "1.0.0"}
@@ -425,22 +424,6 @@ func assertDefinesWhatItReferences(t *testing.T, code string) {
 	}
 }
 
-// TestMergeSchemasRecursionUnderOldMergeSchemas pins that the legacy merge
-// path is unaffected. It embeds $ref members instead of inlining them, so it
-// never recursed on this shape. (It once bypassed the state this fix threads;
-// it now shares it, see merge_schemas_v1_test.go, which changes nothing
-// here.)
-//
-// This test records how schema-merging-behavior v1 behaves. A bug fix may
-// change it, but it must not be changed to accept a regression, and a commit
-// that changes it must say why.
-func TestMergeSchemasRecursionUnderOldMergeSchemas(t *testing.T) {
-	code := generateSpec(t, specRecursiveObject, func(c *Configuration) {
-		c.Compatibility.OldMergeSchemas = true
-	})
-	assert.Contains(t, code, "type Node struct {")
-}
-
 const remoteRecursiveCommonSpec = `openapi: 3.0.3
 info: {title: common, version: "1.0.0"}
 paths: {}
@@ -492,20 +475,16 @@ func TestMergeSchemasRemoteRecursiveSchemaFlattenedTwice(t *testing.T) {
 	swagger, err := loader.LoadFromFile(filepath.Join(dir, "user.yml"))
 	require.NoError(t, err)
 
-	code, err := Generate(swagger, Configuration{
+	_, err = Generate(swagger, Configuration{
 		PackageName:   "user",
 		Generate:      GenerateOptions{Models: true},
 		OutputOptions: OutputOptions{SkipPrune: true},
 		ImportMapping: map[string]string{"./common.yml": "example.com/common"},
 	})
-	require.NoError(t, err)
-
-	// Both composed types keep the recursive member pointing at the named
-	// type in the document it came from, rather than inlining it.
-	assert.Equal(t, 2, strings.Count(code, "*[]externalRef0.Tree"),
-		"both A and B should reference the external Tree:\n%s", code)
-	assert.Contains(t, code, "type A struct {")
-	assert.Contains(t, code, "type B struct {")
+	// A schema in another document is generated as a type of that package,
+	// so it can't be merged with the other allOf members; that is reported
+	// rather than overflowing the stack.
+	require.ErrorContains(t, err, "a reference to another document can't be merged with other allOf members")
 }
 
 // TestMergeSchemasAllOfOverArrayKeepsItems is the end-to-end case: an allOf over
@@ -531,7 +510,7 @@ components:
         - minItems: 1
 `
 	code := generateSpec(t, spec)
-	assert.Contains(t, code, "type Wrapped = []Item")
+	assert.Contains(t, code, "type Wrapped = Items")
 }
 
 // TestAllOfWithOneOfSibling covers a oneOf next to allOf on the same schema,

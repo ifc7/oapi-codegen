@@ -24,8 +24,8 @@ func TestStructTags(t *testing.T) {
 		assert.Equal(t, "tag,omitempty", fieldTag(t, pet, "Tag").Get("json"))
 	})
 
-	t.Run("user yaml entry supersedes yaml-tags flag", func(t *testing.T) {
-		// The overridden template has no omitempty, unlike the yaml-tags default.
+	t.Run("yaml entry renders its template", func(t *testing.T) {
+		// The template has no omitempty, so optional fields don't get one.
 		assert.Equal(t, "name", fieldTag(t, pet, "Name").Get("yaml"))
 		assert.Equal(t, "tag", fieldTag(t, pet, "Tag").Get("yaml"))
 	})

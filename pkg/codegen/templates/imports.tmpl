@@ -21,19 +21,16 @@ import (
 	"mime"
 	"mime/multipart"
 	"net/http"
+	"net/mail"
 	"net/url"
 	"path"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/oapi-codegen/runtime"
 	"github.com/oapi-codegen/nullable"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/getkin/kin-openapi/openapi3"
-	{{- range .RouterImports}}
-	{{if .Alias}}{{.Alias}} {{end}}"{{.Package}}"
-	{{- end}}
 	{{- range .ExternalImports}}
 	{{ . }}
 	{{- end}}

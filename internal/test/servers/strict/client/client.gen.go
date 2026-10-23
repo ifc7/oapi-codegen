@@ -7,13 +7,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Example defines model for example.
@@ -121,7 +121,7 @@ func (t *UnionExample200JSONResponseBody) MergeUnionExample200JSONResponseBody0(
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForUnionExample200JSONResponseBody(t.union, b)
 	t.union = merged
 	return err
 }
@@ -147,7 +147,7 @@ func (t *UnionExample200JSONResponseBody) MergeExample(v Example) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForUnionExample200JSONResponseBody(t.union, b)
 	t.union = merged
 	return err
 }
@@ -160,6 +160,87 @@ func (t UnionExample200JSONResponseBody) MarshalJSON() ([]byte, error) {
 func (t *UnionExample200JSONResponseBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
+}
+
+// oapiJSONMergeForUnionExample200JSONResponseBody merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForUnionExample200JSONResponseBody(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }
 
 // RequestEditorFn is the function signature for the RequestEditor callback function
@@ -981,9 +1062,50 @@ func NewMultipleRequestAndResponseTypesRequest(server string, body MultipleReque
 // NewMultipleRequestAndResponseTypesRequestWithFormdataBody calls the generic MultipleRequestAndResponseTypes builder with application/x-www-form-urlencoded body
 func NewMultipleRequestAndResponseTypesRequestWithFormdataBody(server string, body MultipleRequestAndResponseTypesFormdataRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
-	bodyStr, err := runtime.MarshalForm(body, nil)
-	if err != nil {
-		return nil, err
+	bodyStr := url.Values{}
+	{
+		var err error
+		if values_, ok_ := any(body).(url.Values); ok_ {
+			for k_, vs_ := range values_ {
+				bodyStr[k_] = append(bodyStr[k_], vs_...)
+			}
+		} else if b_, err_ := json.Marshal(body); err_ != nil {
+			err = err_
+		} else {
+			var tree_ any
+			dec_ := json.NewDecoder(bytes.NewReader(b_))
+			dec_.UseNumber()
+			if err = dec_.Decode(&tree_); err == nil {
+				var walk_ func(key string, node any)
+				walk_ = func(key string, node any) {
+					child := func(name string) string {
+						if key == "" {
+							return name
+						}
+						return key + "[" + name + "]"
+					}
+					switch node := node.(type) {
+					case map[string]any:
+						for k, e := range node {
+							walk_(child(k), e)
+						}
+					case []any:
+						for i, e := range node {
+							walk_(child(strconv.Itoa(i)), e)
+						}
+					case nil:
+					case string:
+						bodyStr.Add(key, node)
+					default:
+						bodyStr.Add(key, fmt.Sprint(node))
+					}
+				}
+				walk_("", tree_)
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	bodyReader = strings.NewReader(bodyStr.Encode())
 	return NewMultipleRequestAndResponseTypesRequestWithBody(server, "application/x-www-form-urlencoded", bodyReader)
@@ -1142,7 +1264,7 @@ func NewReservedGoKeywordParametersRequest(server string, pType string) (*http.R
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "type", pType, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	pathParam0 = url.PathEscape(pType)
 	if err != nil {
 		return nil, err
 	}
@@ -1213,9 +1335,50 @@ func NewReusableResponsesRequestWithBody(server string, contentType string, body
 // NewReusableURLEncodedResponseRequestWithFormdataBody calls the generic ReusableURLEncodedResponse builder with application/x-www-form-urlencoded body
 func NewReusableURLEncodedResponseRequestWithFormdataBody(server string, body ReusableURLEncodedResponseFormdataRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
-	bodyStr, err := runtime.MarshalForm(body, nil)
-	if err != nil {
-		return nil, err
+	bodyStr := url.Values{}
+	{
+		var err error
+		if values_, ok_ := any(body).(url.Values); ok_ {
+			for k_, vs_ := range values_ {
+				bodyStr[k_] = append(bodyStr[k_], vs_...)
+			}
+		} else if b_, err_ := json.Marshal(body); err_ != nil {
+			err = err_
+		} else {
+			var tree_ any
+			dec_ := json.NewDecoder(bytes.NewReader(b_))
+			dec_.UseNumber()
+			if err = dec_.Decode(&tree_); err == nil {
+				var walk_ func(key string, node any)
+				walk_ = func(key string, node any) {
+					child := func(name string) string {
+						if key == "" {
+							return name
+						}
+						return key + "[" + name + "]"
+					}
+					switch node := node.(type) {
+					case map[string]any:
+						for k, e := range node {
+							walk_(child(k), e)
+						}
+					case []any:
+						for i, e := range node {
+							walk_(child(strconv.Itoa(i)), e)
+						}
+					case nil:
+					case string:
+						bodyStr.Add(key, node)
+					default:
+						bodyStr.Add(key, fmt.Sprint(node))
+					}
+				}
+				walk_("", tree_)
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	bodyReader = strings.NewReader(bodyStr.Encode())
 	return NewReusableURLEncodedResponseRequestWithBody(server, "application/x-www-form-urlencoded", bodyReader)
@@ -1267,7 +1430,7 @@ func NewSameNameParamAndBodyPropertyRequestWithBody(server string, name string, 
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "name", name, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	pathParam0 = url.PathEscape(name)
 	if err != nil {
 		return nil, err
 	}
@@ -1398,9 +1561,50 @@ func NewUnspecifiedContentTypeRequestWithBody(server string, contentType string,
 // NewURLEncodedExampleRequestWithFormdataBody calls the generic URLEncodedExample builder with application/x-www-form-urlencoded body
 func NewURLEncodedExampleRequestWithFormdataBody(server string, body URLEncodedExampleFormdataRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
-	bodyStr, err := runtime.MarshalForm(body, nil)
-	if err != nil {
-		return nil, err
+	bodyStr := url.Values{}
+	{
+		var err error
+		if values_, ok_ := any(body).(url.Values); ok_ {
+			for k_, vs_ := range values_ {
+				bodyStr[k_] = append(bodyStr[k_], vs_...)
+			}
+		} else if b_, err_ := json.Marshal(body); err_ != nil {
+			err = err_
+		} else {
+			var tree_ any
+			dec_ := json.NewDecoder(bytes.NewReader(b_))
+			dec_.UseNumber()
+			if err = dec_.Decode(&tree_); err == nil {
+				var walk_ func(key string, node any)
+				walk_ = func(key string, node any) {
+					child := func(name string) string {
+						if key == "" {
+							return name
+						}
+						return key + "[" + name + "]"
+					}
+					switch node := node.(type) {
+					case map[string]any:
+						for k, e := range node {
+							walk_(child(k), e)
+						}
+					case []any:
+						for i, e := range node {
+							walk_(child(strconv.Itoa(i)), e)
+						}
+					case nil:
+					case string:
+						bodyStr.Add(key, node)
+					default:
+						bodyStr.Add(key, fmt.Sprint(node))
+					}
+				}
+				walk_("", tree_)
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	bodyReader = strings.NewReader(bodyStr.Encode())
 	return NewURLEncodedExampleRequestWithBody(server, "application/x-www-form-urlencoded", bodyReader)
@@ -1476,7 +1680,7 @@ func NewHeadersExampleRequestWithBody(server string, params *HeadersExampleParam
 
 		var headerParam0 string
 
-		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "header1", params.Header1, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		headerParam0 = params.Header1
 		if err != nil {
 			return nil, err
 		}
@@ -1486,7 +1690,7 @@ func NewHeadersExampleRequestWithBody(server string, params *HeadersExampleParam
 		if params.Header2 != nil {
 			var headerParam1 string
 
-			headerParam1, err = runtime.StyleParamWithOptions("simple", false, "header2", *params.Header2, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: ""})
+			headerParam1 = strconv.FormatInt(int64((*params.Header2)), 10)
 			if err != nil {
 				return nil, err
 			}
@@ -2943,14 +3147,18 @@ func ParseNoContentHeadersResponse(rsp *http.Response) (*NoContentHeadersRespons
 		var headers NoContentHeadersResponse204Headers
 		if values := rsp.Header.Values("nullable-header"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "nullable-header", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = values[0]
+			if err != nil {
 				return nil, err
 			}
 			headers.NullableHeader = &value
 		}
 		if values := rsp.Header.Values("optional-header"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "optional-header", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = values[0]
+			if err != nil {
 				return nil, err
 			}
 			headers.OptionalHeader = &value
@@ -3053,14 +3261,30 @@ func ParseReusableResponsesResponse(rsp *http.Response) (*ReusableResponsesRespo
 		var headers ReusableResponsesResponse200Headers
 		if values := rsp.Header.Values("header1"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "header1", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'header1' is empty, can't bind its value")
+			} else {
+				value = values[0]
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.Header1 = value
 		}
 		if values := rsp.Header.Values("header2"); len(values) > 0 {
 			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "header2", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'header2' is empty, can't bind its value")
+			} else {
+				if v_, err_ := strconv.ParseInt(values[0], 10, 0); err_ != nil {
+					err = err_
+				} else {
+					value = int(v_)
+				}
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.Header2 = value
@@ -3208,28 +3432,48 @@ func ParseHeadersExampleResponse(rsp *http.Response) (*HeadersExampleResponse, e
 		var headers HeadersExampleResponse200Headers
 		if values := rsp.Header.Values("header1"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "header1", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'header1' is empty, can't bind its value")
+			} else {
+				value = values[0]
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.Header1 = value
 		}
 		if values := rsp.Header.Values("header2"); len(values) > 0 {
 			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "header2", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'header2' is empty, can't bind its value")
+			} else {
+				if v_, err_ := strconv.ParseInt(values[0], 10, 0); err_ != nil {
+					err = err_
+				} else {
+					value = int(v_)
+				}
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.Header2 = value
 		}
 		if values := rsp.Header.Values("nullable-header"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "nullable-header", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = values[0]
+			if err != nil {
 				return nil, err
 			}
 			headers.NullableHeader = &value
 		}
 		if values := rsp.Header.Values("optional-header"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "optional-header", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = values[0]
+			if err != nil {
 				return nil, err
 			}
 			headers.OptionalHeader = &value
@@ -3278,14 +3522,30 @@ func ParseUnionExampleResponse(rsp *http.Response) (*UnionExampleResponse, error
 		var headers UnionExampleResponse200Headers
 		if values := rsp.Header.Values("header1"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "header1", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'header1' is empty, can't bind its value")
+			} else {
+				value = values[0]
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.Header1 = value
 		}
 		if values := rsp.Header.Values("header2"); len(values) > 0 {
 			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "header2", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: ""}); err != nil {
+			var err error
+			if values[0] == "" {
+				err = errors.New("parameter 'header2' is empty, can't bind its value")
+			} else {
+				if v_, err_ := strconv.ParseInt(values[0], 10, 0); err_ != nil {
+					err = err_
+				} else {
+					value = int(v_)
+				}
+			}
+			if err != nil {
 				return nil, err
 			}
 			headers.Header2 = value

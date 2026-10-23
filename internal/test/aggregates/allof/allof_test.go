@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -105,6 +105,6 @@ func TestIssue2524(t *testing.T) {
 	// The decorator idiom over a format-carrying scalar propagates the format
 	// (previously a hard "can not merge incompatible formats" error). The
 	// composite literals fail to compile if the aliases regress to string.
-	assert.IsType(t, openapi_types.UUID{}, NewMergeFormatFromRef{})
-	assert.IsType(t, openapi_types.UUID{}, NewMergeFormatFromRefReversed{})
+	assert.IsType(t, uuid.UUID{}, NewMergeFormatFromRef{})
+	assert.IsType(t, uuid.UUID{}, NewMergeFormatFromRefReversed{})
 }

@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: A nullable oneOf (OpenAPI 3.0 `nullable`).
 subject:
   nullable: true

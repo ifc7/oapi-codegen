@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   allOf over two enums with no value in common, which no value satisfies. The
   sample is one that v2, which merges enums into their union, accepts.
@@ -9,5 +8,4 @@ subject:
     - enum: [c]
 samples:
   - '"a"'
-rejects:
-  v3: "allOf can't merge allOf/0 (enum [a b]) with allOf/1 (enum [c]): no value is in both"
+rejects: "allOf can't merge allOf/0 (enum [a b]) with allOf/1 (enum [c]): no value is in both"

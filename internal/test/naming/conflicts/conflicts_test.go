@@ -481,10 +481,10 @@ func TestLineComments(t *testing.T) {
 	opts := codegen.Configuration{
 		PackageName: "namingconflicts",
 		Generate: codegen.GenerateOptions{
-			EchoServer:   true,
-			Client:       true,
-			Models:       true,
-			EmbeddedSpec: true,
+			StdHTTPServer: true,
+			Client:        true,
+			Models:        true,
+			EmbeddedSpec:  true,
 		},
 	}
 

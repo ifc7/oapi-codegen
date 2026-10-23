@@ -6,10 +6,9 @@
 package serversroutersdashed
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -37,7 +36,11 @@ func (siw *ServerInterfaceWrapper) GetResource(w http.ResponseWriter, r *http.Re
 	// ------------- Path parameter "addressing-identifier" -------------
 	var addressingIdentifier string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "addressing-identifier", r.PathValue("addressing_identifier"), &addressingIdentifier, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("addressing_identifier") == "" {
+		err = errors.New("parameter 'addressing-identifier' is empty, can't bind its value")
+	} else {
+		addressingIdentifier = r.PathValue("addressing_identifier")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "addressing-identifier", Err: err})
 		return
@@ -47,8 +50,9 @@ func (siw *ServerInterfaceWrapper) GetResource(w http.ResponseWriter, r *http.Re
 		siw.Handler.GetResource(w, r, addressingIdentifier)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

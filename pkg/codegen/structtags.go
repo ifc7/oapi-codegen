@@ -10,7 +10,7 @@ import (
 
 // StructTagInfo is the data made available to struct tag templates. The
 // omit flags are fully computed before rendering: OmitEmpty folds in the
-// required/readOnly/writeOnly logic, compatibility options and the
+// required/readOnly/writeOnly logic and the
 // x-omitempty extension; OmitZero folds in x-omitzero and
 // prefer-skip-optional-pointer-with-omitzero. Templates therefore only
 // need to decide whether to emit them, not re-derive them.
@@ -51,23 +51,14 @@ type StructTagsConfig struct {
 const (
 	defaultJSONTagTemplate = `{{.FieldName}}{{if .OmitEmpty}},omitempty{{end}}{{if .OmitZero}},omitzero{{end}}`
 	defaultFormTagTemplate = `{{if .NeedsFormTag}}{{.FieldName}}{{if .OmitEmpty}},omitempty{{end}}{{end}}`
-	defaultYamlTagTemplate = `{{.FieldName}}{{if .OmitEmpty}},omitempty{{end}}`
 )
 
-// defaultStructTagsConfig returns the built-in tag templates, which
-// reproduce the historical hardcoded output. The yaml entry is only
-// present when the legacy `output-options.yaml-tags` flag is enabled and
-// applies only where it always did (schema properties); a user-supplied
-// yaml entry in struct-tags supersedes the flag entirely.
-func defaultStructTagsConfig(enableYamlTags bool) StructTagsConfig {
-	tags := []StructTagTemplate{
+// defaultStructTagsConfig returns the built-in tag templates: json and form.
+func defaultStructTagsConfig() StructTagsConfig {
+	return StructTagsConfig{Tags: []StructTagTemplate{
 		{Name: "json", Template: defaultJSONTagTemplate},
 		{Name: "form", Template: defaultFormTagTemplate},
-	}
-	if enableYamlTags {
-		tags = append(tags, StructTagTemplate{Name: "yaml", Template: defaultYamlTagTemplate})
-	}
-	return StructTagsConfig{Tags: tags}
+	}}
 }
 
 // Merge merges user config on top of this config by tag name: matching
@@ -178,40 +169,21 @@ func (g *structTagGenerator) generateTagsMap(info StructTagInfo) map[string]stri
 	return result
 }
 
-// schemaFieldTagGenerator returns the generator used for schema property
-// fields, building it from the current configuration on first use. This
-// lazy path keeps direct callers of GenFieldsFromProperties (tests)
-// working without running Generate; Generate itself constructs the
-// generators eagerly so configuration errors are reported.
-func schemaFieldTagGenerator() *structTagGenerator {
-	if globalState.schemaFieldTagGenerator == nil {
-		cfg := defaultStructTagsConfig(globalState.options.OutputOptions.EnableYamlTags).
-			Merge(globalState.options.OutputOptions.StructTags)
-		g, err := newStructTagGenerator(cfg)
+// fieldTagGenerator returns the generator used for struct fields, schema
+// properties and strict RequestObject path parameters alike, building it from
+// the current configuration on first use. This lazy path keeps direct callers
+// of GenFieldsFromProperties (tests) working without running Generate;
+// Generate itself constructs the generator eagerly so configuration errors are
+// reported.
+func fieldTagGenerator() *structTagGenerator {
+	if globalState.fieldTagGenerator == nil {
+		g, err := newStructTagGenerator(defaultStructTagsConfig().Merge(globalState.options.OutputOptions.StructTags))
 		if err != nil {
 			// Generate() reports this error to the user; fall back to the
 			// defaults so lazy callers still produce standard tags.
-			g, _ = newStructTagGenerator(defaultStructTagsConfig(globalState.options.OutputOptions.EnableYamlTags))
+			g, _ = newStructTagGenerator(defaultStructTagsConfig())
 		}
-		globalState.schemaFieldTagGenerator = g
+		globalState.fieldTagGenerator = g
 	}
-	return globalState.schemaFieldTagGenerator
-}
-
-// paramFieldTagGenerator returns the generator used for path parameter
-// fields on strict RequestObject structs (ParameterDefinition.JsonTag).
-// It differs from the schema one in a single way: the legacy `yaml-tags`
-// flag never applied to those fields, so its injected default is excluded
-// here. Tags configured explicitly via struct-tags apply to them too.
-func paramFieldTagGenerator() *structTagGenerator {
-	if globalState.paramFieldTagGenerator == nil {
-		cfg := defaultStructTagsConfig(false).
-			Merge(globalState.options.OutputOptions.StructTags)
-		g, err := newStructTagGenerator(cfg)
-		if err != nil {
-			g, _ = newStructTagGenerator(defaultStructTagsConfig(false))
-		}
-		globalState.paramFieldTagGenerator = g
-	}
-	return globalState.paramFieldTagGenerator
+	return globalState.fieldTagGenerator
 }

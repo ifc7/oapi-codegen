@@ -74,8 +74,9 @@ func TestOpenAPI31StrictResponseBody(t *testing.T) {
 	}
 }
 
+// formBody is encoded by its JSON encoding, as an untyped form body is.
 type formBody struct {
-	Name string `form:"name"`
+	Name string `json:"name"`
 }
 
 func TestUntypedTextAndFormResponseBody(t *testing.T) {

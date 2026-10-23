@@ -1,6 +1,10 @@
 package codegen
 
-import "maps"
+import (
+	"maps"
+	"regexp"
+	"slices"
+)
 
 // SimpleTypeSpec defines the Go type for an OpenAPI type/format combination,
 // along with any import required to use it.
@@ -96,13 +100,54 @@ var DefaultTypeMapping = TypeMapping{
 		Default: SimpleTypeSpec{Type: "string"},
 		Formats: map[string]SimpleTypeSpec{
 			"byte":      {Type: "[]byte"},
-			"email":     {Type: "openapi_types.Email"},
-			"date":      {Type: "openapi_types.Date"},
+			"email":     {Type: "OpenAPIEmail"},
+			"date":      {Type: "OpenAPIDate"},
 			"date-time": {Type: "time.Time", Import: "time"},
-			"duration":  {Type: "openapi_types.Duration"},
+			"duration":  {Type: "OpenAPIDuration"},
 			"json":      {Type: "json.RawMessage", Import: "encoding/json"},
-			"uuid":      {Type: "openapi_types.UUID"},
-			"binary":    {Type: "openapi_types.File"},
+			"uuid":      {Type: "uuid.UUID", Import: "github.com/google/uuid"},
+			"binary":    {Type: "OpenAPIFile"},
 		},
 	},
+}
+
+// packageQualifier matches the package name qualifying a type in a type
+// expression, such as "uuid" in "[]uuid.UUID".
+var packageQualifier = regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)\.`)
+
+// usesPackage reports whether a type the mapping maps to is qualified by the
+// package name name.
+func (tm TypeMapping) usesPackage(name string) bool {
+	for _, fm := range []FormatMapping{tm.Integer, tm.Number, tm.Boolean, tm.String} {
+		for _, spec := range append([]SimpleTypeSpec{fm.Default}, slices.Collect(maps.Values(fm.Formats))...) {
+			for _, m := range packageQualifier.FindAllStringSubmatch(spec.Type, -1) {
+				if m[1] == name {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// formatTypes lists, in the order they're emitted, the types that
+// format-types.tmpl declares in the generated package for the string formats
+// that have no suitable standard library or third-party type.
+var formatTypes = []string{"OpenAPIDate", "OpenAPIDuration", "OpenAPIEmail", "OpenAPIFile"}
+
+// useTypeSpec returns spec's Go type, recording what the generated code needs
+// in order to use it: the package to import, or the format type to declare.
+func useTypeSpec(spec SimpleTypeSpec) string {
+	if spec.Import != "" {
+		if globalState.typeMappingImports == nil {
+			globalState.typeMappingImports = map[string]goImport{}
+		}
+		globalState.typeMappingImports[spec.Import] = goImport{Path: spec.Import}
+	} else if slices.Contains(formatTypes, spec.Type) {
+		if globalState.usedFormatTypes == nil {
+			globalState.usedFormatTypes = map[string]bool{}
+		}
+		globalState.usedFormatTypes[spec.Type] = true
+	}
+	return spec.Type
 }

@@ -88,12 +88,11 @@ func (pd ParameterDefinition) ZeroValueIsNil() bool {
 // JsonTag generates the struct tag annotation for a parameter field on a
 // strict RequestObject struct. If Parameter Foo is marshaled to json as "foo",
 // this will create the annotation 'json:"foo"'. Tags configured via
-// output-options.struct-tags are rendered too (the legacy yaml-tags flag does
-// not apply to these fields).
+// output-options.struct-tags are rendered too.
 // It also includes any additional struct tags from x-oapi-codegen-extra-tags
 // at the parameter or schema level (parameter-level takes precedence).
-func (pd *ParameterDefinition) JsonTag() string {
-	fieldTags := paramFieldTagGenerator().generateTagsMap(StructTagInfo{
+func (pd ParameterDefinition) JsonTag() string {
+	fieldTags := fieldTagGenerator().generateTagsMap(StructTagInfo{
 		FieldName:  pd.ParamName,
 		IsOptional: !pd.Required,
 		OmitEmpty:  !pd.Required,
@@ -128,7 +127,7 @@ func (pd *ParameterDefinition) JsonTag() string {
 	return "`" + strings.Join(tags, " ") + "`"
 }
 
-func (pd *ParameterDefinition) IsJson() bool {
+func (pd ParameterDefinition) IsJson() bool {
 	p := pd.Spec
 	if len(p.Content) == 1 {
 		for k := range p.Content {
@@ -140,7 +139,7 @@ func (pd *ParameterDefinition) IsJson() bool {
 	return false
 }
 
-func (pd *ParameterDefinition) IsPassThrough() bool {
+func (pd ParameterDefinition) IsPassThrough() bool {
 	p := pd.Spec
 	if len(p.Content) > 1 {
 		return true
@@ -151,12 +150,12 @@ func (pd *ParameterDefinition) IsPassThrough() bool {
 	return false
 }
 
-func (pd *ParameterDefinition) IsStyled() bool {
+func (pd ParameterDefinition) IsStyled() bool {
 	p := pd.Spec
 	return p.Schema != nil
 }
 
-func (pd *ParameterDefinition) Style() string {
+func (pd ParameterDefinition) Style() string {
 	style := pd.Spec.Style
 	if style == "" {
 		in := pd.Spec.In
@@ -172,7 +171,7 @@ func (pd *ParameterDefinition) Style() string {
 	return style
 }
 
-func (pd *ParameterDefinition) Explode() bool {
+func (pd ParameterDefinition) Explode() bool {
 	if pd.Spec.Explode == nil {
 		in := pd.Spec.In
 		switch in {
@@ -187,42 +186,6 @@ func (pd *ParameterDefinition) Explode() bool {
 	return *pd.Spec.Explode
 }
 
-// SchemaType returns the single OpenAPI type of this parameter's schema
-// (e.g. "string", "integer") with the OpenAPI 3.1 "null" nullability marker
-// stripped, or empty string when the schema declares no type or a
-// multi-type union (unions are carried by SchemaTypes instead).
-func (pd *ParameterDefinition) SchemaType() string {
-	if pd.Spec.Schema != nil && pd.Spec.Schema.Value != nil && pd.Spec.Schema.Value.Type != nil {
-		t := schemaPrimaryType(pd.Spec.Schema.Value.Type)
-		if s := t.Slice(); len(s) == 1 {
-			return s[0]
-		}
-	}
-	return ""
-}
-
-// SchemaTypes returns the members of this parameter's OpenAPI 3.1
-// multi-type union (e.g. ["string", "integer"]) with the "null" nullability
-// marker stripped, or nil when the schema declares at most one non-null
-// type. Non-nil only for genuine unions, where the generated bind call
-// passes the list to the runtime (Types option, runtime v1.7.0+) so the
-// value can bind into the parameter's `any` destination.
-func (pd *ParameterDefinition) SchemaTypes() []string {
-	if pd.Spec.Schema == nil || pd.Spec.Schema.Value == nil {
-		return nil
-	}
-	return schemaUnionTypes(pd.Spec.Schema.Value.Type)
-}
-
-// SchemaFormat returns the OpenAPI format string for this parameter's schema (e.g. "byte", "date-time"),
-// or empty string if unavailable.
-func (pd *ParameterDefinition) SchemaFormat() string {
-	if pd.Spec.Schema != nil && pd.Spec.Schema.Value != nil {
-		return pd.Spec.Schema.Value.Format
-	}
-	return ""
-}
-
 // SanitizedParamName returns the parameter name sanitized to be a valid Go
 // identifier. This is needed for routers like net/http's ServeMux where path
 // wildcards (e.g. {name}) must be valid Go identifiers. For the original
@@ -233,7 +196,10 @@ func (pd ParameterDefinition) SanitizedParamName() string {
 
 func (pd ParameterDefinition) GoVariableName() string {
 	name := LowercaseFirstCharacters(pd.GoName())
-	if IsGoKeyword(name) {
+	// A variable named after a package the type mapping uses would shadow
+	// it, so a second parameter of that type in the same scope (as in
+	// `var uuid uuid.UUID; var other uuid.UUID`) wouldn't compile.
+	if IsGoKeyword(name) || globalState.typeMapping.usesPackage(name) {
 		name = "p" + UppercaseFirstCharacter(name)
 	}
 	if unicode.IsNumber([]rune(name)[0]) {
@@ -599,42 +565,6 @@ func sharedParameterTypeDefs(sharedParams []ParameterDefinition) []TypeDefinitio
 	return typeDefs
 }
 
-type SecurityDefinition struct {
-	ProviderName string
-	Scopes       []string
-}
-
-func DescribeSecurityDefinition(securityRequirements openapi3.SecurityRequirements) []SecurityDefinition {
-	outDefs := make([]SecurityDefinition, 0)
-
-	for _, sr := range securityRequirements {
-		if len(sr) == 0 {
-			return nil
-		}
-		for _, k := range SortedMapKeys(sr) {
-			v := sr[k]
-			outDefs = append(outDefs, SecurityDefinition{ProviderName: k, Scopes: v})
-		}
-	}
-
-	return outDefs
-}
-
-// filterOutUndefinedSecuritySchemes drops any SecurityDefinition whose ProviderName
-// is not present in defined. A `security` requirement that references an
-// unknown scheme would otherwise produce a constant declaration and middleware
-// references against a context-key type that is never emitted (the type is
-// only generated for entries in components/securitySchemes).
-func filterOutUndefinedSecuritySchemes(defs []SecurityDefinition, defined map[string]struct{}) []SecurityDefinition {
-	out := make([]SecurityDefinition, 0, len(defs))
-	for _, d := range defs {
-		if _, ok := defined[d.ProviderName]; ok {
-			out = append(out, d)
-		}
-	}
-	return out
-}
-
 // OperationDefinition describes an Operation
 type OperationDefinition struct {
 	// OperationId is the `operationId` field from the OpenAPI Specification, after going through a `nameNormalizer`, and will be used to generate function names
@@ -642,18 +572,17 @@ type OperationDefinition struct {
 	// SpecOperationId is the raw `operationId` value as it appears in the OpenAPI spec, before normalization to a Go identifier. Empty when the spec didn't supply one (in which case the codegen-generated ID is the only available identifier and is exposed via OperationId).
 	SpecOperationId string
 
-	PathParams          []ParameterDefinition // Parameters in the path, eg, /path/:param
-	HeaderParams        []ParameterDefinition // Parameters in HTTP headers
-	QueryParams         []ParameterDefinition // Parameters in the query, /path?param
-	CookieParams        []ParameterDefinition // Parameters in cookies
-	TypeDefinitions     []TypeDefinition      // These are all the types we need to define for this operation
-	SecurityDefinitions []SecurityDefinition  // These are the security providers
-	BodyRequired        bool
-	Bodies              []RequestBodyDefinition // The list of bodies for which to generate handlers.
-	Responses           []ResponseDefinition    // The list of responses that can be accepted by handlers.
-	Summary             string                  // Summary string from Swagger, used to generate a comment
-	Method              string                  // GET, POST, DELETE, etc.
-	Path                string                  // The Swagger path for the operation, like /resource/{id}
+	PathParams      []ParameterDefinition // Parameters in the path, eg, /path/:param
+	HeaderParams    []ParameterDefinition // Parameters in HTTP headers
+	QueryParams     []ParameterDefinition // Parameters in the query, /path?param
+	CookieParams    []ParameterDefinition // Parameters in cookies
+	TypeDefinitions []TypeDefinition      // These are all the types we need to define for this operation
+	BodyRequired    bool
+	Bodies          []RequestBodyDefinition // The list of bodies for which to generate handlers.
+	Responses       []ResponseDefinition    // The list of responses that can be accepted by handlers.
+	Summary         string                  // Summary string from Swagger, used to generate a comment
+	Method          string                  // GET, POST, DELETE, etc.
+	Path            string                  // The Swagger path for the operation, like /resource/{id}
 	// SpecOrder is the source line on which this operation's path is
 	// declared in the spec, used to register routes in the order the paths
 	// appear in the spec rather than sorted (issue #1887). Zero when the
@@ -726,13 +655,7 @@ func (o OperationDefinition) SourceName() string {
 type ReceiverTemplateData struct {
 	Prefix      string // "Webhook" or "Callback"
 	PrefixLower string // lowercase form of Prefix, for prose
-	// CtxType is the framework context type as it appears in the handler
-	// signature: "echo.Context" vs "*echo.Context" for echo v4/v5, and
-	// "*fiber.Ctx" vs "fiber.Ctx" for fiber v2/v3. Only the echo and fiber
-	// receiver templates read it; the other frameworks' templates embed
-	// their fixed context type directly and leave this empty.
-	CtxType    string
-	Operations []OperationDefinition
+	Operations  []OperationDefinition
 }
 
 // NewReceiverTemplateData builds the template input for the given
@@ -777,16 +700,6 @@ func NewInitiatorTemplateData(prefix string, ops []OperationDefinition) (Initiat
 		PrefixLower: strings.ToLower(prefix),
 		Operations:  ops,
 	}, nil
-}
-
-// EchoRegisterTemplateData is the input to the shared echo route-
-// registration template. RouteReturnType selects between echo v4's
-// "*echo.Route" and echo v5's "echo.RouteInfo" in the EchoRouter
-// interface method signatures -- the only difference between the two
-// echo versions' registration code.
-type EchoRegisterTemplateData struct {
-	RouteReturnType string
-	Operations      []OperationDefinition
 }
 
 // Params returns the list of all parameters except Path parameters. Path parameters
@@ -1560,39 +1473,6 @@ func (h ResponseHeaderDefinition) IsNullable() bool {
 	return globalState.options.OutputOptions.NullableType && h.Nullable
 }
 
-// SchemaType returns the single OpenAPI type of this header's schema
-// (e.g. "string", "integer") with the OpenAPI 3.1 "null" nullability marker
-// stripped, or empty string when the schema declares no type or a
-// multi-type union (unions are carried by SchemaTypes instead).
-func (h ResponseHeaderDefinition) SchemaType() string {
-	if h.Schema.OAPISchema != nil && h.Schema.OAPISchema.Type != nil {
-		t := schemaPrimaryType(h.Schema.OAPISchema.Type)
-		if s := t.Slice(); len(s) == 1 {
-			return s[0]
-		}
-	}
-	return ""
-}
-
-// SchemaTypes returns the members of this header's OpenAPI 3.1 multi-type
-// union with the "null" nullability marker stripped, or nil when the schema
-// declares at most one non-null type. See ParameterDefinition.SchemaTypes.
-func (h ResponseHeaderDefinition) SchemaTypes() []string {
-	if h.Schema.OAPISchema == nil {
-		return nil
-	}
-	return schemaUnionTypes(h.Schema.OAPISchema.Type)
-}
-
-// SchemaFormat returns the OpenAPI format string for this header's schema
-// (e.g. "date-time", "duration"), or empty string if unavailable.
-func (h ResponseHeaderDefinition) SchemaFormat() string {
-	if h.Schema.OAPISchema != nil {
-		return h.Schema.OAPISchema.Format
-	}
-	return ""
-}
-
 // FilterParameterDefinitionByType returns the subset of the specified parameters which are of the
 // specified type.
 func FilterParameterDefinitionByType(params []ParameterDefinition, in string) []ParameterDefinition {
@@ -1633,16 +1513,6 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 		return operations, nil
 	}
 
-	// Collect the names of security schemes actually defined under
-	// components/securitySchemes. Requirements that reference an undefined
-	// scheme are filtered out below so generated code stays compilable.
-	definedSecuritySchemes := map[string]struct{}{}
-	if swagger.Components != nil {
-		for name := range swagger.Components.SecuritySchemes {
-			definedSecuritySchemes[name] = struct{}{}
-		}
-	}
-
 	// Track alias counters for generating unique client method names
 	// when multiple paths $ref the same path item.
 	aliasCounters := map[string]int{}
@@ -1679,9 +1549,8 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 			// take a copy of operationId, so we don't modify the underlying spec
 			operationId := op.OperationID
 			// Preserve the raw spec value (pre-normalization, pre-prefix, pre-alias-suffix)
-			// so templates that need to mirror the OpenAPI spec verbatim — e.g. echo's
-			// per-operation middleware map key — can do so without seeing the
-			// Go-identifier-friendly transformations applied below.
+			// so templates that need to mirror the OpenAPI spec verbatim can do so
+			// without seeing the Go-identifier-friendly transformations applied below.
 			specOperationId := op.OperationID
 			// We rely on OperationID to generate function names, it's required
 			if operationId == "" {
@@ -1708,13 +1577,6 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 				n := aliasCounters[operationId]
 				aliasCounters[operationId] = n + 1
 				operationId = operationId + fmt.Sprintf("Alias%d", n)
-			}
-
-			if !globalState.options.Compatibility.PreserveOriginalOperationIdCasingInEmbeddedSpec && !isAlias {
-				// update the existing, shared, copy of the spec if we're not wanting to preserve it.
-				// Skip for aliases: they share the same *Operation as the canonical path,
-				// and writing the suffixed name back would corrupt the original.
-				op.OperationID = operationId
 			}
 
 			// These are parameters defined for the specific path method that
@@ -1776,21 +1638,6 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 				AliasTarget:     aliasTarget,
 				PathItemRef:     pathItem.Ref,
 			}
-
-			// check for overrides of SecurityDefinitions.
-			// See: "Step 2. Applying security:" from the spec:
-			// https://swagger.io/docs/specification/authentication/
-			if op.Security != nil {
-				opDef.SecurityDefinitions = DescribeSecurityDefinition(*op.Security)
-			} else {
-				// use global securityDefinitions
-				// globalSecurityDefinitions contains the top-level securityDefinitions.
-				// They are the default securityPermissions which are injected into each
-				// path, except for the case where a path explicitly overrides them.
-				opDef.SecurityDefinitions = DescribeSecurityDefinition(swagger.Security)
-
-			}
-			opDef.SecurityDefinitions = filterOutUndefinedSecuritySchemes(opDef.SecurityDefinitions, definedSecuritySchemes)
 
 			if op.RequestBody != nil {
 				opDef.BodyRequired = op.RequestBody.Value.Required
@@ -1918,12 +1765,6 @@ func WebhookOperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, er
 				TypeDefinitions: typeDefinitions,
 				IsWebhook:       true,
 				WebhookName:     webhookName,
-			}
-
-			if op.Security != nil {
-				opDef.SecurityDefinitions = DescribeSecurityDefinition(*op.Security)
-			} else {
-				opDef.SecurityDefinitions = DescribeSecurityDefinition(swagger.Security)
 			}
 
 			if op.RequestBody != nil {
@@ -2069,12 +1910,6 @@ func CallbackOperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, e
 							TypeDefinitions: typeDefinitions,
 							IsCallback:      true,
 							CallbackName:    callbackName,
-						}
-
-						if op.Security != nil {
-							opDef.SecurityDefinitions = DescribeSecurityDefinition(*op.Security)
-						} else {
-							opDef.SecurityDefinitions = DescribeSecurityDefinition(swagger.Security)
 						}
 
 						if op.RequestBody != nil {
@@ -2405,7 +2240,7 @@ func GenerateResponseDefinitions(operationID string, responses map[string]*opena
 				Schema:   contentSchema,
 				Style:    style,
 				Explode:  explode,
-				Required: header.Value.Required || globalState.options.Compatibility.HeadersImplicitlyRequired,
+				Required: header.Value.Required,
 				Nullable: nullable,
 			}
 			if header.Value.Deprecated {
@@ -2606,151 +2441,6 @@ func sortOperationsBySpecOrder(ops []OperationDefinition) []OperationDefinition 
 	return out
 }
 
-// sortOperationsLexicographically returns a copy of ops sorted by path then
-// method, reproducing the historical (pre-#1887) route-registration order in
-// which OperationDefinitions gathers paths. It is a stable no-op on an
-// already-gathered slice, but re-sorts explicitly so the ordering does not
-// depend on the caller's input.
-func sortOperationsLexicographically(ops []OperationDefinition) []OperationDefinition {
-	out := make([]OperationDefinition, len(ops))
-	copy(out, ops)
-	slices.SortStableFunc(out, func(a, b OperationDefinition) int {
-		if c := cmp.Compare(a.Path, b.Path); c != 0 {
-			return c
-		}
-		return cmp.Compare(a.Method, b.Method)
-	})
-	return out
-}
-
-// operationsInRegistrationOrder returns ops in the order route handlers should
-// be registered. By default this follows spec-declaration order (issue #1887);
-// when the sort-handler-registrations compatibility flag is set it restores the
-// historical lexicographic order.
-func operationsInRegistrationOrder(ops []OperationDefinition) []OperationDefinition {
-	if globalState.options.Compatibility.SortHandlerRegistrations {
-		return sortOperationsLexicographically(ops)
-	}
-	return sortOperationsBySpecOrder(ops)
-}
-
-// GenerateIrisServer generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateIrisServer(t *template.Template, operations []OperationDefinition) (string, error) {
-	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "iris/iris-middleware.tmpl"}, t, operations); err != nil {
-		return "", err
-	}
-	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"iris/iris-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-// GenerateChiServer generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateChiServer(t *template.Template, operations []OperationDefinition) (string, error) {
-	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "server-middleware.tmpl"}, t, operations); err != nil {
-		return "", err
-	}
-	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-// GenerateFiberServer generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateFiberServer(t *template.Template, operations []OperationDefinition) (string, error) {
-	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "fiber/fiber-middleware.tmpl"}, t, operations); err != nil {
-		return "", err
-	}
-	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"fiber-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-// GenerateFiberV3Server generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateFiberV3Server(t *template.Template, operations []OperationDefinition) (string, error) {
-	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "fiber/fiber-middleware.tmpl"}, t, operations); err != nil {
-		return "", err
-	}
-	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"fiber-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-// GenerateEchoServer generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateEchoServer(t *template.Template, operations []OperationDefinition) (string, error) {
-	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "echo/echo-wrappers.tmpl"}, t, operations); err != nil {
-		return "", err
-	}
-	// Route registration follows spec-declaration order (issue #1887).
-	registerData := EchoRegisterTemplateData{RouteReturnType: "*echo.Route", Operations: operationsInRegistrationOrder(operations)}
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"echo/echo-register.tmpl"}, t, registerData); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-// GenerateEcho5Server generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateEcho5Server(t *template.Template, operations []OperationDefinition) (string, error) {
-	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "echo/echo-wrappers.tmpl"}, t, operations); err != nil {
-		return "", err
-	}
-	// Route registration follows spec-declaration order (issue #1887).
-	// Echo v5's EchoRouter methods return echo.RouteInfo instead of v4's
-	// *echo.Route; the shared echo/echo-register.tmpl is parameterized on
-	// that return type.
-	registerData := EchoRegisterTemplateData{RouteReturnType: "echo.RouteInfo", Operations: operationsInRegistrationOrder(operations)}
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"echo/echo-register.tmpl"}, t, registerData); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-// GenerateGinServer generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateGinServer(t *template.Template, operations []OperationDefinition) (string, error) {
-	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "gin/gin-wrappers.tmpl"}, t, operations); err != nil {
-		return "", err
-	}
-	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"gin/gin-register.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-// GenerateGorillaServer generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateGorillaServer(t *template.Template, operations []OperationDefinition) (string, error) {
-	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "server-middleware.tmpl"}, t, operations); err != nil {
-		return "", err
-	}
-	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
 // GenerateStdHTTPServer generates all the go code for the ServerInterface as well as
 // all the wrapper functions around our handlers.
 func GenerateStdHTTPServer(t *template.Template, operations []OperationDefinition) (string, error) {
@@ -2759,67 +2449,26 @@ func GenerateStdHTTPServer(t *template.Template, operations []OperationDefinitio
 		return "", err
 	}
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, operationsInRegistrationOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
 }
 
-func GenerateStrictServer(t *template.Template, serverTemplates map[string]*template.Template, operations []OperationDefinition, opts Configuration) (string, error) {
-
-	// Each strict framework renders its interface + glue templates against a
-	// specific template tree: the base tree for frameworks that use the
-	// skeleton/base defaults, or a per-framework clone (from serverTemplates)
-	// for those that override strict hooks -- fiber v3 swaps the fiber context
-	// type from *fiber.Ctx to fiber.Ctx via the fiber.ctxType hook, so its
-	// interface template must render against the fiber v3 clone.
-	type strictTarget struct {
-		enabled       bool
-		tree          *template.Template
-		interfaceTmpl string
-		glueTmpl      string
-	}
-
-	targets := []strictTarget{
-		{opts.Generate.ChiServer || opts.Generate.GorillaServer || opts.Generate.StdHTTPServer, t, "strict/strict-interface.tmpl", "strict/strict-http.tmpl"},
-		{opts.Generate.EchoServer, t, "strict/strict-interface.tmpl", "strict/strict-echo.tmpl"},
-		{opts.Generate.GinServer, t, "strict/strict-interface.tmpl", "strict/strict-gin.tmpl"},
-		{opts.Generate.FiberServer, t, "strict/strict-fiber-interface.tmpl", "strict/strict-fiber.tmpl"},
-		{opts.Generate.FiberV3Server, serverTemplates["fiberv3"], "strict/strict-fiber-interface.tmpl", "strict/strict-fiber.tmpl"},
-		{opts.Generate.IrisServer, t, "strict/strict-iris-interface.tmpl", "strict/strict-iris.tmpl"},
-		{opts.Generate.Echo5Server, serverTemplates["echo5"], "strict/strict-interface.tmpl", "strict/strict-echo.tmpl"},
-	}
-
-	// Configuration.Validate() enforces that at most one server type is
-	// enabled, so at most one target can be enabled here. Enforce the same
-	// invariant for direct callers of this exported function: every interface
-	// template declares the same package-level names (StrictServerInterface,
-	// <Op>RequestObject, <Op>ResponseObject), with visitor signatures that
-	// differ per framework, so emitting more than one target can never
-	// compile. (chi/gorilla/stdhttp form a single target: they share both
-	// templates, so any one of them yields identical output.)
-	var chosen *strictTarget
-	for i := range targets {
-		if !targets[i].enabled {
-			continue
-		}
-		if chosen != nil {
-			return "", fmt.Errorf("only one server type is supported at a time for strict server generation")
-		}
-		chosen = &targets[i]
-	}
-	if chosen == nil {
+// GenerateStrictServer generates the strict server interface and the glue
+// that adapts it to the net/http server.
+func GenerateStrictServer(t *template.Template, operations []OperationDefinition, opts Configuration) (string, error) {
+	if !opts.Generate.StdHTTPServer {
 		return "", nil
 	}
-	return GenerateTemplates([]string{chosen.interfaceTmpl, chosen.glueTmpl}, chosen.tree, operations)
+	return GenerateTemplates([]string{"strict/strict-interface.tmpl", "strict/strict-http.tmpl"}, t, operations)
 }
 
 func GenerateStrictResponses(t *template.Template, responses []ResponseDefinition) (string, error) {
 	return GenerateTemplates([]string{"strict/strict-responses.tmpl"}, t, responses)
 }
 
-// GenerateClient uses the template engine to generate the function which registers our wrappers
-// as Echo path handlers.
+// GenerateClient generates the client for the operations.
 func GenerateClient(t *template.Template, ops []OperationDefinition) (string, error) {
 	return GenerateTemplates([]string{"client.tmpl"}, t, ops)
 }
@@ -2867,76 +2516,6 @@ func GenerateCallbackInitiator(t *template.Template, callbackOps []OperationDefi
 // machinery used by the path-server middleware).
 func GenerateStdHTTPReceiver(t *template.Template, prefix string, ops []OperationDefinition) (string, error) {
 	return GenerateTemplates([]string{"receiver-stdlib.tmpl"}, t, NewReceiverTemplateData(prefix, ops))
-}
-
-// GenerateChiReceiver renders the chi receiver template. Chi shares
-// stdhttp's (w, r) handler signature, so it renders the same shared
-// receiver-stdlib.tmpl template.
-func GenerateChiReceiver(t *template.Template, prefix string, ops []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"receiver-stdlib.tmpl"}, t, NewReceiverTemplateData(prefix, ops))
-}
-
-// GenerateGorillaReceiver renders the gorilla/mux receiver template.
-// Gorilla shares stdhttp's (w, r) handler signature, so it renders the
-// same shared receiver-stdlib.tmpl template.
-func GenerateGorillaReceiver(t *template.Template, prefix string, ops []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"receiver-stdlib.tmpl"}, t, NewReceiverTemplateData(prefix, ops))
-}
-
-// GenerateEchoReceiver renders the echo (v4) receiver template. Echo's
-// handler shape is `(ctx echo.Context) error`, and binding errors are
-// returned via echo.NewHTTPError so echo's framework error chain
-// reports them as 400 -- there's no errHandler argument like the
-// stdhttp receiver factory has.
-func GenerateEchoReceiver(t *template.Template, prefix string, ops []OperationDefinition) (string, error) {
-	data := NewReceiverTemplateData(prefix, ops)
-	data.CtxType = "echo.Context"
-	return GenerateTemplates([]string{"echo/echo-receiver.tmpl"}, t, data)
-}
-
-// GenerateEcho5Receiver renders the shared echo receiver template with
-// echo v5's `*echo.Context` (pointer) context type -- the only API
-// difference between echo v4 and v5 that affects the receiver.
-func GenerateEcho5Receiver(t *template.Template, prefix string, ops []OperationDefinition) (string, error) {
-	data := NewReceiverTemplateData(prefix, ops)
-	data.CtxType = "*echo.Context"
-	return GenerateTemplates([]string{"echo/echo-receiver.tmpl"}, t, data)
-}
-
-// GenerateGinReceiver renders the gin receiver template. Gin's handler
-// shape is `(c *gin.Context)` (no error return); binding errors abort
-// with c.JSON(400, gin.H{"error": ...}). Per-handler middleware is not
-// generated here -- gin's idiom prefers engine .Use() composition.
-func GenerateGinReceiver(t *template.Template, prefix string, ops []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"gin/gin-receiver.tmpl"}, t, NewReceiverTemplateData(prefix, ops))
-}
-
-// GenerateFiberReceiver renders the fiber (v2) receiver template.
-// Fiber's handler shape is `(c *fiber.Ctx) error`; binding errors are
-// returned via fiber.NewError so fiber's error chain reports them as
-// 400. Per-handler middleware is not generated; use fiber.App.Use().
-func GenerateFiberReceiver(t *template.Template, prefix string, ops []OperationDefinition) (string, error) {
-	data := NewReceiverTemplateData(prefix, ops)
-	data.CtxType = "*fiber.Ctx"
-	return GenerateTemplates([]string{"fiber/fiber-receiver.tmpl"}, t, data)
-}
-
-// GenerateFiberV3Receiver renders the shared fiber receiver template with
-// fiber v3's `fiber.Ctx` (interface, by value) context type -- the only
-// API difference between fiber v2 and v3 that affects the receiver.
-func GenerateFiberV3Receiver(t *template.Template, prefix string, ops []OperationDefinition) (string, error) {
-	data := NewReceiverTemplateData(prefix, ops)
-	data.CtxType = "fiber.Ctx"
-	return GenerateTemplates([]string{"fiber/fiber-receiver.tmpl"}, t, data)
-}
-
-// GenerateIrisReceiver renders the iris receiver template. Iris's
-// handler shape is `(ctx iris.Context)` (no error return); binding
-// errors set ctx.StatusCode(400) plus ctx.WriteString and return.
-// Per-handler middleware is not generated; use app.Use() at the
-// engine or Party level.
-func GenerateIrisReceiver(t *template.Template, prefix string, ops []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"iris/iris-receiver.tmpl"}, t, NewReceiverTemplateData(prefix, ops))
 }
 
 // GenerateTemplatesIntoBuffer executes the named templates against ops and

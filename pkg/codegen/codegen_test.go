@@ -3,8 +3,6 @@ package codegen
 import (
 	_ "embed"
 	"go/format"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -28,10 +26,10 @@ func TestExampleOpenAPICodeGeneration(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			EchoServer:   true,
-			Client:       true,
-			Models:       true,
-			EmbeddedSpec: true,
+			StdHTTPServer: true,
+			Client:        true,
+			Models:        true,
+			EmbeddedSpec:  true,
 		},
 	}
 
@@ -105,10 +103,10 @@ func TestExtPropGoTypeSkipOptionalPointer(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			EchoServer:   true,
-			Models:       true,
-			EmbeddedSpec: true,
-			Strict:       true,
+			StdHTTPServer: true,
+			Models:        true,
+			EmbeddedSpec:  true,
+			Strict:        true,
 		},
 	}
 	spec := "test_specs/x-go-type-skip-optional-pointer.yaml"
@@ -143,9 +141,9 @@ func TestGoTypeImport(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			EchoServer:   true,
-			Models:       true,
-			EmbeddedSpec: true,
+			StdHTTPServer: true,
+			Models:        true,
+			EmbeddedSpec:  true,
 		},
 	}
 	spec := "test_specs/x-go-type-import-pet.yaml"
@@ -186,9 +184,9 @@ func TestGoAllofTypeOverride(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			EchoServer:   true,
-			Models:       true,
-			EmbeddedSpec: true,
+			StdHTTPServer: true,
+			Models:        true,
+			EmbeddedSpec:  true,
 		},
 	}
 	spec := "test_specs/x-go-type-pet-allof.yaml"
@@ -317,9 +315,9 @@ paths:
 	opts := Configuration{
 		PackageName: "api",
 		Generate: GenerateOptions{
-			EchoServer: true,
-			Client:     true,
-			Models:     true,
+			StdHTTPServer: true,
+			Client:        true,
+			Models:        true,
 		},
 	}
 
@@ -528,11 +526,11 @@ func indexOf(s, substr string) int {
 	return -1
 }
 
-// TestEnableAuthScopesOnContext verifies that generated server code embeds
-// security scheme scopes into the request context only when the deprecated
-// enable-auth-scopes-on-context compatibility option is set.
+// TestNoAuthScopesOnContext verifies that generated server code doesn't embed
+// security scheme scopes into the request context: authentication belongs in
+// the validation middleware, which evaluates the security requirements.
 // Please see https://github.com/oapi-codegen/oapi-codegen/issues/1524
-func TestEnableAuthScopesOnContext(t *testing.T) {
+func TestNoAuthScopesOnContext(t *testing.T) {
 	const spec = `
 openapi: "3.0.0"
 info:
@@ -565,20 +563,11 @@ paths:
 		},
 	}
 
-	// By default, no context key types, scope constants, or context values
-	// are generated.
 	code, err := Generate(swagger, opts)
 	require.NoError(t, err)
 	assert.NotContains(t, code, "BearerAuthScopes")
 	assert.NotContains(t, code, "bearerAuthContextKey")
 	assert.NotContains(t, code, "context.WithValue")
-
-	// With the compatibility option set, the legacy scope emission returns.
-	opts.Compatibility.EnableAuthScopesOnContext = true
-	code, err = Generate(swagger, opts)
-	require.NoError(t, err)
-	assert.Contains(t, code, `BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"`)
-	assert.Contains(t, code, `ctx = context.WithValue(ctx, BearerAuthScopes, []string{"read"})`)
 }
 
 // TestEnumValueEscaping verifies that a string enum value containing a
@@ -622,169 +611,11 @@ components:
 	require.NoError(t, err)
 }
 
-const securityScopesSharedSpec = `
-openapi: "3.0.0"
-info:
-  version: 1.0.0
-  title: Common
-paths: {}
-components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-`
-
-const securityScopesUserSpec = `
-openapi: "3.0.0"
-info:
-  version: 1.0.0
-  title: User API
-paths:
-  /user:
-    get:
-      operationId: getUser
-      security:
-        - BearerAuth: ["read"]
-        - LocalAuth: []
-      responses:
-        '200':
-          description: ok
-components:
-  securitySchemes:
-    BearerAuth:
-      $ref: './common.yml#/components/securitySchemes/BearerAuth'
-    LocalAuth:
-      type: http
-      scheme: basic
-`
-
-// loadSecurityScopesUserSpec writes the shared/user spec pair to disk and
-// loads the user spec, resolving the cross-file security scheme $ref.
-func loadSecurityScopesUserSpec(t *testing.T) *openapi3.T {
-	t.Helper()
-	dir := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "common.yml"), []byte(securityScopesSharedSpec), 0o600))
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "user.yml"), []byte(securityScopesUserSpec), 0o600))
-
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	swagger, err := loader.LoadFromFile(filepath.Join(dir, "user.yml"))
-	require.NoError(t, err)
-	return swagger
-}
-
-// TestSecuritySchemeScopesWithImportMapping verifies that a security scheme
-// $ref'd from an import-mapped spec aliases the scopes constant declared by
-// the mapped package instead of declaring its own context key type, so
-// shared middleware sees a single context key across generated packages.
-// Please see https://github.com/oapi-codegen/oapi-codegen/issues/2383
-func TestSecuritySchemeScopesWithImportMapping(t *testing.T) {
-	swagger := loadSecurityScopesUserSpec(t)
-
-	opts := Configuration{
-		PackageName: "user",
-		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
-		},
-		Compatibility: CompatibilityOptions{EnableAuthScopesOnContext: true},
-		ImportMapping: map[string]string{"./common.yml": "example.com/common"},
-	}
-
-	code, err := Generate(swagger, opts)
-	require.NoError(t, err)
-
-	// The const block is column-aligned by gofmt, so collapse runs of
-	// whitespace before matching the declarations.
-	normalized := strings.Join(strings.Fields(code), " ")
-
-	// The imported scheme aliases the shared constant — carrying the shared
-	// package's context key type — and declares no local type; middleware
-	// still references the constant by its local name.
-	assert.Contains(t, normalized, "BearerAuthScopes = externalRef0.BearerAuthScopes")
-	assert.NotContains(t, code, "bearerAuthContextKey")
-	assert.Contains(t, code, `ctx = context.WithValue(ctx, BearerAuthScopes, []string{"read"})`)
-
-	// The locally declared scheme keeps its own typed constant.
-	assert.Contains(t, normalized, `LocalAuthScopes localAuthContextKey = "LocalAuth.Scopes"`)
-}
-
-// TestSecuritySchemeScopesWithoutImportMapping verifies that an external
-// scheme $ref without an import-mapping entry keeps the historical behavior
-// of declaring the context key type and constant locally.
-func TestSecuritySchemeScopesWithoutImportMapping(t *testing.T) {
-	swagger := loadSecurityScopesUserSpec(t)
-
-	opts := Configuration{
-		PackageName: "user",
-		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
-		},
-		Compatibility: CompatibilityOptions{EnableAuthScopesOnContext: true},
-	}
-
-	code, err := Generate(swagger, opts)
-	require.NoError(t, err)
-
-	assert.Contains(t, code, `BearerAuthScopes bearerAuthContextKey = "BearerAuth.Scopes"`)
-}
-
-// TestSecuritySchemeScopesCurrentPackageMapping verifies that a scheme $ref'd
-// from a spec mapped to the current package ("-") emits neither the type nor
-// the constant: the sibling config generating that spec into the same package
-// declares both.
-func TestSecuritySchemeScopesCurrentPackageMapping(t *testing.T) {
-	swagger := loadSecurityScopesUserSpec(t)
-
-	opts := Configuration{
-		PackageName: "user",
-		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
-		},
-		Compatibility: CompatibilityOptions{EnableAuthScopesOnContext: true},
-		ImportMapping: map[string]string{"./common.yml": "-"},
-	}
-
-	code, err := Generate(swagger, opts)
-	require.NoError(t, err)
-
-	// No local declarations for the shared scheme...
-	assert.NotContains(t, code, "bearerAuthContextKey")
-	assert.NotContains(t, code, `= "BearerAuth.Scopes"`)
-	// ...but middleware references the sibling-declared constant.
-	assert.Contains(t, code, `ctx = context.WithValue(ctx, BearerAuthScopes, []string{"read"})`)
-}
-
-// TestSecuritySchemeScopesWithoutOperations verifies that a spec holding only
-// shared definitions (no paths) still exports the scopes constants, so that
-// other packages can alias them via import-mapping.
-func TestSecuritySchemeScopesWithoutOperations(t *testing.T) {
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(securityScopesSharedSpec))
-	require.NoError(t, err)
-
-	opts := Configuration{
-		PackageName: "common",
-		Generate: GenerateOptions{
-			Models: true,
-		},
-		Compatibility: CompatibilityOptions{EnableAuthScopesOnContext: true},
-	}
-
-	code, err := Generate(swagger, opts)
-	require.NoError(t, err)
-
-	assert.Contains(t, code, `BearerAuthScopes bearerAuthContextKey = "BearerAuth.Scopes"`)
-}
-
-// TestSortHandlerRegistrations verifies the sort-handler-registrations
-// compatibility flag: by default handlers are registered in spec-declaration
-// order (issue #1887), and setting the flag restores the historical
-// lexicographic (by path) registration order.
-func TestSortHandlerRegistrations(t *testing.T) {
+// TestHandlerRegistrationFollowsSpecOrder verifies that handlers are
+// registered in spec-declaration order (issue #1887), so that on routers which
+// match in registration order overlapping paths can be disambiguated by
+// ordering them in the spec.
+func TestHandlerRegistrationFollowsSpecOrder(t *testing.T) {
 	// Paths are declared in non-lexicographic order: zebra before apple.
 	const spec = `
 openapi: 3.0.0
@@ -809,7 +640,7 @@ paths:
 
 	base := Configuration{
 		PackageName: "api",
-		Generate:    GenerateOptions{FiberServer: true, Models: true},
+		Generate:    GenerateOptions{StdHTTPServer: true, Models: true},
 	}
 
 	regOrder := func(code string) (zebra, apple int) {
@@ -817,23 +648,12 @@ paths:
 			strings.Index(code, `options.BaseURL+"/apple"`)
 	}
 
-	// Default: registration follows spec order — zebra before apple.
 	code, err := Generate(load(), base)
 	require.NoError(t, err)
 	zebra, apple := regOrder(code)
 	require.NotEqual(t, -1, zebra)
 	require.NotEqual(t, -1, apple)
-	assert.Less(t, zebra, apple, "default registration should follow spec order (zebra before apple)")
-
-	// Flag set: registration restored to lexicographic order — apple before zebra.
-	sorted := base
-	sorted.Compatibility.SortHandlerRegistrations = true
-	code, err = Generate(load(), sorted)
-	require.NoError(t, err)
-	zebra, apple = regOrder(code)
-	require.NotEqual(t, -1, zebra)
-	require.NotEqual(t, -1, apple)
-	assert.Less(t, apple, zebra, "sort-handler-registrations should restore lexicographic order (apple before zebra)")
+	assert.Less(t, zebra, apple, "registration should follow spec order (zebra before apple)")
 }
 
 //go:embed test_spec.yaml
@@ -900,4 +720,33 @@ components:
 `
 	code := generateSpec(t, spec)
 	assert.Equal(t, 1, strings.Count(code, `"time"`), code)
+}
+
+// TestUnionJSONMergeHelperIsLocal verifies that union methods merge JSON
+// through a helper emitted in the generated file rather than the runtime
+// library, and that the helper is named after a union type in the file, so
+// several generated files in one package don't redeclare it.
+func TestUnionJSONMergeHelperIsLocal(t *testing.T) {
+	code := generateSpec(t, `openapi: 3.0.3
+info: {title: api, version: "1.0.0"}
+paths: {}
+components:
+  schemas:
+    Cat:
+      type: object
+      properties:
+        name: {type: string}
+    Dog:
+      type: object
+      properties:
+        bark: {type: boolean}
+    Pet:
+      oneOf:
+        - $ref: '#/components/schemas/Cat'
+        - $ref: '#/components/schemas/Dog'
+`)
+	assert.Contains(t, code, "func oapiJSONMergeForPet(data, patch json.RawMessage) (json.RawMessage, error) {")
+	assert.Contains(t, methodBody(t, code, "func (t *Pet) MergeCat("), "oapiJSONMergeForPet(t.union, b)")
+	assert.NotContains(t, code, "runtime.JSONMerge")
+	assert.NotContains(t, code, `"github.com/oapi-codegen/runtime"`)
 }

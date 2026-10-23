@@ -3,7 +3,7 @@ package: extensionsxgotype
 output: x_go_type.gen.go
 # Union of the flags every folded case needs:
 #   - models       : all four folded sources need type definitions
-#   - echo-server  : issue-1397 uses echo-server + client + embedded-spec to verify
+#   - std-http-server  : issue-1397 uses std-http-server + client + embedded-spec to verify
 #                    x-go-type-name on nested objects compiles correctly
 #   - client       : issue-1397
 #   - embedded-spec: issue-832 and issue-1397
@@ -11,7 +11,7 @@ output: x_go_type.gen.go
 #                    (SomeObject, SomeInteger are not path-referenced)
 generate:
   models: true
-  echo-server: true
+  std-http-server: true
   client: true
   embedded-spec: true
 output-options:

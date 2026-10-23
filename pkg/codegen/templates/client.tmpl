@@ -122,9 +122,13 @@ func New{{$opid}}Request{{.Suffix}}(server string{{genParamArgs $pathParams}}{{i
         }
         bodyReader = bytes.NewReader(buf)
     {{else if .IsFormdata -}}
-        bodyStr, err := runtime.MarshalForm(body, nil)
-        if err != nil {
-            return nil, err
+        bodyStr := url.Values{}
+        {
+            var err error
+            {{formEncode "body" "bodyStr"}}
+            if err != nil {
+                return nil, err
+            }
         }
         bodyReader = strings.NewReader(bodyStr.Encode())
     {{else if .IsText -}}
@@ -160,10 +164,12 @@ func New{{$opid}}Request{{$generic.Suffix}}(server string{{$generic.ArgsDecl}}) 
     pathParam{{$paramIdx}} = string(pathParamBuf{{$paramIdx}})
     {{end}}
     {{if .IsStyled}}
-    pathParam{{$paramIdx}}, err = runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{.GoVariableName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"})
+    {{with .Codec -}}
+    {{.Style $param.GoVariableName (printf "pathParam%d" $paramIdx)}}
     if err != nil {
         return nil, err
     }
+    {{- end}}
     {{end}}
 {{end}}
     serverURL, err := url.Parse(server)
@@ -204,13 +210,7 @@ func New{{$opid}}Request{{$generic.Suffix}}(server string{{$generic.ArgsDecl}}) 
 
             {{end}}
             {{if .IsStyled}}
-            if queryFrag, err := runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if and .RequiresNilCheck .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"}); err != nil {
-                return nil, err
-            } else {
-                for _, qp := range strings.Split(queryFrag, "&") {
-                    rawQueryFragments = append(rawQueryFragments, qp)
-                }
-            }
+            {{template "client.styleQuery" .}}
             {{end}}
             {{if .RequiresNilCheck}}}{{end}}
         {{end}}
@@ -245,10 +245,12 @@ func New{{$opid}}Request{{$generic.Suffix}}(server string{{$generic.ArgsDecl}}) 
         cookieParam{{$paramIdx}} = url.QueryEscape(string(cookieParamBuf{{$paramIdx}}))
         {{end}}
         {{if .IsStyled}}
-        cookieParam{{$paramIdx}}, err = runtime.StyleParamWithOptions("simple", {{.Explode}}, "{{.ParamName}}", {{if .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"})
+        {{with .Codec -}}
+        {{.Style (printf "%sparams.%s" (or (and $param.HasOptionalPointer "*") "") $param.GoName) (printf "cookieParam%d" $paramIdx)}}
         if err != nil {
             return nil, err
         }
+        {{- end}}
         {{end}}
         cookie{{$paramIdx}} := &http.Cookie{
             Name:"{{.ParamName}}",

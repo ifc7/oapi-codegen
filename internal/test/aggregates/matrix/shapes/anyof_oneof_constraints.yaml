@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   An object with both an anyOf and a oneOf whose branches only add
   constraints (issue #839): at least one of a and b, and exactly one of c

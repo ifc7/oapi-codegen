@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Error defines model for Error.
@@ -127,7 +125,7 @@ func NewGetThingRequest(server string, id string) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	pathParam0 = url.PathEscape(id)
 	if err != nil {
 		return nil, err
 	}

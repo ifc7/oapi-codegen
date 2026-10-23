@@ -1,0 +1,71 @@
+{{/*
+Shared server-side parameter binding partials, used by the server wrappers
+(server-middleware.tmpl) and the webhook/callback receivers
+(receiver-stdlib.tmpl). Both call them with a dict: .Param is the
+ParameterDefinition and .Handler the expression of the error handler to call.
+
+A styled parameter is bound by the code its Codec generates.
+*/}}
+
+{{/*
+"param.bindStyled" binds .Src, a `simple`-style value of a path, header or
+cookie parameter, into the variable .Dst, and sets err when it can't. A
+required parameter's value can't be empty.
+*/}}
+{{define "param.bindStyled" -}}
+{{- $p := .Param -}}
+{{- with $p.Codec -}}
+{{if $p.Required -}}
+if {{$.Src}} == "" {
+    err = errors.New({{printf "parameter '%s' is empty, can't bind its value" $p.ParamName | toGoString}})
+} else {
+{{.BindStyled $.Src $.Dst}}
+}
+{{- else -}}
+{{.BindStyled $.Src $.Dst}}
+{{- end}}
+{{- end}}
+{{- end}}
+
+{{/*
+"param.bindQuery" binds a styled query parameter into params, calling the
+error handler and returning when it is missing but required, or invalid.
+*/}}
+{{define "param.bindQuery" -}}
+{{- $p := .Param -}}
+{{- with $p.Codec -}}
+{{if .ExplodedQueryObject -}}
+{
+    // The object's properties are query parameters of their own.
+    var value_ {{$p.TypeDef}}
+    found_ := false
+    query_ := r.URL.Query()
+    _ = query_
+    {{.BindQueryObject "query_" "value_"}}
+    if err != nil {
+        {{$.Handler}}(w, r, &InvalidParamFormatError{ParamName: "{{$p.ParamName}}", Err: err})
+        return
+    }
+    if found_ {
+        params.{{$p.GoName}} = {{if $p.HasOptionalPointer}}&{{end}}value_
+    }{{if $p.Required}} else {
+        {{$.Handler}}(w, r, &RequiredParamError{ParamName: "{{$p.ParamName}}"})
+        return
+    }{{end}}
+}
+{{- else -}}
+if values_, found_ := r.URL.Query()["{{$p.ParamName}}"]; found_ {
+    var value_ {{$p.TypeDef}}
+    {{.BindQuery "values_" "value_"}}
+    if err != nil {
+        {{$.Handler}}(w, r, &InvalidParamFormatError{ParamName: "{{$p.ParamName}}", Err: err})
+        return
+    }
+    params.{{$p.GoName}} = {{if $p.HasOptionalPointer}}&{{end}}value_
+}{{if $p.Required}} else {
+    {{$.Handler}}(w, r, &RequiredParamError{ParamName: "{{$p.ParamName}}"})
+    return
+}{{end}}
+{{- end}}
+{{- end}}
+{{- end}}

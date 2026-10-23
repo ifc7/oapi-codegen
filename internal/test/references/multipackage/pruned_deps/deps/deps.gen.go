@@ -179,13 +179,3 @@ func GetSpec() (swagger *openapi3.T, err error) {
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
 }
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
-}

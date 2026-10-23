@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: oneOf over two $ref variants next to fixed properties of the union itself.
 subject:
   type: object

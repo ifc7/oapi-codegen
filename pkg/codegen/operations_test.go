@@ -938,10 +938,7 @@ func TestNewInitiatorTemplateDataRejectsPathParams(t *testing.T) {
 	assert.Equal(t, "callback", data.PrefixLower)
 }
 
-// buildStrictTestTrees loads the real embedded templates and per-framework
-// clones the same way Generate() does, for exercising GenerateStrictServer.
-func buildStrictTestTrees(t *testing.T) (*template.Template, map[string]*template.Template) {
-	t.Helper()
+func TestGenerateStrictServerInterface(t *testing.T) {
 	funcs := make(template.FuncMap, len(TemplateFunctions)+1)
 	for k, v := range TemplateFunctions {
 		funcs[k] = v
@@ -950,33 +947,13 @@ func buildStrictTestTrees(t *testing.T) (*template.Template, map[string]*templat
 	funcs["opts"] = func() Configuration { return Configuration{} }
 	base := template.New("codegen").Funcs(funcs)
 	require.NoError(t, LoadTemplates(templates, base))
-	clones, err := buildServerTemplates(templates, base)
-	require.NoError(t, err)
-	return base, clones
-}
-
-func TestGenerateStrictServerInterfaceDedup(t *testing.T) {
-	base, clones := buildStrictTestTrees(t)
 	ops := []OperationDefinition{{OperationId: "Ping"}}
 
-	// A single enabled server emits the interface exactly once.
-	out, err := GenerateStrictServer(base, clones, ops, Configuration{
-		Generate: GenerateOptions{ChiServer: true},
+	out, err := GenerateStrictServer(base, ops, Configuration{
+		Generate: GenerateOptions{StdHTTPServer: true},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 1, strings.Count(out, "type StrictServerInterface interface"))
-
-	// Configuration.Validate() permits only one server type; the strict
-	// generator enforces the same invariant for direct API callers, since
-	// every interface template declares the same package-level type names.
-	for name, generate := range map[string]GenerateOptions{
-		"fiber v2+v3": {FiberServer: true, FiberV3Server: true},
-		"echo+fiber":  {EchoServer: true, FiberServer: true},
-		"chi+gin":     {ChiServer: true, GinServer: true},
-	} {
-		_, err = GenerateStrictServer(base, clones, ops, Configuration{Generate: generate})
-		require.ErrorContains(t, err, "only one server type", name)
-	}
 }
 
 func TestStrictServerResponseReceiverCompatibility(t *testing.T) {
@@ -1089,9 +1066,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{ChiServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
+		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
 	}
 
 	for _, server := range servers {
@@ -1191,9 +1166,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{ChiServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
+		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
 	}
 
 	for _, server := range servers {
@@ -1311,9 +1284,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{ChiServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
+		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
 	}
 
 	for _, server := range servers {
@@ -1340,10 +1311,8 @@ components:
 	}
 }
 
-// A composition lowered to an untyped member's type is wrapped. How a
-// composition is lowered depends on the schema-merging behavior, so the
-// member is identified by the type the generator emitted; every behavior
-// lowers these to the member's type, v1 since #2590.
+// A composition lowered to an untyped member's type is wrapped. The member is
+// identified by the type the generator emitted.
 func TestStrictServerComposedResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.1.0"
@@ -1427,17 +1396,12 @@ components:
 `
 
 	wrapped := []string{"AllOfOp", "AllOfSiblingOp", "WrappedOp", "NullableOp", "NullableAnyOfOp", "NamedOp"}
-	for _, behavior := range []string{SchemaMergingV1, SchemaMergingV2, SchemaMergingV3} {
-		t.Run(behavior, func(t *testing.T) {
-			code := generateSpec(t, spec, func(c *Configuration) {
-				c.Compatibility.SchemaMergingBehavior = behavior
-				c.Generate.StdHTTPServer = true
-				c.Generate.Strict = true
-			})
-			for _, op := range wrapped {
-				assert.Contains(t, code, "type "+op+"200JSONResponse struct {\n\tBody ", op)
-			}
-		})
+	code := generateSpec(t, spec, func(c *Configuration) {
+		c.Generate.StdHTTPServer = true
+		c.Generate.Strict = true
+	})
+	for _, op := range wrapped {
+		assert.Contains(t, code, "type "+op+"200JSONResponse struct {\n\tBody ", op)
 	}
 }
 
@@ -1543,9 +1507,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{ChiServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
+		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
 	}
 
 	for _, server := range servers {
@@ -1565,7 +1527,7 @@ components:
 
 			assert.Contains(t, code, "type FormUntypedOp200FormdataResponse struct {\n\tBody any\n}")
 			assert.Contains(t, code, "type FormObjectOp200FormdataResponse struct {\n\tName *string")
-			assert.Contains(t, visitorOf(t, code, "FormUntypedOp200FormdataResponse"), "runtime.MarshalForm(response.Body, nil)")
+			assert.Contains(t, visitorOf(t, code, "FormUntypedOp200FormdataResponse"), "any(response.Body).(url.Values)")
 			// Only the shape of an embedded form envelope is pinned here, not
 			// how its visitor marshals it.
 			assert.Contains(t, code, "type UntypedFormFormdataResponse any\n")
@@ -1713,7 +1675,7 @@ components:
 	code := generateSpec(t, spec)
 	assert.Contains(t, code, "type Id struct {")
 	assert.Contains(t, code, "type IdParam struct {")
-	assert.Contains(t, code, "type Id0 = openapi_types.UUID", "members keep their names")
+	assert.Contains(t, code, "type Id0 = uuid.UUID", "members keep their names")
 	assert.Contains(t, code, "type GetOtherParamsQ struct {", "an operation's own parameters are prefixed by it")
 }
 

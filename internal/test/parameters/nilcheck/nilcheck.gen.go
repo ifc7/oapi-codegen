@@ -8,9 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // GetCookieParams defines parameters for GetCookie.
@@ -180,7 +179,13 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 		if params.Tags != nil {
 			var cookieParam0 string
 
-			cookieParam0, err = runtime.StyleParamWithOptions("simple", true, "tags", params.Tags, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "array", Format: ""})
+			{
+				parts_ := make([]string, len(params.Tags))
+				for i_, e_ := range params.Tags {
+					parts_[i_] = e_
+				}
+				cookieParam0 = "" + strings.Join(parts_, ",")
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -224,7 +229,13 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 		if params.XTags != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-Tags", params.XTags, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "array", Format: ""})
+			{
+				parts_ := make([]string, len(params.XTags))
+				for i_, e_ := range params.XTags {
+					parts_[i_] = e_
+				}
+				headerParam0 = "" + strings.Join(parts_, ",")
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -267,12 +278,16 @@ func NewGetQueryRequest(server string, params *GetQueryParams) (*http.Request, e
 
 		if params.UserIds != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "user_ids[]", params.UserIds, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+			if len(params.UserIds) == 0 {
+				rawQueryFragments = append(rawQueryFragments, "user_ids%5B%5D=")
+			}
+			for _, e_ := range params.UserIds {
+				var s_ string
+				s_ = url.QueryEscape(strconv.FormatInt(int64(e_), 10))
+				rawQueryFragments = append(rawQueryFragments, "user_ids%5B%5D="+s_)
+			}
+			if err != nil {
 				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
 			}
 
 		}

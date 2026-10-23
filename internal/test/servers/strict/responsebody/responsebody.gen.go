@@ -11,8 +11,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/oapi-codegen/runtime"
+	"net/url"
+	"strconv"
 )
 
 // Untyped defines model for Untyped.
@@ -56,8 +56,9 @@ func (siw *ServerInterfaceWrapper) GetForm(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetForm(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -70,8 +71,9 @@ func (siw *ServerInterfaceWrapper) GetNull(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetNull(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -84,8 +86,9 @@ func (siw *ServerInterfaceWrapper) GetNullableRef(w http.ResponseWriter, r *http
 		siw.Handler.GetNullableRef(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -98,8 +101,9 @@ func (siw *ServerInterfaceWrapper) GetText(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetText(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -112,8 +116,9 @@ func (siw *ServerInterfaceWrapper) GetTextRef(w http.ResponseWriter, r *http.Req
 		siw.Handler.GetTextRef(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -126,8 +131,9 @@ func (siw *ServerInterfaceWrapper) GetUnion(w http.ResponseWriter, r *http.Reque
 		siw.Handler.GetUnion(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -280,7 +286,46 @@ type GetForm200FormdataResponse struct {
 
 func (response GetForm200FormdataResponse) VisitGetFormResponse(w http.ResponseWriter) error {
 
-	form, err := runtime.MarshalForm(response.Body, nil)
+	form := url.Values{}
+	var err error
+	if values_, ok_ := any(response.Body).(url.Values); ok_ {
+		for k_, vs_ := range values_ {
+			form[k_] = append(form[k_], vs_...)
+		}
+	} else if b_, err_ := json.Marshal(response.Body); err_ != nil {
+		err = err_
+	} else {
+		var tree_ any
+		dec_ := json.NewDecoder(bytes.NewReader(b_))
+		dec_.UseNumber()
+		if err = dec_.Decode(&tree_); err == nil {
+			var walk_ func(key string, node any)
+			walk_ = func(key string, node any) {
+				child := func(name string) string {
+					if key == "" {
+						return name
+					}
+					return key + "[" + name + "]"
+				}
+				switch node := node.(type) {
+				case map[string]any:
+					for k, e := range node {
+						walk_(child(k), e)
+					}
+				case []any:
+					for i, e := range node {
+						walk_(child(strconv.Itoa(i)), e)
+					}
+				case nil:
+				case string:
+					form.Add(key, node)
+				default:
+					form.Add(key, fmt.Sprint(node))
+				}
+			}
+			walk_("", tree_)
+		}
+	}
 	if err != nil {
 		return err
 	}
@@ -321,7 +366,7 @@ type GetNullableRefResponseObject interface {
 }
 
 type GetNullableRef200JSONResponse struct {
-	Body Untyped
+	Body any
 }
 
 func (response GetNullableRef200JSONResponse) VisitGetNullableRefResponse(w http.ResponseWriter) error {

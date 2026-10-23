@@ -1,16 +1,14 @@
 package codegen
 
-// This file holds the allOf code that every schema-merging-behavior version
-// shares: the dispatch on the version in effect, and the generator's plumbing
-// around a version's merge, such as naming a recursive composition. The
-// versions' own code is in merge_schemas_v1.go, merge_schemas_v2.go and
-// merge_schemas_v3.go. A change here changes what every version generates,
-// so the versions move in step.
+// This file holds the generator's plumbing around the allOf merge, such as
+// naming a recursive composition. The merge itself is in
+// merge_schemas_allof.go.
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -101,36 +99,6 @@ func finishAllOf(ctx genContext, frame *mergeFrame, schema *openapi3.Schema, mer
 	return merged, nil
 }
 
-// schemaMerger merges the members of an allOf into one Schema.
-type schemaMerger func(ctx genContext, allOf []*openapi3.SchemaRef, path []string) (Schema, error)
-
-// schemaMergerFor returns the allOf merge of v1 or v2, which generateAllOf
-// hands to generateAllOfV2, which they share. v3's merge takes more than a
-// schemaMerger does (see allOfOptions), and generateAllOfV3 calls it itself.
-func schemaMergerFor(version string) schemaMerger {
-	switch version {
-	case SchemaMergingV1:
-		return mergeSchemasV1
-	case SchemaMergingV2:
-		return mergeSchemasV2
-	default:
-		// generateAllOf asks only for the versions that share
-		// generateAllOfV2; a new one of those has to be added here too.
-		panic(fmt.Sprintf("no allOf merge for schema-merging-behavior %q", version))
-	}
-}
-
-// generateAllOf lowers a schema with allOf for generateGoSchema, the way the
-// schema-merging-behavior in effect does. v1 and v2 share v2's code, which is
-// handed the version's own merge of the members.
-func generateAllOf(ctx genContext, schema *openapi3.Schema, path []string, extensions map[string]any, skipOptionalPointer bool) (Schema, error) {
-	version := ctx.run.merging
-	if version == SchemaMergingV3 {
-		return generateAllOfV3(ctx, schema, path, extensions, skipOptionalPointer)
-	}
-	return generateAllOfV2(ctx, schema, path, extensions, skipOptionalPointer, schemaMergerFor(version))
-}
-
 // nonNullTypes returns a type array's entries other than "null".
 func nonNullTypes(t *openapi3.Types) []string {
 	var out []string
@@ -153,4 +121,18 @@ func sameSchema(r1, r2 *openapi3.SchemaRef) bool {
 	b1, err1 := json.Marshal(r1.Value)
 	b2, err2 := json.Marshal(r2.Value)
 	return err1 == nil && err2 == nil && bytes.Equal(b1, b2)
+}
+
+// sameTypeSet reports whether two type lists name the same types, in any
+// order.
+func sameTypeSet(t1, t2 []string) bool {
+	if len(t1) != len(t2) {
+		return false
+	}
+	for _, typ := range t1 {
+		if !slices.Contains(t2, typ) {
+			return false
+		}
+	}
+	return true
 }

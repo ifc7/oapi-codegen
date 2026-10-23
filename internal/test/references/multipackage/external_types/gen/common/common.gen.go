@@ -12,8 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-
-	"github.com/oapi-codegen/runtime"
+	"strconv"
 )
 
 // Thing defines model for Thing.
@@ -69,7 +68,11 @@ func (siw *ServerInterfaceWrapper) UpdateThing(w http.ResponseWriter, r *http.Re
 	// ------------- Path parameter "id" -------------
 	var id string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		id = r.PathValue("id")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -80,23 +83,31 @@ func (siw *ServerInterfaceWrapper) UpdateThing(w http.ResponseWriter, r *http.Re
 
 	// ------------- Optional query parameter "limit" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+	if values_, found_ := r.URL.Query()["limit"]; found_ {
+		var value_ int
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'limit'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 0); err_ != nil {
+				err = err_
+			} else {
+				value_ = int(v_)
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+			return
+		}
+		params.Limit = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateThing(w, r, id, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -262,7 +273,9 @@ func (response UpdateThing200JSONResponse) VisitUpdateThingResponse(w http.Respo
 	}
 	w.Header().Set("Content-Type", "application/json")
 	{
-		v, err := runtime.StyleParamWithOptions("simple", false, "X-Thing-ID", response.Headers.XThingID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		var v string
+		var err error
+		v = string(response.Headers.XThingID)
 		if err != nil {
 			return fmt.Errorf("error styling response header X-Thing-ID: %w", err)
 		}

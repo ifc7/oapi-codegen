@@ -15,8 +15,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Client defines model for Client.
@@ -491,24 +489,26 @@ func NewGetDeprecatedFieldRequest(server string, params *GetDeprecatedFieldParam
 
 		if params.OldFilter != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "old_filter", *params.OldFilter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			{
+				var s_ string
+				s_ = url.QueryEscape((*params.OldFilter))
+				rawQueryFragments = append(rawQueryFragments, "old_filter="+s_)
+			}
+			if err != nil {
 				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
 			}
 
 		}
 
 		if params.NewFilter != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "new_filter", *params.NewFilter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			{
+				var s_ string
+				s_ = url.QueryEscape((*params.NewFilter))
+				rawQueryFragments = append(rawQueryFragments, "new_filter="+s_)
+			}
+			if err != nil {
 				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
 			}
 
 		}
@@ -533,7 +533,7 @@ func NewGetDeprecatedParamsOldIdRequest(server string, oldId string, params *Get
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "old_id", oldId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	pathParam0 = url.PathEscape(oldId)
 	if err != nil {
 		return nil, err
 	}
@@ -563,7 +563,7 @@ func NewGetDeprecatedParamsOldIdRequest(server string, oldId string, params *Get
 		if params.OldHeader != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "old_header", *params.OldHeader, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			headerParam0 = (*params.OldHeader)
 			if err != nil {
 				return nil, err
 			}
@@ -578,7 +578,7 @@ func NewGetDeprecatedParamsOldIdRequest(server string, oldId string, params *Get
 		if params.OldCookie != nil {
 			var cookieParam0 string
 
-			cookieParam0, err = runtime.StyleParamWithOptions("simple", true, "old_cookie", *params.OldCookie, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "string", Format: ""})
+			cookieParam0 = (*params.OldCookie)
 			if err != nil {
 				return nil, err
 			}
@@ -1347,7 +1347,9 @@ func ParseGetDeprecatedParamsOldIdResponse(rsp *http.Response) (*GetDeprecatedPa
 		var headers GetDeprecatedParamsOldIdResponse200Headers
 		if values := rsp.Header.Values("X-Old-Token"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Old-Token", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = values[0]
+			if err != nil {
 				return nil, err
 			}
 			headers.XOldToken = &value
@@ -1412,14 +1414,18 @@ func ParseGetLegacyResponse(rsp *http.Response) (*GetLegacyResponse, error) {
 		var headers GetLegacyResponse200Headers
 		if values := rsp.Header.Values("X-Correlation-Id"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Correlation-Id", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = values[0]
+			if err != nil {
 				return nil, err
 			}
 			headers.XCorrelationId = &value
 		}
 		if values := rsp.Header.Values("X-Old-Trace"); len(values) > 0 {
 			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "X-Old-Trace", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+			var err error
+			value = values[0]
+			if err != nil {
 				return nil, err
 			}
 			headers.XOldTrace = &value
@@ -1477,8 +1483,9 @@ func (siw *ServerInterfaceWrapper) PostClients(w http.ResponseWriter, r *http.Re
 		siw.Handler.PostClients(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1491,8 +1498,9 @@ func (siw *ServerInterfaceWrapper) GetDeprecatedEndpoint(w http.ResponseWriter, 
 		siw.Handler.GetDeprecatedEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1505,8 +1513,9 @@ func (siw *ServerInterfaceWrapper) PostDeprecatedEndpointWithNonDeprecatedBody(w
 		siw.Handler.PostDeprecatedEndpointWithNonDeprecatedBody(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1523,36 +1532,43 @@ func (siw *ServerInterfaceWrapper) GetDeprecatedField(w http.ResponseWriter, r *
 
 	// ------------- Optional query parameter "old_filter" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "old_filter", r.URL.Query(), &params.OldFilter, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "old_filter"})
+	if values_, found_ := r.URL.Query()["old_filter"]; found_ {
+		var value_ string
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'old_filter'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_filter", Err: err})
+			value_ = values_[0]
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_filter", Err: err})
+			return
+		}
+		params.OldFilter = &value_
 	}
 
 	// ------------- Optional query parameter "new_filter" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "new_filter", r.URL.Query(), &params.NewFilter, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "new_filter"})
+	if values_, found_ := r.URL.Query()["new_filter"]; found_ {
+		var value_ string
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'new_filter'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "new_filter", Err: err})
+			value_ = values_[0]
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "new_filter", Err: err})
+			return
+		}
+		params.NewFilter = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDeprecatedField(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1567,7 +1583,11 @@ func (siw *ServerInterfaceWrapper) GetDeprecatedParamsOldId(w http.ResponseWrite
 	// ------------- Path parameter "old_id" -------------
 	var oldId string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "old_id", r.PathValue("old_id"), &oldId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("old_id") == "" {
+		err = errors.New("parameter 'old_id' is empty, can't bind its value")
+	} else {
+		oldId = r.PathValue("old_id")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_id", Err: err})
 		return
@@ -1587,7 +1607,7 @@ func (siw *ServerInterfaceWrapper) GetDeprecatedParamsOldId(w http.ResponseWrite
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "old_header", valueList[0], &OldHeader, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		OldHeader = valueList[0]
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_header", Err: err})
 			return
@@ -1602,7 +1622,7 @@ func (siw *ServerInterfaceWrapper) GetDeprecatedParamsOldId(w http.ResponseWrite
 
 		if cookie, err = r.Cookie("old_cookie"); err == nil {
 			var value string
-			err = runtime.BindStyledParameterWithOptions("simple", "old_cookie", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "string", Format: ""})
+			value = cookie.Value
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_cookie", Err: err})
 				return
@@ -1616,8 +1636,9 @@ func (siw *ServerInterfaceWrapper) GetDeprecatedParamsOldId(w http.ResponseWrite
 		siw.Handler.GetDeprecatedParamsOldId(w, r, oldId, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1630,8 +1651,9 @@ func (siw *ServerInterfaceWrapper) PostDeprecatedRequestBody(w http.ResponseWrit
 		siw.Handler.PostDeprecatedRequestBody(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1644,8 +1666,9 @@ func (siw *ServerInterfaceWrapper) GetLegacy(w http.ResponseWriter, r *http.Requ
 		siw.Handler.GetLegacy(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1919,7 +1942,9 @@ func (response GetDeprecatedParamsOldId200JSONResponse) VisitGetDeprecatedParams
 	w.Header().Set("Content-Type", "application/json")
 	if response.Headers.XOldToken != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "X-Old-Token", *response.Headers.XOldToken, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			var v string
+			var err error
+			v = (*response.Headers.XOldToken)
 			if err != nil {
 				return fmt.Errorf("error styling response header X-Old-Token: %w", err)
 			}
@@ -1971,7 +1996,9 @@ func (response GetLegacy200JSONResponse) VisitGetLegacyResponse(w http.ResponseW
 	w.Header().Set("Content-Type", "application/json")
 	if response.Headers.XCorrelationId != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "X-Correlation-Id", *response.Headers.XCorrelationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			var v string
+			var err error
+			v = (*response.Headers.XCorrelationId)
 			if err != nil {
 				return fmt.Errorf("error styling response header X-Correlation-Id: %w", err)
 			}
@@ -1980,7 +2007,9 @@ func (response GetLegacy200JSONResponse) VisitGetLegacyResponse(w http.ResponseW
 	}
 	if response.Headers.XOldTrace != nil {
 		{
-			v, err := runtime.StyleParamWithOptions("simple", false, "X-Old-Trace", *response.Headers.XOldTrace, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			var v string
+			var err error
+			v = (*response.Headers.XOldTrace)
 			if err != nil {
 				return fmt.Errorf("error styling response header X-Old-Trace: %w", err)
 			}

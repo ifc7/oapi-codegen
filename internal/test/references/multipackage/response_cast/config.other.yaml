@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=../../../../../configuration-schema.json
 package: spec_other
 generate:
-  chi-server: true
+  std-http-server: true
   strict-server: true
   models: true
 import-mapping:

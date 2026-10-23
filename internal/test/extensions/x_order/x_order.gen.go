@@ -4,13 +4,14 @@
 package extensionsxorder
 
 import (
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"encoding/json"
+	"time"
 )
 
 // DateInterval defines model for DateInterval.
 type DateInterval struct {
-	Start *openapi_types.Date `json:"start,omitempty"`
-	End   *openapi_types.Date `json:"end,omitempty"`
+	Start *OpenAPIDate `json:"start,omitempty"`
+	End   *OpenAPIDate `json:"end,omitempty"`
 }
 
 // Port defines model for Port.
@@ -25,3 +26,54 @@ type PortInterval struct {
 
 // LowPriorityPort defines model for LowPriorityPort.
 type LowPriorityPort = int
+
+// OpenAPIDate is a calendar date in the OpenAPI "date" format (RFC 3339
+// full-date, e.g. "2006-01-02"), without a time of day or time zone.
+type OpenAPIDate struct {
+	time.Time
+}
+
+func (d OpenAPIDate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.Format(time.DateOnly))
+}
+
+func (d *OpenAPIDate) UnmarshalJSON(data []byte) error {
+	var dateStr string
+	err := json.Unmarshal(data, &dateStr)
+	if err != nil {
+		return err
+	}
+	parsed, err := time.Parse(time.DateOnly, dateStr)
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+func (d OpenAPIDate) String() string {
+	return d.Format(time.DateOnly)
+}
+
+func (d *OpenAPIDate) UnmarshalText(data []byte) error {
+	parsed, err := time.Parse(time.DateOnly, string(data))
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+// Bind binds a parameter value, treating it as a scalar rather than a struct
+// of key-value pairs. An empty value leaves the date unchanged.
+func (d *OpenAPIDate) Bind(src string) error {
+	if src == "" {
+		return nil
+	}
+	parsed, err := time.Parse(time.DateOnly, src)
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}

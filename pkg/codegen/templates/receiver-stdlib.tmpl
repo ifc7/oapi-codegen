@@ -58,16 +58,7 @@ func {{$opid}}{{$.Prefix}}Handler(si {{$.Prefix}}ReceiverInterface, errHandler f
         }{{end}}
         {{end}}
         {{if .IsStyled}}
-        err = runtime.BindQueryParameterWithOptions("{{.Style}}", {{.Explode}}, {{.Required}}, "{{.ParamName}}", r.URL.Query(), &params.{{.GoName}}, runtime.BindQueryParameterOptions{Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"{{unionTypes .SchemaTypes}}})
-        if err != nil {
-            var requiredError *runtime.RequiredParameterError
-            if errors.As(err, &requiredError) {
-                errHandler(w, r, &RequiredParamError{ParamName: "{{.ParamName}}"})
-            } else {
-                errHandler(w, r, &InvalidParamFormatError{ParamName: "{{.ParamName}}", Err: err})
-            }
-            return
-        }
+        {{template "param.bindQuery" (dict "Param" . "Handler" "errHandler")}}
         {{end}}
 {{end}}
 {{range $paramIdx, $param := .HeaderParams}}
@@ -91,7 +82,7 @@ func {{$opid}}{{$.Prefix}}Handler(si {{$.Prefix}}ReceiverInterface, errHandler f
             params.{{.GoName}} = {{if .HasOptionalPointer}}&{{end}}{{.GoName}}
             {{end}}
             {{if .IsStyled}}
-            err = runtime.BindStyledParameterWithOptions("{{.Style}}", "{{.ParamName}}", valueList[0], &{{.GoName}}, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: {{.Explode}}, Required: {{.Required}}, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"{{unionTypes .SchemaTypes}}})
+            {{template "param.bindStyled" (dict "Param" . "Src" "valueList[0]" "Dst" .GoName)}}
             if err != nil {
                 errHandler(w, r, &InvalidParamFormatError{ParamName: "{{.ParamName}}", Err: err})
                 return

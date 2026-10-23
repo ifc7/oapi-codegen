@@ -12,13 +12,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -137,8 +138,9 @@ func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *ht
 		siw.Handler.GetContentObject(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -158,7 +160,11 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 
 		if cookie, err = r.Cookie("p"); err == nil {
 			var value int32
-			err = runtime.BindStyledParameterWithOptions("simple", "p", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: false, Required: false, Type: "integer", Format: "int32"})
+			if v_, err_ := strconv.ParseInt(cookie.Value, 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value = int32(v_)
+			}
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
 				return
@@ -173,7 +179,11 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 
 		if cookie, err = r.Cookie("ep"); err == nil {
 			var value int32
-			err = runtime.BindStyledParameterWithOptions("simple", "ep", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "integer", Format: "int32"})
+			if v_, err_ := strconv.ParseInt(cookie.Value, 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value = int32(v_)
+			}
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
 				return
@@ -188,7 +198,25 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 
 		if cookie, err = r.Cookie("ea"); err == nil {
 			var value []int32
-			err = runtime.BindStyledParameterWithOptions("simple", "ea", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "array", Format: ""})
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					{
+						parts_ := parts_
+						value = make([]int32, len(parts_))
+						for i_, part_ := range parts_ {
+							if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+								err = err_
+							} else {
+								value[i_] = int32(v_)
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
 				return
@@ -203,7 +231,25 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 
 		if cookie, err = r.Cookie("a"); err == nil {
 			var value []int32
-			err = runtime.BindStyledParameterWithOptions("simple", "a", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: false, Required: false, Type: "array", Format: ""})
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					{
+						parts_ := parts_
+						value = make([]int32, len(parts_))
+						for i_, part_ := range parts_ {
+							if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+								err = err_
+							} else {
+								value[i_] = int32(v_)
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
 				return
@@ -218,7 +264,33 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 
 		if cookie, err = r.Cookie("eo"); err == nil {
 			var value Object
-			err = runtime.BindStyledParameterWithOptions("simple", "eo", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "", Format: ""})
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					pairs_ := make([][2]string, 0, len(parts_))
+					for _, part_ := range parts_ {
+						kv_ := strings.Split(part_, "=")
+						if len(kv_) != 2 {
+							err = errors.New("parameter 'eo' has invalid exploded format")
+							break
+						}
+						pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+					}
+					if err == nil {
+						for _, kv_ := range pairs_ {
+							switch kv_[0] {
+							case "firstName":
+								value.FirstName = kv_[1]
+							case "role":
+								value.Role = kv_[1]
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
 				return
@@ -233,7 +305,32 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 
 		if cookie, err = r.Cookie("o"); err == nil {
 			var value Object
-			err = runtime.BindStyledParameterWithOptions("simple", "o", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: false, Required: false, Type: "", Format: ""})
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					pairs_ := make([][2]string, 0, len(parts_)/2)
+					if len(parts_)%2 != 0 {
+						err = errors.New("parameter 'o' has invalid format, property/values need to be pairs")
+					} else {
+						for i_ := 0; i_ < len(parts_); i_ += 2 {
+							pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+						}
+					}
+					if err == nil {
+						for _, kv_ := range pairs_ {
+							switch kv_[0] {
+							case "firstName":
+								value.FirstName = kv_[1]
+							case "role":
+								value.Role = kv_[1]
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
 				return
@@ -272,7 +369,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 
 		if cookie, err = r.Cookie("1s"); err == nil {
 			var value string
-			err = runtime.BindStyledParameterWithOptions("simple", "1s", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "string", Format: ""})
+			value = cookie.Value
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
 				return
@@ -286,8 +383,9 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 		siw.Handler.GetCookie(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -304,23 +402,31 @@ func (siw *ServerInterfaceWrapper) EnumParams(w http.ResponseWriter, r *http.Req
 
 	// ------------- Optional query parameter "enumPathParam" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "enumPathParam", r.URL.Query(), &params.EnumPathParam, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "enumPathParam"})
+	if values_, found_ := r.URL.Query()["enumPathParam"]; found_ {
+		var value_ EnumParamsParamsEnumPathParam
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'enumPathParam'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "enumPathParam", Err: err})
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value_ = EnumParamsParamsEnumPathParam(v_)
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "enumPathParam", Err: err})
+			return
+		}
+		params.EnumPathParam = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnumParams(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -346,7 +452,11 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Primitive", valueList[0], &XPrimitive, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: "int32"})
+		if v_, err_ := strconv.ParseInt(valueList[0], 10, 32); err_ != nil {
+			err = err_
+		} else {
+			XPrimitive = int32(v_)
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive", Err: err})
 			return
@@ -365,7 +475,11 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Primitive-Exploded", valueList[0], &XPrimitiveExploded, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: true, Required: false, Type: "integer", Format: "int32"})
+		if v_, err_ := strconv.ParseInt(valueList[0], 10, 32); err_ != nil {
+			err = err_
+		} else {
+			XPrimitiveExploded = int32(v_)
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive-Exploded", Err: err})
 			return
@@ -384,7 +498,25 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Array-Exploded", valueList[0], &XArrayExploded, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: true, Required: false, Type: "array", Format: ""})
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				{
+					parts_ := parts_
+					XArrayExploded = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							XArrayExploded[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array-Exploded", Err: err})
 			return
@@ -403,7 +535,25 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Array", valueList[0], &XArray, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "array", Format: ""})
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				{
+					parts_ := parts_
+					XArray = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							XArray[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array", Err: err})
 			return
@@ -422,7 +572,33 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Object-Exploded", valueList[0], &XObjectExploded, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: true, Required: false, Type: "", Format: ""})
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'X-Object-Exploded' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							XObjectExploded.FirstName = kv_[1]
+						case "role":
+							XObjectExploded.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object-Exploded", Err: err})
 			return
@@ -441,7 +617,32 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Object", valueList[0], &XObject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "", Format: ""})
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'X-Object' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							XObject.FirstName = kv_[1]
+						case "role":
+							XObject.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object", Err: err})
 			return
@@ -494,7 +695,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "1-Starting-With-Number", valueList[0], &N1StartingWithNumber, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		N1StartingWithNumber = valueList[0]
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1-Starting-With-Number", Err: err})
 			return
@@ -508,8 +709,9 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		siw.Handler.GetHeader(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -524,7 +726,33 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeArray(w http.ResponseWriter, r
 	// ------------- Path parameter "param" -------------
 	var param []int32
 
-	err = runtime.BindStyledParameterWithOptions("label", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "array", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ".")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				{
+					parts_ := parts_
+					param = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							param[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -534,8 +762,9 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeArray(w http.ResponseWriter, r
 		siw.Handler.GetLabelExplodeArray(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -550,7 +779,41 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, 
 	// ------------- Path parameter "param" -------------
 	var param Object
 
-	err = runtime.BindStyledParameterWithOptions("label", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ".")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'param' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -560,8 +823,9 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, 
 		siw.Handler.GetLabelExplodeObject(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -576,7 +840,28 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodePrimitive(w http.ResponseWrite
 	// ------------- Path parameter "param" -------------
 	var param int32
 
-	err = runtime.BindStyledParameterWithOptions("label", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "integer", Format: "int32", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ".")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				if len(parts_) != 1 {
+					err = errors.New("parameter 'param': expected single value")
+				} else {
+					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
+						err = err_
+					} else {
+						param = int32(v_)
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -586,8 +871,9 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodePrimitive(w http.ResponseWrite
 		siw.Handler.GetLabelExplodePrimitive(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -602,7 +888,34 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeArray(w http.ResponseWriter,
 	// ------------- Path parameter "param" -------------
 	var param []int32
 
-	err = runtime.BindStyledParameterWithOptions("label", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "array", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("param"), ".") {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			} else {
+				parts_ = strings.Split(r.PathValue("param")[1:], ",")
+			}
+			if err == nil {
+				{
+					parts_ := parts_
+					param = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							param[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -612,8 +925,9 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeArray(w http.ResponseWriter,
 		siw.Handler.GetLabelNoExplodeArray(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -628,7 +942,41 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter
 	// ------------- Path parameter "param" -------------
 	var param Object
 
-	err = runtime.BindStyledParameterWithOptions("label", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("param"), ".") {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			} else {
+				parts_ = strings.Split(r.PathValue("param")[1:], ",")
+			}
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'param' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -638,8 +986,9 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter
 		siw.Handler.GetLabelNoExplodeObject(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -654,7 +1003,29 @@ func (siw *ServerInterfaceWrapper) GetLabelPrimitive(w http.ResponseWriter, r *h
 	// ------------- Path parameter "param" -------------
 	var param int32
 
-	err = runtime.BindStyledParameterWithOptions("label", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int32", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("param"), ".") {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			} else {
+				parts_ = strings.Split(r.PathValue("param")[1:], ",")
+			}
+			if err == nil {
+				if len(parts_) != 1 {
+					err = errors.New("parameter 'param': expected single value")
+				} else {
+					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
+						err = err_
+					} else {
+						param = int32(v_)
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -664,8 +1035,9 @@ func (siw *ServerInterfaceWrapper) GetLabelPrimitive(w http.ResponseWriter, r *h
 		siw.Handler.GetLabelPrimitive(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -680,7 +1052,36 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeArray(w http.ResponseWriter, 
 	// ------------- Path parameter "id" -------------
 	var id []int32
 
-	err = runtime.BindStyledParameterWithOptions("matrix", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "array", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("id"), ";")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
+			}
+			parts_ = parts_[1:]
+			for i_ := range parts_ {
+				parts_[i_] = strings.TrimPrefix(parts_[i_], "id=")
+			}
+			if err == nil {
+				{
+					parts_ := parts_
+					id = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							id[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -690,8 +1091,9 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeArray(w http.ResponseWriter, 
 		siw.Handler.GetMatrixExplodeArray(w, r, id)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -706,7 +1108,41 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter,
 	// ------------- Path parameter "id" -------------
 	var id Object
 
-	err = runtime.BindStyledParameterWithOptions("matrix", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("id"), ";")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'id' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							id.FirstName = kv_[1]
+						case "role":
+							id.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -716,8 +1152,9 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter,
 		siw.Handler.GetMatrixExplodeObject(w, r, id)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -732,7 +1169,31 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodePrimitive(w http.ResponseWrit
 	// ------------- Path parameter "id" -------------
 	var id int32
 
-	err = runtime.BindStyledParameterWithOptions("matrix", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "integer", Format: "int32", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("id"), ";")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
+			}
+			parts_ = parts_[1:]
+			for i_ := range parts_ {
+				parts_[i_] = strings.TrimPrefix(parts_[i_], "id=")
+			}
+			if err == nil {
+				if len(parts_) != 1 {
+					err = errors.New("parameter 'id': expected single value")
+				} else {
+					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
+						err = err_
+					} else {
+						id = int32(v_)
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -742,8 +1203,9 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodePrimitive(w http.ResponseWrit
 		siw.Handler.GetMatrixExplodePrimitive(w, r, id)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -758,7 +1220,34 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeArray(w http.ResponseWriter
 	// ------------- Path parameter "id" -------------
 	var id []int32
 
-	err = runtime.BindStyledParameterWithOptions("matrix", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "array", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
+				err = errors.New("expected parameter 'id' to start with ;id=")
+			} else {
+				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
+			}
+			if err == nil {
+				{
+					parts_ := parts_
+					id = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							id[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -768,8 +1257,9 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeArray(w http.ResponseWriter
 		siw.Handler.GetMatrixNoExplodeArray(w, r, id)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -784,7 +1274,41 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWrite
 	// ------------- Path parameter "id" -------------
 	var id Object
 
-	err = runtime.BindStyledParameterWithOptions("matrix", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
+				err = errors.New("expected parameter 'id' to start with ;id=")
+			} else {
+				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
+			}
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'id' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							id.FirstName = kv_[1]
+						case "role":
+							id.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -794,8 +1318,9 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWrite
 		siw.Handler.GetMatrixNoExplodeObject(w, r, id)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -810,7 +1335,29 @@ func (siw *ServerInterfaceWrapper) GetMatrixPrimitive(w http.ResponseWriter, r *
 	// ------------- Path parameter "id" -------------
 	var id int32
 
-	err = runtime.BindStyledParameterWithOptions("matrix", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int32", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
+				err = errors.New("expected parameter 'id' to start with ;id=")
+			} else {
+				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
+			}
+			if err == nil {
+				if len(parts_) != 1 {
+					err = errors.New("parameter 'id': expected single value")
+				} else {
+					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
+						err = err_
+					} else {
+						id = int32(v_)
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -820,8 +1367,9 @@ func (siw *ServerInterfaceWrapper) GetMatrixPrimitive(w http.ResponseWriter, r *
 		siw.Handler.GetMatrixPrimitive(w, r, id)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -842,8 +1390,9 @@ func (siw *ServerInterfaceWrapper) GetPassThrough(w http.ResponseWriter, r *http
 		siw.Handler.GetPassThrough(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -860,23 +1409,246 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 
 	// ------------- Required query parameter "deepObj" -------------
 
-	err = runtime.BindQueryParameterWithOptions("deepObject", true, true, "deepObj", r.URL.Query(), &params.DeepObj, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deepObj"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deepObj", Err: err})
+	{
+		// The object's properties are query parameters of their own.
+		var value_ ComplexObject
+		found_ := false
+		query_ := r.URL.Query()
+		_ = query_
+		{
+			form_ := false
+			_ = form_
+			tree_ := map[string]any{}
+			insert_ := func(path []string, value string) {
+				node := tree_
+				for _, key := range path[:len(path)-1] {
+					next, ok := node[key].(map[string]any)
+					if !ok {
+						next = map[string]any{}
+						node[key] = next
+					}
+					node = next
+				}
+				node[path[len(path)-1]] = value
+			}
+			for key_, values_ := range query_ {
+				rest_, ok_ := strings.CutPrefix(key_, "deepObj[")
+				if !ok_ {
+					continue
+				}
+				found_ = true
+				path_ := strings.Split(strings.TrimRight(rest_, "]"), "][")
+				if len(values_) == 1 {
+					insert_(path_, values_[0])
+				} else {
+					for i_, value_ := range values_ {
+						insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
+					}
+				}
+			}
+			if found_ {
+				kinds_ := map[string]map[string]string{
+					"ComplexObject": {"Id": "int", "IsAdmin": "bool", "Object": "object:Object"},
+					"Object":        {"firstName": "string", "role": "string"},
+				}
+				// In a form, a value of the wrong shape is skipped, as the runtime
+				// library skipped it.
+				skip_ := &struct{}{}
+				var convert_ func(node any, kind string) (any, error)
+				convert_ = func(node any, kind string) (any, error) {
+					fields, isMap := node.(map[string]any)
+					if form_ {
+						compound := strings.HasPrefix(kind, "object:") || strings.HasPrefix(kind, "map:") || strings.HasPrefix(kind, "array:")
+						switch {
+						case isMap && !compound && kind != "any":
+							// A repeated value: the first one counts.
+							first, ok := fields["0"]
+							if !ok {
+								return skip_, nil
+							}
+							return convert_(first, kind)
+						case !isMap && compound && !strings.HasPrefix(kind, "array:"):
+							return skip_, nil
+						}
+					}
+					text, _ := node.(string)
+					switch {
+					case strings.HasPrefix(kind, "object:"):
+						if !isMap {
+							return nil, fmt.Errorf("expected an object, got %q", text)
+						}
+						object := kinds_[strings.TrimPrefix(kind, "object:")]
+						out := make(map[string]any, len(fields))
+						for key, value := range fields {
+							fieldKind, ok := object[key]
+							if !ok {
+								if fieldKind, ok = object["*"]; !ok {
+									if form_ {
+										continue
+									}
+									return nil, fmt.Errorf("field [%s] is not present in destination object", key)
+								}
+							}
+							if fieldKind == "skip" {
+								continue
+							}
+							v, err := convert_(value, fieldKind)
+							if err != nil {
+								return nil, fmt.Errorf("error assigning field [%s]: %w", key, err)
+							}
+							if v == skip_ {
+								continue
+							}
+							out[key] = v
+						}
+						return out, nil
+					case strings.HasPrefix(kind, "map:"):
+						if !isMap {
+							return nil, fmt.Errorf("expected an object, got %q", text)
+						}
+						out := make(map[string]any, len(fields))
+						for key, value := range fields {
+							v, err := convert_(value, strings.TrimPrefix(kind, "map:"))
+							if err != nil {
+								return nil, err
+							}
+							if v == skip_ {
+								continue
+							}
+							out[key] = v
+						}
+						return out, nil
+					case strings.HasPrefix(kind, "array:"):
+						if !isMap && form_ {
+							v, err := convert_(node, strings.TrimPrefix(kind, "array:"))
+							if err != nil {
+								return nil, fmt.Errorf("error binding array element 0: %w", err)
+							}
+							return []any{v}, nil
+						}
+						if !isMap {
+							return nil, fmt.Errorf("expected an array, got %q", text)
+						}
+						size := len(fields)
+						if form_ {
+							// Missing elements of a form's array are zero values.
+							size = 0
+							for key := range fields {
+								if i, err := strconv.Atoi(key); err == nil && i >= size {
+									size = i + 1
+								}
+							}
+						}
+						out := make([]any, size)
+						for i := range out {
+							value, ok := fields[strconv.Itoa(i)]
+							if !ok && form_ {
+								continue
+							}
+							if !ok {
+								return nil, errors.New("array deepObjects must have consecutive indices")
+							}
+							v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
+							if err != nil {
+								return nil, fmt.Errorf("error binding array element %d: %w", i, err)
+							}
+							if v == skip_ {
+								v = nil
+							}
+							out[i] = v
+						}
+						return out, nil
+					case isMap:
+						if kind != "any" {
+							return nil, fmt.Errorf("expected a value, got an object")
+						}
+						keys := make([]int, 0, len(fields))
+						for key := range fields {
+							if i, err := strconv.Atoi(key); err == nil && i >= 0 && i < len(fields) {
+								keys = append(keys, i)
+							}
+						}
+						out := make(map[string]any, len(fields))
+						for key, value := range fields {
+							v, err := convert_(value, "any")
+							if err != nil {
+								return nil, err
+							}
+							out[key] = v
+						}
+						if len(keys) != len(fields) {
+							return out, nil
+						}
+						array := make([]any, len(fields))
+						for key, value := range out {
+							i, _ := strconv.Atoi(key)
+							array[i] = value
+						}
+						return array, nil
+					case kind == "int":
+						i, err := strconv.ParseInt(text, 10, 64)
+						if err != nil {
+							return nil, fmt.Errorf("expected a valid int, got %s", text)
+						}
+						return i, nil
+					case kind == "float":
+						f, err := strconv.ParseFloat(text, 64)
+						if err != nil || math.IsInf(f, 0) || math.IsNaN(f) {
+							return nil, fmt.Errorf("expected a valid float, got %s", text)
+						}
+						return f, nil
+					case kind == "bool":
+						b, err := strconv.ParseBool(text)
+						if err != nil {
+							return nil, fmt.Errorf("expected a valid bool, got %s", text)
+						}
+						return b, nil
+					case kind == "any":
+						switch text {
+						case "true":
+							return true, nil
+						case "false":
+							return false, nil
+						case "null":
+							return nil, nil
+						}
+						var f float64
+						if err := json.Unmarshal([]byte(text), &f); err == nil {
+							return f, nil
+						}
+						return text, nil
+					default:
+						return text, nil
+					}
+				}
+				if v_, err_ := convert_(tree_, "object:ComplexObject"); err_ != nil {
+					err = err_
+				} else if b_, err_ := json.Marshal(v_); err_ != nil {
+					err = err_
+				} else {
+					err = json.Unmarshal(b_, &value_)
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deepObj", Err: err})
+			return
+		}
+		if found_ {
+			params.DeepObj = value_
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deepObj"})
+			return
+		}
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDeepObject(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -893,36 +1665,69 @@ func (siw *ServerInterfaceWrapper) GetQueryDelimited(w http.ResponseWriter, r *h
 
 	// ------------- Optional query parameter "sa" -------------
 
-	err = runtime.BindQueryParameterWithOptions("spaceDelimited", false, false, "sa", r.URL.Query(), &params.Sa, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sa"})
+	if values_, found_ := r.URL.Query()["sa"]; found_ {
+		var value_ []int32
+		if len(values_) != 1 {
+			err = errors.New("parameter 'sa' is not exploded, but is specified multiple times")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sa", Err: err})
+			{
+				parts_ := strings.Split(values_[0], " ")
+				value_ = make([]int32, len(parts_))
+				for i_, part_ := range parts_ {
+					if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+						err = err_
+					} else {
+						value_[i_] = int32(v_)
+					}
+					if err != nil {
+						break
+					}
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sa", Err: err})
+			return
+		}
+		params.Sa = &value_
 	}
 
 	// ------------- Optional query parameter "pa" -------------
 
-	err = runtime.BindQueryParameterWithOptions("pipeDelimited", false, false, "pa", r.URL.Query(), &params.Pa, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pa"})
+	if values_, found_ := r.URL.Query()["pa"]; found_ {
+		var value_ []int32
+		if len(values_) != 1 {
+			err = errors.New("parameter 'pa' is not exploded, but is specified multiple times")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pa", Err: err})
+			{
+				parts_ := strings.Split(values_[0], "|")
+				value_ = make([]int32, len(parts_))
+				for i_, part_ := range parts_ {
+					if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+						err = err_
+					} else {
+						value_[i_] = int32(v_)
+					}
+					if err != nil {
+						break
+					}
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pa", Err: err})
+			return
+		}
+		params.Pa = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetQueryDelimited(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -939,93 +1744,183 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	// ------------- Optional query parameter "ea" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "ea", r.URL.Query(), &params.Ea, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "ea"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
+	if values_, found_ := r.URL.Query()["ea"]; found_ {
+		var value_ []int32
+		{
+			parts_ := values_
+			value_ = make([]int32, len(parts_))
+			for i_, part_ := range parts_ {
+				if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+					err = err_
+				} else {
+					value_[i_] = int32(v_)
+				}
+				if err != nil {
+					break
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
+			return
+		}
+		params.Ea = &value_
 	}
 
 	// ------------- Optional query parameter "a" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", false, false, "a", r.URL.Query(), &params.A, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "a"})
+	if values_, found_ := r.URL.Query()["a"]; found_ {
+		var value_ []int32
+		if len(values_) != 1 {
+			err = errors.New("parameter 'a' is not exploded, but is specified multiple times")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
+			{
+				parts_ := strings.Split(values_[0], ",")
+				value_ = make([]int32, len(parts_))
+				for i_, part_ := range parts_ {
+					if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+						err = err_
+					} else {
+						value_[i_] = int32(v_)
+					}
+					if err != nil {
+						break
+					}
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
+			return
+		}
+		params.A = &value_
 	}
 
 	// ------------- Optional query parameter "eo" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "eo", r.URL.Query(), &params.Eo, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "eo"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
+	{
+		// The object's properties are query parameters of their own.
+		var value_ Object
+		found_ := false
+		query_ := r.URL.Query()
+		_ = query_
+		if vs_, ok_ := query_["firstName"]; ok_ {
+			found_ = true
+			if len(vs_) != 1 {
+				err = errors.New("field 'firstName' specified multiple times for param 'eo'")
+			} else {
+				value_.FirstName = vs_[0]
+			}
 		}
-		return
+		if vs_, ok_ := query_["role"]; ok_ {
+			found_ = true
+			if len(vs_) != 1 {
+				err = errors.New("field 'role' specified multiple times for param 'eo'")
+			} else {
+				value_.Role = vs_[0]
+			}
+		}
+
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
+			return
+		}
+		if found_ {
+			params.Eo = &value_
+		}
 	}
 
 	// ------------- Optional query parameter "o" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", false, false, "o", r.URL.Query(), &params.O, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "o"})
+	if values_, found_ := r.URL.Query()["o"]; found_ {
+		var value_ Object
+		if len(values_) != 1 {
+			err = errors.New("parameter 'o' is not exploded, but is specified multiple times")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
+			parts_ := strings.Split(values_[0], ",")
+			pairs_ := make([][2]string, 0, len(parts_)/2)
+			if len(parts_)%2 != 0 {
+				err = errors.New("parameter 'o' has invalid format, property/values need to be pairs")
+			} else {
+				for i_ := 0; i_ < len(parts_); i_ += 2 {
+					pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+				}
+			}
+			if err == nil {
+				for _, kv_ := range pairs_ {
+					switch kv_[0] {
+					case "firstName":
+						value_.FirstName = kv_[1]
+					case "role":
+						value_.Role = kv_[1]
+					}
+					if err != nil {
+						break
+					}
+				}
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
+			return
+		}
+		params.O = &value_
 	}
 
 	// ------------- Optional query parameter "ep" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "ep", r.URL.Query(), &params.Ep, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "ep"})
+	if values_, found_ := r.URL.Query()["ep"]; found_ {
+		var value_ int32
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'ep'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value_ = int32(v_)
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
+			return
+		}
+		params.Ep = &value_
 	}
 
 	// ------------- Optional query parameter "p" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", false, false, "p", r.URL.Query(), &params.P, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "p"})
+	if values_, found_ := r.URL.Query()["p"]; found_ {
+		var value_ int32
+		if len(values_) != 1 {
+			err = errors.New("parameter 'p' is not exploded, but is specified multiple times")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value_ = int32(v_)
+			}
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
+			return
+		}
+		params.P = &value_
 	}
 
 	// ------------- Optional query parameter "ps" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "ps", r.URL.Query(), &params.Ps, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "ps"})
+	if values_, found_ := r.URL.Query()["ps"]; found_ {
+		var value_ string
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'ps'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ps", Err: err})
+			value_ = values_[0]
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ps", Err: err})
+			return
+		}
+		params.Ps = &value_
 	}
 
 	// ------------- Optional query parameter "co" -------------
@@ -1045,23 +1940,27 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	// ------------- Optional query parameter "1s" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "1s", r.URL.Query(), &params.N1s, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "1s"})
+	if values_, found_ := r.URL.Query()["1s"]; found_ {
+		var value_ string
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter '1s'")
 		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
+			value_ = values_[0]
 		}
-		return
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
+			return
+		}
+		params.N1s = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetQueryForm(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1076,7 +1975,29 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeArray(w http.ResponseWriter, 
 	// ------------- Path parameter "param" -------------
 	var param []int32
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "array", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				{
+					parts_ := parts_
+					param = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							param[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -1086,8 +2007,9 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeArray(w http.ResponseWriter, 
 		siw.Handler.GetSimpleExplodeArray(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1102,7 +2024,37 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter,
 	// ------------- Path parameter "param" -------------
 	var param Object
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'param' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -1112,8 +2064,9 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter,
 		siw.Handler.GetSimpleExplodeObject(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1128,7 +2081,15 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodePrimitive(w http.ResponseWrit
 	// ------------- Path parameter "param" -------------
 	var param int32
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: true, Required: true, Type: "integer", Format: "int32", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		if v_, err_ := strconv.ParseInt(r.PathValue("param"), 10, 32); err_ != nil {
+			err = err_
+		} else {
+			param = int32(v_)
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -1138,8 +2099,9 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodePrimitive(w http.ResponseWrit
 		siw.Handler.GetSimpleExplodePrimitive(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1154,7 +2116,29 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeArray(w http.ResponseWriter
 	// ------------- Path parameter "param" -------------
 	var param []int32
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "array", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				{
+					parts_ := parts_
+					param = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							param[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -1164,8 +2148,9 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeArray(w http.ResponseWriter
 		siw.Handler.GetSimpleNoExplodeArray(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1180,7 +2165,36 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWrite
 	// ------------- Path parameter "param" -------------
 	var param Object
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'param' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -1190,8 +2204,9 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWrite
 		siw.Handler.GetSimpleNoExplodeObject(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1206,7 +2221,15 @@ func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *
 	// ------------- Path parameter "param" -------------
 	var param int32
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int32", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		if v_, err_ := strconv.ParseInt(r.PathValue("param"), 10, 32); err_ != nil {
+			err = err_
+		} else {
+			param = int32(v_)
+		}
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -1216,8 +2239,9 @@ func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *
 		siw.Handler.GetSimplePrimitive(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1232,7 +2256,11 @@ func (siw *ServerInterfaceWrapper) GetSimpleString(w http.ResponseWriter, r *htt
 	// ------------- Path parameter "param" -------------
 	var param string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "param", r.PathValue("param"), &param, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		param = r.PathValue("param")
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
@@ -1242,8 +2270,9 @@ func (siw *ServerInterfaceWrapper) GetSimpleString(w http.ResponseWriter, r *htt
 		siw.Handler.GetSimpleString(w, r, param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1264,8 +2293,9 @@ func (siw *ServerInterfaceWrapper) GetStartingWithNumber(w http.ResponseWriter, 
 		siw.Handler.GetStartingWithNumber(w, r, n1param)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1428,29 +2458,28 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"3Fpbc6M2FP4rjNqnDjZ2tk/0KbPdtul0k7TOTDuTyYMCx7G2IGklOZuMh//ekQADAnOxIZe+2ejoXD7p",
-	"O0LnsEMBizmjQJVE/g4JkJxRCebPisQ8gr+yR/pJwKgCqvRPBU/K4xEmVP+TwQZibJ4/c0A+kkoQ+oCS",
-	"JHFRCDIQhCvCKPLRuSONXie35bD7LxAopEVTPcb6R6alnq7SQX+HuGAchCKpcxdhyRqhCh5AoMRFF/I8",
-	"jAktDd4zFgGmerBQ9r2ANfLRd14Rv5cZ964KfwR83RIBIfJv88muNl3Yuauorfq4JkKqSxxDAzAuEixq",
-	"GrCsGim3pOrOYEromunJEQkgWxxqDKHPFzdauyJKq0c3IJWzAvEIArnoEYRMl2E5X8wXWpBxoJgT5KMP",
-	"88V8iVzEsdoY/71svdP4vB3HAseJHnkAE64OFut11auBfgX1sTzBqBI4BgVCIv+2sn8w5xEJzGTvi2TW",
-	"LmpbnurGyNBAvnEbuTkMxjIqY6nEFpI7t7rHzxaLQ/b2cp5FhMTY9ALG/iXQjoaRqMFQJQQXJCaKPGpB",
-	"eOIRCwH5axxJyAILcjV5aMgtQbVmIsYqJcGHM+TWOJG4vSxqeA4YhJMtZlZCBwuBn/uaxRWzREEse9nf",
-	"P0mtNfhTc6MN7+nc2MPCcsL0woVVHOqXymzTdYttEBxncSq6VyMJUoECw8YIAobqIOgxRyosFKEPzjei",
-	"Ng7dxvcgDmlZygoQduq2s0sIa7yN1LEZBug2lgcTzCe6ja91YpFdGeY6H0xD1GqdRxxtQeZxft2CeC7C",
-	"BKNaba6zJFpErEeQf7tcLNyzxeLO7ZEM6in3R+TbLlLm5LslC34DOATRll5/SyVOTa+bXE0W/D+z69KU",
-	"SRNti+nZpyw3vEjqrTtyrqWbnXixRHzAq1dOx3Wv0tzUDNYU2fmQB+8uSdcDyRTlASXuOJcOyujs99XV",
-	"ZZ5kXOeebWnoYOmoDTgCf3NSX5xMx2GCYilnNxvBtg+bY04UW+NytsqkZ38TtZld5tIvdspE+B6ibO8a",
-	"fnm7ucmoP7S+6v9hT6sn4ib29HlLH4ffLpLq2dyBTIRozHf/Mmb57WgoaIcuSWOg1of8L4XP/kgbDlH5",
-	"IJ4ApR5bamKILlkT8brxqc5rQad8bPyPqLePv0q+AcB1su8U5N4E/Wq860anD99OweVVCRdjJciTxTcS",
-	"tmejz7VJx6QiEk5OtDS66QDbE20QYsefcR2QDWPY1OCUqPbTIHxOOuA6IBpAtsnwqZ1vJOwBzgin23tm",
-	"XP1wG4baCUfb+2BdlW49oDntXHvTPONYyuw62qdBc12It7ZnBty0X6X5YgqWPwPwovd2KOSSVEepMATg",
-	"7bUfq04apqqP5oxVNik2Slj4PPZ1P0Mu0oyAsA24P6uSHeBJjgNwwlzcaa3sWTjKsVosBYLGncL5htos",
-	"4ce6y8d3V3tT8nZspvzCRNy51EaoY5V7VZMtuGB8uPRUNLCabHn1Yk71qyrbmE3f47MsjmFwH2pX48OO",
-	"dpqWdhuFRzNoVYxtO+0Nw1euv1vOHtcjtZQMbJGekNnS74iqF4weBcZVbdrbrVynIaLJUKt82TMAtrdT",
-	"u54aodJdo/vtetU489WL15NhZF/v+yL0bsrX0yPX/9u6VdPEN1HAngylI8jXwrp3S7OVOTz7Y7DK30jG",
-	"AKD23eqU4WavGboTnjbCvd2yR9S1aRPWNpYTFzc0wuZz3dTvrYiQjzZKcd/zsm91FUg1DwF4jPkcE5Tc",
-	"Jf8NAA==",
+	"3Fpbj6M2FP4ryO1TRUKy2yf6tNq26lbdmWkzUiuN5sEDJ4O3YHttZ3ZGEf+9soEAhnBJYC59S/C5fvZ3",
+	"jI/Zo4AlnFGgSiJ/jwRIzqgE82dDEh7DX/kj/SRgVAFV+qeCR+XxGBOq/8kgggSb508ckI+kEoTeozRN",
+	"XRSCDAThijCKfPTBkcauU/hy2N0XCBTSopkd4/0j01KPl9mgv0dcMA5CkSy4T2HFG6EK7kGg1EWf5Icw",
+	"IbQyeMdYDJjqwdLY9wK2yEffeWX+Xu7cuyzjEfB1RwSEyL8plF3tuvRzWzNbj3FLhFQXOIEWYFwkWNw2",
+	"YHk1Um7F1K3BlNAt08oxCSCfHGococ+frrV1RZQ2j65BKmcD4gEEctEDCJlNw3q5Wq60IONAMSfIR++X",
+	"q+UauYhjFZn4vXy+s/y8PccCJ6keuQeTrk4W63nVs6EffqwqGFMCJ6BASOTf1NYP5jwmgVH2vkhmraKu",
+	"6akvjBwN5JuwkVvAYDyjKpZK7CC9detr/N1qdczfQc6ziJAan17A2L8EutEwEg0Y6oTggiREkQctCI88",
+	"ZiEgf4tjCXliQWGmSA25Fai2TCRYZSR4/w65DU6k7iCPGp4jDuFsj7mX0MFC4KehbnHNLVGQyEH+D08y",
+	"by3xNMLownu+MA6wsIIwg3BhtYCGlTLbddNjFwSneZyL7vVMgkygxLA1g4ChJgh6zJEKC0XovfONqMih",
+	"u+QOxDEra1kDwi7ddnUJYYt3sTq1wgDdJfJogdGjV7qwyL4Kc1UMZilqRecBxzuQRZ5fdyCeyjQz0yq6",
+	"yotombEeQf7NerVy361Wt+6AYtAsuT8i3w6RMqdYLXnyEeAQRFd5/S2TOLe8RoWZPPl/FlcVlVkLbYfr",
+	"xS95bXiW0tsM5IOWbg/i2QrxkaheuBw3o8pqUztYc1TnYxG8uSLdTCQ3VCSUutMcOiiji983lxdFkXGd",
+	"O7ajoYOloyJwBP7mZLE4uY3jBMVSLq4jwXb30Sk7im1xvdjk0ou/iYoWF4X0s+0yMb6DOF+7hl/efmkq",
+	"6g+dr/p/2GrNQtzGniFv6dPw20VSPZkzkMkQTfnuX8WsOB2NBe3YIWkK1IaQ/7nwOWxp4yGqbsQzoDRg",
+	"Sc0M0QVrI14/PnW9DnSq28b/iHqH/OvkGwFcL/vOQe5V0K/Bu350hvDtHFxelHAJVoI8WnwjYXc1+txQ",
+	"OqUUkXB2omXZzQfYgWijEDt9j+uBbBzD5ganQrWfRuFz1gbXA9EIss2GT2N/I+EAcCbY3d4y45qb2zjU",
+	"ztja3gbr6nQbAM15+9qr5hnHUubH0SEXNFeleOf1zIiT9otcvpiG5c8AvLx7O5ZyRaqnVRgC8O7ej9Un",
+	"DTPTJ3PGapuUCyUsY576uJ8jF2tGQNgF3J91yR7wJMcBOGEh7nR29iwc5VRXLCWCJpwy+JbeLOGnhsun",
+	"D1dHU4l2aqb8ykTSO9VGqGeWB3WTLbhgeri0KhrZTbaieraghnWVbczmv+OzPE7h8JBq38WHne08V9pd",
+	"FJ7ModUxtv10Xxi+cP/dCva0O1LLyMgr0jMqW/YdUf2AMaDBuGmovd7OdZYimg212pc9I2B7Pb3ruRGq",
+	"nDX63643rZov3ryeDSP7eD8UoTfTvp4fueHf1m3aFF9FA3s2lE4gXwfr3izNNmbzHI7BpngjmQKAxner",
+	"c6abv2bom/DsItzbrwdk3VCbsbexnrm5oRE2n+tmce9EjHwUKcV9z8u/1VUg1TIE4AnmS0xQepv+NwA=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -1532,14 +2561,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

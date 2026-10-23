@@ -14,9 +14,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // Bound defines model for Bound.
@@ -153,7 +152,7 @@ func (t *IntOrString) MergeIntOrString0(v IntOrString0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -179,7 +178,7 @@ func (t *IntOrString) MergeIntOrString1(v IntOrString1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -207,9 +206,20 @@ func (t *IntOrString) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *IntOrString) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t IntOrString) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t IntOrString) MarshalJSON() ([]byte, error) {
@@ -243,7 +253,7 @@ func (t *Filter) MergeFilter0(v Filter0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -269,7 +279,7 @@ func (t *Filter) MergeFilter1(v Filter1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -297,9 +307,20 @@ func (t *Filter) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *Filter) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t Filter) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t Filter) MarshalJSON() ([]byte, error) {
@@ -333,7 +354,7 @@ func (t *GetItemParamsSession) MergeGetItemParamsSession0(v GetItemParamsSession
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -359,7 +380,7 @@ func (t *GetItemParamsSession) MergeGetItemParamsSession1(v GetItemParamsSession
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -386,9 +407,20 @@ func (t *GetItemParamsSession) UnmarshalText(text []byte) error {
 	return fmt.Errorf("%q is not a valid GetItemParamsSession", text)
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *GetItemParamsSession) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t GetItemParamsSession) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t GetItemParamsSession) MarshalJSON() ([]byte, error) {
@@ -422,7 +454,7 @@ func (t *IdParam) MergeId0(v Id0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -448,7 +480,7 @@ func (t *IdParam) MergeId1(v Id1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -476,9 +508,20 @@ func (t *IdParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *IdParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t IdParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t IdParam) MarshalJSON() ([]byte, error) {
@@ -512,7 +555,7 @@ func (t *GetThingParamsQ) MergeGetThingParamsQ0(v GetThingParamsQ0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -538,7 +581,7 @@ func (t *GetThingParamsQ) MergeGetThingParamsQ1(v GetThingParamsQ1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -566,9 +609,20 @@ func (t *GetThingParamsQ) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *GetThingParamsQ) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t GetThingParamsQ) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t GetThingParamsQ) MarshalJSON() ([]byte, error) {
@@ -602,7 +656,7 @@ func (t *GetThingParamsN) MergeIntOrString(v IntOrString) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -628,7 +682,7 @@ func (t *GetThingParamsN) MergeGetThingParamsN1(v GetThingParamsN1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -660,9 +714,20 @@ func (t *GetThingParamsN) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *GetThingParamsN) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t GetThingParamsN) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t GetThingParamsN) MarshalJSON() ([]byte, error) {
@@ -696,7 +761,7 @@ func (t *GetThingParamsXAmount) MergeGetThingParamsXAmount0(v GetThingParamsXAmo
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -722,7 +787,7 @@ func (t *GetThingParamsXAmount) MergeGetThingParamsXAmount1(v GetThingParamsXAmo
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -747,9 +812,20 @@ func (t *GetThingParamsXAmount) UnmarshalText(text []byte) error {
 	return fmt.Errorf("%q is not a valid GetThingParamsXAmount", text)
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *GetThingParamsXAmount) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t GetThingParamsXAmount) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t GetThingParamsXAmount) MarshalJSON() ([]byte, error) {
@@ -783,7 +859,7 @@ func (t *GetThingParamsAccept) MergeGetThingParamsAccept0(v GetThingParamsAccept
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -809,7 +885,7 @@ func (t *GetThingParamsAccept) MergeGetThingParamsAccept1(v GetThingParamsAccept
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForIntOrString(t.union, b)
 	t.union = merged
 	return err
 }
@@ -835,9 +911,20 @@ func (t *GetThingParamsAccept) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *GetThingParamsAccept) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t GetThingParamsAccept) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t GetThingParamsAccept) MarshalJSON() ([]byte, error) {
@@ -848,6 +935,87 @@ func (t GetThingParamsAccept) MarshalJSON() ([]byte, error) {
 func (t *GetThingParamsAccept) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
+}
+
+// oapiJSONMergeForIntOrString merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForIntOrString(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }
 
 // RequestEditorFn is the function signature for the RequestEditor callback function
@@ -963,7 +1131,11 @@ func NewGetItemRequest(server string, id IdParam, params *GetItemParams) (*http.
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := id.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -994,12 +1166,17 @@ func NewGetItemRequest(server string, id IdParam, params *GetItemParams) (*http.
 
 		if params.Filter != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Filter).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "filter="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1020,7 +1197,11 @@ func NewGetItemRequest(server string, id IdParam, params *GetItemParams) (*http.
 		if params.Session != nil {
 			var cookieParam0 string
 
-			cookieParam0, err = runtime.StyleParamWithOptions("simple", true, "session", *params.Session, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationCookie, Type: "", Format: ""})
+			if b_, err_ := (*params.Session).MarshalText(); err_ != nil {
+				err = err_
+			} else {
+				cookieParam0 = string(b_)
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -1041,7 +1222,11 @@ func NewGetThingRequest(server string, accept GetThingParamsAccept, params *GetT
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "accept", accept, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := accept.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1072,36 +1257,51 @@ func NewGetThingRequest(server string, accept GetThingParamsAccept, params *GetT
 
 		if params.Q != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "q", *params.Q, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Q).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "q="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
 
 		if params.R != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "r", *params.R, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.R).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "r="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
 
 		if params.N != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "n", *params.N, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.N).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "n="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1122,7 +1322,11 @@ func NewGetThingRequest(server string, accept GetThingParamsAccept, params *GetT
 		if params.XAmount != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-Amount", *params.XAmount, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "", Format: ""})
+			if b_, err_ := (*params.XAmount).MarshalText(); err_ != nil {
+				err = err_
+			} else {
+				headerParam0 = string(b_)
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -1388,7 +1592,11 @@ func (siw *ServerInterfaceWrapper) GetItem(w http.ResponseWriter, r *http.Reques
 	// ------------- Path parameter "id" -------------
 	var id IdParam
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		err = id.UnmarshalText([]byte(r.PathValue("id")))
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -1399,15 +1607,14 @@ func (siw *ServerInterfaceWrapper) GetItem(w http.ResponseWriter, r *http.Reques
 
 	// ------------- Optional query parameter "filter" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "filter", r.URL.Query(), &params.Filter, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "filter"})
-		} else {
+	if values_, found_ := r.URL.Query()["filter"]; found_ {
+		var value_ Filter
+		err = value_.Bind(values_[0])
+		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter", Err: err})
+			return
 		}
-		return
+		params.Filter = &value_
 	}
 
 	{
@@ -1415,7 +1622,7 @@ func (siw *ServerInterfaceWrapper) GetItem(w http.ResponseWriter, r *http.Reques
 
 		if cookie, err = r.Cookie("session"); err == nil {
 			var value GetItemParamsSession
-			err = runtime.BindStyledParameterWithOptions("simple", "session", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "", Format: ""})
+			err = value.UnmarshalText([]byte(cookie.Value))
 			if err != nil {
 				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "session", Err: err})
 				return
@@ -1429,8 +1636,9 @@ func (siw *ServerInterfaceWrapper) GetItem(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetItem(w, r, id, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -1445,7 +1653,11 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 	// ------------- Path parameter "accept" -------------
 	var accept GetThingParamsAccept
 
-	err = runtime.BindStyledParameterWithOptions("simple", "accept", r.PathValue("accept"), &accept, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "", Format: "", ValueIsUnescaped: true})
+	if r.PathValue("accept") == "" {
+		err = errors.New("parameter 'accept' is empty, can't bind its value")
+	} else {
+		err = accept.UnmarshalText([]byte(r.PathValue("accept")))
+	}
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accept", Err: err})
 		return
@@ -1456,41 +1668,38 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 
 	// ------------- Optional query parameter "q" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
-		} else {
+	if values_, found_ := r.URL.Query()["q"]; found_ {
+		var value_ GetThingParamsQ
+		err = value_.Bind(values_[0])
+		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+			return
 		}
-		return
+		params.Q = &value_
 	}
 
 	// ------------- Optional query parameter "r" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "r", r.URL.Query(), &params.R, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "r"})
-		} else {
+	if values_, found_ := r.URL.Query()["r"]; found_ {
+		var value_ IntOrString
+		err = value_.Bind(values_[0])
+		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "r", Err: err})
+			return
 		}
-		return
+		params.R = &value_
 	}
 
 	// ------------- Optional query parameter "n" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "n", r.URL.Query(), &params.N, runtime.BindQueryParameterOptions{Type: "", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "n"})
-		} else {
+	if values_, found_ := r.URL.Query()["n"]; found_ {
+		var value_ GetThingParamsN
+		err = value_.Bind(values_[0])
+		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+			return
 		}
-		return
+		params.N = &value_
 	}
 
 	headers := r.Header
@@ -1504,7 +1713,7 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Amount", valueList[0], &XAmount, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "", Format: ""})
+		err = XAmount.UnmarshalText([]byte(valueList[0]))
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Amount", Err: err})
 			return
@@ -1518,8 +1727,9 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 		siw.Handler.GetThing(w, r, accept, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

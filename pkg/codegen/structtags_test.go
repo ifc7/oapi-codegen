@@ -8,28 +8,20 @@ import (
 )
 
 func TestDefaultStructTagsConfig(t *testing.T) {
-	t.Run("without yaml-tags", func(t *testing.T) {
-		cfg := defaultStructTagsConfig(false)
-		require.Len(t, cfg.Tags, 2)
-		assert.Equal(t, "json", cfg.Tags[0].Name)
-		assert.Equal(t, "form", cfg.Tags[1].Name)
-	})
-
-	t.Run("with yaml-tags", func(t *testing.T) {
-		cfg := defaultStructTagsConfig(true)
-		require.Len(t, cfg.Tags, 3)
-		assert.Equal(t, "yaml", cfg.Tags[2].Name)
-	})
+	cfg := defaultStructTagsConfig()
+	require.Len(t, cfg.Tags, 2)
+	assert.Equal(t, "json", cfg.Tags[0].Name)
+	assert.Equal(t, "form", cfg.Tags[1].Name)
 }
 
 func TestStructTagsConfigMerge(t *testing.T) {
 	t.Run("empty user config keeps defaults", func(t *testing.T) {
-		merged := defaultStructTagsConfig(false).Merge(StructTagsConfig{})
-		assert.Equal(t, defaultStructTagsConfig(false), merged)
+		merged := defaultStructTagsConfig().Merge(StructTagsConfig{})
+		assert.Equal(t, defaultStructTagsConfig(), merged)
 	})
 
 	t.Run("matching name overrides default", func(t *testing.T) {
-		merged := defaultStructTagsConfig(false).Merge(StructTagsConfig{
+		merged := defaultStructTagsConfig().Merge(StructTagsConfig{
 			Tags: []StructTagTemplate{{Name: "json", Template: `{{.FieldName}}`}},
 		})
 		require.Len(t, merged.Tags, 2)
@@ -39,26 +31,17 @@ func TestStructTagsConfigMerge(t *testing.T) {
 	})
 
 	t.Run("new name is appended", func(t *testing.T) {
-		merged := defaultStructTagsConfig(false).Merge(StructTagsConfig{
+		merged := defaultStructTagsConfig().Merge(StructTagsConfig{
 			Tags: []StructTagTemplate{{Name: "db", Template: `{{.FieldName}}`}},
 		})
 		require.Len(t, merged.Tags, 3)
 		assert.Equal(t, "db", merged.Tags[2].Name)
 	})
-
-	t.Run("user yaml entry clobbers the yaml-tags injected default", func(t *testing.T) {
-		merged := defaultStructTagsConfig(true).Merge(StructTagsConfig{
-			Tags: []StructTagTemplate{{Name: "yaml", Template: `{{.FieldName}}`}},
-		})
-		require.Len(t, merged.Tags, 3)
-		assert.Equal(t, "yaml", merged.Tags[2].Name)
-		assert.Equal(t, `{{.FieldName}}`, merged.Tags[2].Template)
-	})
 }
 
 func TestNewStructTagGenerator(t *testing.T) {
 	t.Run("defaults parse", func(t *testing.T) {
-		_, err := newStructTagGenerator(defaultStructTagsConfig(true))
+		_, err := newStructTagGenerator(defaultStructTagsConfig())
 		require.NoError(t, err)
 	})
 
@@ -90,7 +73,9 @@ func TestNewStructTagGenerator(t *testing.T) {
 }
 
 func TestStructTagGeneratorGenerateTagsMap(t *testing.T) {
-	defaults, err := newStructTagGenerator(defaultStructTagsConfig(true))
+	defaults, err := newStructTagGenerator(defaultStructTagsConfig().Merge(StructTagsConfig{
+		Tags: []StructTagTemplate{{Name: "yaml", Template: `{{.FieldName}}{{if .OmitEmpty}},omitempty{{end}}`}},
+	}))
 	require.NoError(t, err)
 
 	t.Run("required field", func(t *testing.T) {

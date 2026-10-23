@@ -4,19 +4,21 @@
 package parameterssharedcollision
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
-	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/google/uuid"
 )
 
 // Hd147675Id0 is a helper type for the shared "id" parameter of "/gadget/{id}", prefixed with a per-path hash to disambiguate it from the same-named parameter on another path.
-type Hd147675Id0 = openapi_types.UUID
+type Hd147675Id0 = uuid.UUID
 
 // Hd147675Id1 is a helper type for the shared "id" parameter of "/gadget/{id}", prefixed with a per-path hash to disambiguate it from the same-named parameter on another path.
 type Hd147675Id1 = string
@@ -27,7 +29,7 @@ type Hd147675IdParam struct {
 }
 
 // Hdf81445Id0 is a helper type for the shared "id" parameter of "/gadget/{id}/part", prefixed with a per-path hash to disambiguate it from the same-named parameter on another path.
-type Hdf81445Id0 = openapi_types.UUID
+type Hdf81445Id0 = uuid.UUID
 
 // Hdf81445Id1 is a helper type for the shared "id" parameter of "/gadget/{id}/part", prefixed with a per-path hash to disambiguate it from the same-named parameter on another path.
 type Hdf81445Id1 = string
@@ -38,7 +40,7 @@ type Hdf81445IdParam struct {
 }
 
 // Ref0 defines parameters for GetSprocket.
-type Ref0 = openapi_types.UUID
+type Ref0 = uuid.UUID
 
 // Ref1 defines parameters for GetSprocket.
 type Ref1 = string
@@ -49,7 +51,7 @@ type RefParam struct {
 }
 
 // Wid0 defines parameters for DeleteWidget.
-type Wid0 = openapi_types.UUID
+type Wid0 = uuid.UUID
 
 // Wid1 defines parameters for DeleteWidget.
 type Wid1 = string
@@ -65,7 +67,7 @@ type OnEventGetParams struct {
 }
 
 // Whid0 defines parameters for OnEventGet.
-type Whid0 = openapi_types.UUID
+type Whid0 = uuid.UUID
 
 // Whid1 defines parameters for OnEventGet.
 type Whid1 = string
@@ -86,7 +88,7 @@ type OnDataGetParams struct {
 }
 
 // Cbid0 defines parameters for OnDataGet.
-type Cbid0 = openapi_types.UUID
+type Cbid0 = uuid.UUID
 
 // Cbid1 defines parameters for OnDataGet.
 type Cbid1 = string
@@ -122,7 +124,7 @@ func (t *Hd147675IdParam) MergeHd147675Id0(v Hd147675Id0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -148,7 +150,7 @@ func (t *Hd147675IdParam) MergeHd147675Id1(v Hd147675Id1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -165,9 +167,20 @@ func (t *Hd147675IdParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *Hd147675IdParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t Hd147675IdParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t Hd147675IdParam) MarshalJSON() ([]byte, error) {
@@ -201,7 +214,7 @@ func (t *Hdf81445IdParam) MergeHdf81445Id0(v Hdf81445Id0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -227,7 +240,7 @@ func (t *Hdf81445IdParam) MergeHdf81445Id1(v Hdf81445Id1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -244,9 +257,20 @@ func (t *Hdf81445IdParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *Hdf81445IdParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t Hdf81445IdParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t Hdf81445IdParam) MarshalJSON() ([]byte, error) {
@@ -280,7 +304,7 @@ func (t *RefParam) MergeRef0(v Ref0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -306,7 +330,7 @@ func (t *RefParam) MergeRef1(v Ref1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -323,9 +347,20 @@ func (t *RefParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *RefParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t RefParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t RefParam) MarshalJSON() ([]byte, error) {
@@ -359,7 +394,7 @@ func (t *WidParam) MergeWid0(v Wid0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -385,7 +420,7 @@ func (t *WidParam) MergeWid1(v Wid1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -402,9 +437,20 @@ func (t *WidParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *WidParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t WidParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t WidParam) MarshalJSON() ([]byte, error) {
@@ -438,7 +484,7 @@ func (t *WhidParam) MergeWhid0(v Whid0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -464,7 +510,7 @@ func (t *WhidParam) MergeWhid1(v Whid1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -481,9 +527,20 @@ func (t *WhidParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *WhidParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t WhidParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t WhidParam) MarshalJSON() ([]byte, error) {
@@ -517,7 +574,7 @@ func (t *CbidParam) MergeCbid0(v Cbid0) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -543,7 +600,7 @@ func (t *CbidParam) MergeCbid1(v Cbid1) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForHd147675IdParam(t.union, b)
 	t.union = merged
 	return err
 }
@@ -560,9 +617,20 @@ func (t *CbidParam) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Bind implements runtime.Binder, which binds exploded query parameters; see UnmarshalText.
+// Bind sets the union from the text of a query parameter; see UnmarshalText.
 func (t *CbidParam) Bind(src string) error {
 	return t.UnmarshalText([]byte(src))
+}
+
+// MarshalText returns the union as the text of a path, query, header or
+// cookie parameter: a string without its quotes, or the JSON of any other
+// value.
+func (t CbidParam) MarshalText() ([]byte, error) {
+	var s string
+	if err := json.Unmarshal(t.union, &s); err == nil {
+		return []byte(s), nil
+	}
+	return t.union, nil
 }
 
 func (t CbidParam) MarshalJSON() ([]byte, error) {
@@ -573,6 +641,87 @@ func (t CbidParam) MarshalJSON() ([]byte, error) {
 func (t *CbidParam) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
+}
+
+// oapiJSONMergeForHd147675IdParam merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForHd147675IdParam(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }
 
 // RequestEditorFn is the function signature for the RequestEditor callback function
@@ -752,7 +901,11 @@ func NewDeleteGadgetRequest(server string, id Hd147675IdParam) (*http.Request, e
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := id.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -786,7 +939,11 @@ func NewGetGadgetPartRequest(server string, id Hdf81445IdParam) (*http.Request, 
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := id.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -820,7 +977,11 @@ func NewGetSprocketRequest(server string, ref RefParam) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "ref", ref, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := ref.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -881,7 +1042,11 @@ func NewDeleteWidgetRequest(server string, wid WidParam) (*http.Request, error) 
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "wid", wid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := wid.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -915,7 +1080,11 @@ func NewGetWidgetRequest(server string, wid WidParam) (*http.Request, error) {
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "wid", wid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "", Format: ""})
+	if b_, err_ := wid.MarshalText(); err_ != nil {
+		err = err_
+	} else {
+		pathParam0 = url.PathEscape(string(b_))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1497,12 +1666,17 @@ func NewOnEventGetWebhookRequest(targetURL string, params *OnEventGetParams) (*h
 
 		if params.Whid != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "whid", *params.Whid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Whid).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "whid="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1537,12 +1711,17 @@ func NewOnEventPostWebhookRequest(targetURL string, params *OnEventPostParams) (
 
 		if params.Whid != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "whid", *params.Whid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Whid).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "whid="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1675,12 +1854,17 @@ func NewOnDataGetCallbackRequest(targetURL string, params *OnDataGetParams) (*ht
 
 		if params.Cbid != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cbid", *params.Cbid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Cbid).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "cbid="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}
@@ -1715,12 +1899,17 @@ func NewOnDataPostCallbackRequest(targetURL string, params *OnDataPostParams) (*
 
 		if params.Cbid != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cbid", *params.Cbid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
+			{
+				var s_ string
+				if b_, err_ := (*params.Cbid).MarshalText(); err_ != nil {
+					err = err_
+				} else {
+					s_ = url.QueryEscape(string(b_))
 				}
+				rawQueryFragments = append(rawQueryFragments, "cbid="+s_)
+			}
+			if err != nil {
+				return nil, err
 			}
 
 		}

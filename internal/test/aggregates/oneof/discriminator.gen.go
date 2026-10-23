@@ -4,11 +4,11 @@
 package aggregatesoneof
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	"github.com/oapi-codegen/runtime"
+	"strconv"
 )
 
 // Defines values for IdempotencyConflictErrorCode.
@@ -145,7 +145,7 @@ func (t *ConfigSaveReq) MergeConfigHttp(v ConfigHttp) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForConfigSaveReq(t.union, b)
 	t.union = merged
 	return err
 }
@@ -160,6 +160,10 @@ func (t ConfigSaveReq) AsConfigSsh() (ConfigSsh, error) {
 // FromConfigSsh overwrites any union data inside the ConfigSaveReq as the provided ConfigSsh
 func (t *ConfigSaveReq) FromConfigSsh(v ConfigSsh) error {
 	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"config_type":"ssh_server"}`))
 	t.union = b
 	return err
 }
@@ -170,8 +174,12 @@ func (t *ConfigSaveReq) MergeConfigSsh(v ConfigSsh) error {
 	if err != nil {
 		return err
 	}
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"config_type":"ssh_server"}`))
+	if err != nil {
+		return err
+	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForConfigSaveReq(t.union, b)
 	t.union = merged
 	return err
 }
@@ -226,7 +234,7 @@ func (t *ConflictError) FromResourceConflictError(v ResourceConflictError) error
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"code":"resource_exists"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"code":"resource_exists"}`))
 	t.union = b
 	return err
 }
@@ -237,12 +245,12 @@ func (t *ConflictError) MergeResourceConflictError(v ResourceConflictError) erro
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"code":"resource_exists"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"code":"resource_exists"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForConfigSaveReq(t.union, b)
 	t.union = merged
 	return err
 }
@@ -260,7 +268,7 @@ func (t *ConflictError) FromIdempotencyConflictError(v IdempotencyConflictError)
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"code":"idempotency_conflict"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"code":"idempotency_conflict"}`))
 	t.union = b
 	return err
 }
@@ -271,12 +279,12 @@ func (t *ConflictError) MergeIdempotencyConflictError(v IdempotencyConflictError
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"code":"idempotency_conflict"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"code":"idempotency_conflict"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForConfigSaveReq(t.union, b)
 	t.union = merged
 	return err
 }
@@ -329,7 +337,7 @@ func (t *PetByKind) FromKindCat(v KindCat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"kind":"cat"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"kind":"cat"}`))
 	t.union = b
 	return err
 }
@@ -342,12 +350,12 @@ func (t *PetByKind) MergeKindCat(v KindCat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"kind":"cat"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"kind":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForConfigSaveReq(t.union, b)
 	t.union = merged
 	return err
 }
@@ -367,7 +375,7 @@ func (t *PetByKind) FromKindDog(v KindDog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"kind":"dog"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"kind":"dog"}`))
 	t.union = b
 	return err
 }
@@ -380,12 +388,12 @@ func (t *PetByKind) MergeKindDog(v KindDog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"kind":"dog"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"kind":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForConfigSaveReq(t.union, b)
 	t.union = merged
 	return err
 }
@@ -472,7 +480,7 @@ func (t *RenamedPetByKind) FromKindCat(v KindCat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"kind":"cat"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"kind":"cat"}`))
 	t.union = b
 	return err
 }
@@ -485,12 +493,12 @@ func (t *RenamedPetByKind) MergeKindCat(v KindCat) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"kind":"cat"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"kind":"cat"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForConfigSaveReq(t.union, b)
 	t.union = merged
 	return err
 }
@@ -510,7 +518,7 @@ func (t *RenamedPetByKind) FromKindDog(v KindDog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"kind":"dog"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"kind":"dog"}`))
 	t.union = b
 	return err
 }
@@ -523,12 +531,12 @@ func (t *RenamedPetByKind) MergeKindDog(v KindDog) error {
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"kind":"dog"}`))
+	b, err = oapiJSONMergeForConfigSaveReq(b, []byte(`{"kind":"dog"}`))
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForConfigSaveReq(t.union, b)
 	t.union = merged
 	return err
 }
@@ -598,4 +606,85 @@ func (t *RenamedPetByKind) UnmarshalJSON(b []byte) error {
 	}
 
 	return err
+}
+
+// oapiJSONMergeForConfigSaveReq merges the JSON document patch into data: keys present in
+// both are merged recursively, keys only patch has are copied in, and a nil
+// document counts as `{}`. A patch object merges into an array by index, and
+// a patch value that is not an object never replaces an object in data.
+func oapiJSONMergeForConfigSaveReq(data, patch json.RawMessage) (json.RawMessage, error) {
+	if data == nil {
+		data = []byte(`{}`)
+	}
+	if patch == nil {
+		patch = []byte(`{}`)
+	}
+	decode := func(b []byte) (any, error) {
+		var v any
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		err := dec.Decode(&v)
+		return v, err
+	}
+	dataValue, err := decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("error in data JSON: %w", err)
+	}
+	patchValue, err := decode(patch)
+	if err != nil {
+		return nil, fmt.Errorf("error in patch JSON: %w", err)
+	}
+
+	var merge func(data, patch any) any
+	mergeKey := func(value any, patch map[string]any, key string) any {
+		patchValue, ok := patch[key]
+		if !ok {
+			return value
+		}
+		_, patchIsObject := patchValue.(map[string]any)
+		switch value.(type) {
+		case map[string]any:
+			if !patchIsObject {
+				return value
+			}
+			return merge(value, patchValue)
+		case []any:
+			if patchIsObject {
+				return merge(value, patchValue)
+			}
+		}
+		return patchValue
+	}
+	merge = func(data, patch any) any {
+		patchObject, ok := patch.(map[string]any)
+		if !ok {
+			return data
+		}
+		switch data := data.(type) {
+		case map[string]any:
+			merged := make(map[string]any, len(data)+len(patchObject))
+			for k, v := range data {
+				merged[k] = mergeKey(v, patchObject, k)
+			}
+			for k, v := range patchObject {
+				if _, ok := data[k]; !ok {
+					merged[k] = v
+				}
+			}
+			return merged
+		case []any:
+			merged := make([]any, len(data))
+			for i, v := range data {
+				merged[i] = mergeKey(v, patchObject, strconv.Itoa(i))
+			}
+			return merged
+		}
+		return data
+	}
+
+	merged, err := json.Marshal(merge(dataValue, patchValue))
+	if err != nil {
+		return nil, fmt.Errorf("error writing merged JSON: %w", err)
+	}
+	return merged, nil
 }

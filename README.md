@@ -24,17 +24,16 @@ With `oapi-codegen`, there are a few [Key Design Decisions](#key-design-decision
   - [Installing](#installing)
   - [Pinning to commits](#pinning-to-commits)
 - [Usage](#usage)
-  - [Backwards compatibility](#backwards-compatibility)
 - [Features](#features)
 - [What does it look like?](#what-does-it-look-like)
 - [Key design decisions](#key-design-decisions)
 - [Generating server-side boilerplate](#generating-server-side-boilerplate)
-  - [Supported Servers](#supported-servers)
   - [Strict server](#strict-server)
 - [Generating API clients](#generating-api-clients)
   - [With Server URLs](#with-server-urls)
   - [Duplicate types generated for clients's response object types](#duplicate-types-generated-for-clientss-response-object-types)
 - [Generating API models](#generating-api-models)
+  - [Format types](#format-types)
 - [Splitting large OpenAPI specs across multiple packages (aka &quot;Import Mapping&quot; or &quot;external references&quot;)](#splitting-large-openapi-specs-across-multiple-packages-aka-import-mapping-or-external-references)
   - [Using a single package with multiple OpenAPI specs](#using-a-single-package-with-multiple-openapi-specs)
   - [Using multiple packages, with one OpenAPI spec per package](#using-multiple-packages-with-one-openapi-spec-per-package)
@@ -44,7 +43,6 @@ With `oapi-codegen`, there are a few [Key Design Decisions](#key-design-decision
 - [Request/response validation middleware](#requestresponse-validation-middleware)
 - [Implementing security](#implementing-security)
   - [On the server](#on-the-server)
-    - [Deprecated: auth scopes on the request context](#deprecated-auth-scopes-on-the-request-context)
   - [On the client](#on-the-client)
 - [Custom code generation](#custom-code-generation)
   - [Local paths](#local-paths)
@@ -99,7 +97,7 @@ go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 
 ### Installing
 
-`oapi-codegen` requires Go 1.25+ to build and install. Note that the *generated* code has its own, lower requirements — see [Supported Servers](#supported-servers).
+`oapi-codegen` requires Go 1.25+ to build and install. Note that the *generated* code has its own, lower requirements — see [Generating server-side boilerplate](#generating-server-side-boilerplate).
 
 It is recommended to use [`go tool` support](https://www.jvt.me/posts/2025/01/27/go-tools-124/) for managing the dependency of `oapi-codegen` alongside your core application.
 
@@ -163,9 +161,7 @@ index 44f29a4..436a780 100644
 ## Usage
 
 `oapi-codegen` is configured using a YAML configuration file, to simplify the number of flags that users need to remember, and to make reading the `go:generate` command less daunting.
-While some command line options are supported, they should be considered deprecated,
-we just maintain them for backward compatibility, but we're not extending
-them.
+Prefer the configuration file to command line options, which only cover a subset of it.
 
 For full details of what is supported, check out the [oapi-codegen configuration documentation](docs/configuration.md).
 
@@ -179,32 +175,11 @@ package: api
 
 Note that it's recommended to pin to a specific version of the configuration schema, so it matches the version of `oapi-codegen` you're using. For instance, if you're using [Renovate](https://docs.renovatebot.com/), you can [have Renovate automagically update this version for you](https://www.jvt.me/posts/2026/03/01/oapi-codegen-config-renovate/).
 
-### Backwards compatibility
-
-Although we strive to retain backwards compatibility - as a project that's using a stable API per SemVer - there are sometimes opportunities we must take to fix a bug that could cause a breaking change for [people relying upon the behaviour](https://xkcd.com/1172/).
-
-In this case, we will expose a [compatibility option](https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#CompatibilityOptions) to restore old behaviour.
-
-That all being said, we operate in a little bit of a grey area, since we are a code generator, we support template overrides, and
-our code can be imported. So this is how we will try to maintain compatibility:
-
-  - SemVer mostly applies to generated code. We strive to avoid breaking your code which depends on the generated code. We will
-    provide compatibility flags for major breaking changes.
-  - A breaking change could happen with either a compilation error (as something has changed in the generated code) or a behaviour change (we generate a slightly different implementation)
-  - However, if you're using generated code that is "off the beaten path", on a seldom encountered edge case, we'll sometimes decide to make a breaking change to avoid complicating usage or internals.
-  - [Our `pkg/` directory is importable](https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg). In retrospect, this was a mistake in our original design. Importing anything other than the `Generate` function and its related `Configuration` is considered unstable (and at this point, [hasn't (yet) been documented](https://github.com/oapi-codegen/oapi-codegen/issues/1487)). In the future, we will clean up our import surface.
-  - Template overrides are considered unstable, and you use them at your own risk. These are always drifting and so are their input contexts, so we can't guarantee much here.
-  - The command-line interface and/or the configuration file format are classed as stable
-
-Also note that - if a security vulnerability is found - we will opt for breaking all users if need be, if it is the most secure response.
-
-Unless explicitly called out above, your usage of `oapi-codegen` may be using unstable features, which may make it harder to upgrade over time.
-
 ## Features
 
 At a high level, `oapi-codegen` supports:
 
-- Generating server-side boilerplate for [a number of servers](#supported-servers) ([docs](#generating-server-side-boilerplate))
+- Generating [`net/http`](https://pkg.go.dev/net/http) server-side boilerplate ([docs](#generating-server-side-boilerplate))
 - Generating client API boilerplate ([docs](#generating-api-clients))
 - Generating the types ([docs](#generating-api-models))
 - Splitting large OpenAPI specs across multiple packages([docs](#import-mapping))
@@ -235,26 +210,39 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 
 	// ------------- Optional query parameter "tags" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "tags", r.URL.Query(), &params.Tags)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tags", Err: err})
-		return
+	if values_, found_ := r.URL.Query()["tags"]; found_ {
+		var value_ []string
+		value_ = values_
+		params.Tags = &value_
 	}
 
 	// ------------- Optional query parameter "limit" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		return
+	if values_, found_ := r.URL.Query()["limit"]; found_ {
+		var value_ int32
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'limit'")
+		} else {
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value_ = int32(v_)
+			}
+		}
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+			return
+		}
+		params.Limit = &value_
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FindPets(w, r, params)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -456,28 +444,9 @@ We can see that this provides the best means to focus on the implementation of t
 
 `oapi-codegen` shines by making it fairly straightforward (note that this is a purposeful choice of wording here - we want to avoid words like "easy") to generate the server-side boilerplate for a backend API.
 
-You can find the supported HTTP server backends below, and more information about how to implement a server on top of each router.
+The generated server is built on the standard library's [`net/http`](https://pkg.go.dev/net/http): set `std-http-server: true`, and see the [`net/http` documentation](docs/stdhttp-server.md) for how to implement and run it. The generated `Handler` is an ordinary `http.Handler`, so it works with any router or middleware that accepts one. The generated server needs Go 1.22+, for the `net/http` routing patterns.
 
 To provide you a fully Test Driven Development style test harness to confirm you are following the specification, you could use a tool such as [openapi.tanna.dev/go/validator](https://openapi.tanna.dev/go/validator/), or craft your own.
-
-### Supported Servers
-
-Right now, we support the following servers, and are supportive of adding new servers, too! Each
-server lists a minimum require Go version to compile the generated code, which may
-be different from that of oapi-codegen itself. While the code may compile on an
-older version of Go, we don't promise that it'll work.
-
-| Server | `generate` flag | Go Version | Documentation |
-| --- | --- |------------| --- |
-| [Chi](https://github.com/go-chi/chi) | `chi-server` | 1.24+      | [Chi documentation](docs/chi-server.md) |
-| [Echo](https://github.com/labstack/echo) | `echo-server` | 1.24+      | [Echo documentation](docs/echo-server.md) |
-| [Echo v5](https://github.com/labstack/echo) | `echo5-server` | 1.25+      | [Echo v5 documentation](docs/echo5-server.md) |
-| [Fiber](https://github.com/gofiber/fiber) | `fiber-server` | 1.24+      | [Fiber documentation](docs/fiber-server.md) |
-| [Fiber v3](https://github.com/gofiber/fiber) | `fiber-v3-server` | 1.25+      | [Fiber v3 documentation](docs/fiber-v3-server.md) |
-| [Gin](https://github.com/gin-gonic/gin) | `gin-server` | 1.25+      | [Gin documentation](docs/gin-server.md) |
-| [gorilla/mux](https://github.com/gorilla/mux) | `gorilla-server` | 1.24+      | [gorilla/mux documentation](docs/gorilla-server.md) |
-| [Iris](https://github.com/kataras/iris) | `iris-server` | 1.24+      | [Iris documentation](docs/iris-server.md) |
-| [`net/http`](https://pkg.go.dev/net/http) | `std-http-server` | 1.24+      | [`net/http` documentation](docs/stdhttp-server.md) |
 
 ### Strict server
 
@@ -503,14 +472,13 @@ The strict server has support for:
 You can see a little more detail of the generated code in the ["What does it look like"](#what-does-it-look-like-strict) section.
 
 > [!NOTE]
-> To configure the strict server generation, you must specify another server to be generated. For instance:
+> The strict server wraps the `net/http` server, so enable both:
 
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/v2.8.0/configuration-schema.json
 package: api
 generate:
-  # NOTE another server must be added!
-  chi-server: true
+  std-http-server: true
   strict-server: true
 output: server.gen.go
 ```
@@ -883,6 +851,9 @@ There is no currently planned work to change this behaviour.
 
 If you're looking to only generate the models for interacting with a remote service, for instance if you need to hand-roll the API client for whatever reason, you can do this as-is.
 
+> [!NOTE]
+> Generated models and clients need Go 1.20+, and the generated server Go 1.22+, for the `net/http` routing patterns. Generated code depends only on the standard library, plus `github.com/google/uuid` when the spec uses the `uuid` format, `github.com/oapi-codegen/nullable` with `nullable-type`, and `github.com/getkin/kin-openapi` with `embedded-spec`.
+
 > [!TIP]
 > Try to define as much as possible within the `#/components/schemas` object, as `oapi-codegen` will generate all the types here.
 >
@@ -986,6 +957,23 @@ output-options:
 ```
 
 For a complete example see [`examples/only-models`](examples/only-models).
+
+### Format types
+
+Most string formats map to standard library or well-known types (`date-time` to `time.Time`, `uuid` to `uuid.UUID` from `github.com/google/uuid`). The rest map to types declared in the generated package itself, alongside the models:
+
+| Format | Go type | Notes |
+| --- | --- | --- |
+| `date` | `OpenAPIDate` | Embeds `time.Time`; marshals as `2006-01-02` (`time.DateOnly`) |
+| `duration` | `OpenAPIDuration` | RFC 3339 duration with its components kept as parsed; `ParseOpenAPIDuration`, `TimeDuration` and `OpenAPIDurationFromTimeDuration` convert it |
+| `email` | `OpenAPIEmail` | A `string`, validated and normalized when marshaled or unmarshaled as JSON; invalid addresses return `ErrOpenAPIEmailValidation` |
+| `binary` | `OpenAPIFile` | Content from a multipart upload (`InitFromMultipart`) or memory (`InitFromBytes`), read with `Bytes` or `Reader` |
+
+Only the types the spec uses are declared. Each generated package declares its own, so `admin.OpenAPIDate` and `common.OpenAPIDate` are distinct types; all but `OpenAPIFile` convert into each other with a plain conversion, e.g. `common.OpenAPIDate(d)`.
+
+If you generate models for several specs into one package, set `output-options.skip-format-types: true` on all but one of them, so each type is declared once; the one without it must use every format the others do.
+
+To use your own types instead, map the formats to them with [`type-mapping`](docs/configuration.md). A mapping's `import` is added to the generated code, and a parameter named after a package the mapping uses, such as `uuid`, is given a `p` prefix (`pUuid`) so it doesn't shadow that package.
 
 ## Splitting large OpenAPI specs across multiple packages (aka "Import Mapping" or "external references")
 <a name=import-mapping></a>
@@ -1094,7 +1082,7 @@ package: samepackage
 output: server.gen.go
 generate:
   models: true
-  chi-server: true
+  std-http-server: true
   strict-server: true
 output-options:
   # to make sure that all types are generated
@@ -1142,7 +1130,7 @@ package: admin
 output: server.gen.go
 generate:
   models: true
-  chi-server: true
+  std-http-server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1163,7 +1151,7 @@ package: admin
 output: server.gen.go
 generate:
   models: true
-  chi-server: true
+  std-http-server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1275,7 +1263,7 @@ package: api
 output: ping.gen.go
 generate:
   models: true
-  gorilla-server: true
+  std-http-server: true
   embedded-spec: true
 output-options:
   overlay:
@@ -1358,7 +1346,7 @@ The following extensions are supported:
 | `x-deprecated-reason` | Add a GoDoc deprecation warning to a type | [(docs)](docs/extensions.md#x-deprecated-reason)                      |
 | `x-order` | Explicitly order struct fields | [(docs)](docs/extensions.md#x-order)                                  |
 | `x-oapi-codegen-only-honour-go-name` | Only honour the `x-go-name` when generating field names | [(docs)](docs/extensions.md#x-oapi-codegen-only-honour-go-name)       |
-| `x-oapi-codegen-enum-merge` | Keep all the values of an `allOf`'s enums, with `schema-merging-behavior: v3` | [(docs)](docs/extensions.md#x-oapi-codegen-enum-merge)                |
+| `x-oapi-codegen-enum-merge` | Keep all the values of an `allOf`'s enums | [(docs)](docs/extensions.md#x-oapi-codegen-enum-merge)                |
 
 ## Request/response validation middleware
 
@@ -1366,130 +1354,7 @@ The generated code that `oapi-codegen` produces has some validation for some inc
 
 However, this leaves a lot of validation that needs to be done, which can be tedious to hand-write this logic, especially for large or complex OpenAPI specifications.
 
-To simplify this, we use a middleware, which provides the request validation. The middleware you want to use depends on the server you're using:
-
-<table>
-
-<tr>
-<th>
-Server
-</th>
-<th>
-Middleware library
-</th>
-</tr>
-
-<tr>
-<td>
-
-[Chi](https://github.com/go-chi/chi)
-
-</td>
-<td>
-
-[nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware)
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-[Echo](https://github.com/labstack/echo)
-
-</td>
-<td>
-
-[echo-middleware](https://github.com/oapi-codegen/echo-middleware)
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-[Fiber](https://github.com/gofiber/fiber)
-
-</td>
-<td>
-
-[fiber-middleware](https://github.com/oapi-codegen/fiber-middleware)
-
-</td>
-
-</tr>
-
-
-<tr>
-<td>
-
-[Gin](https://github.com/gin-gonic/gin)
-
-</td>
-<td>
-
-[gin-middleware](https://github.com/oapi-codegen/gin-middleware)
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-[gorilla/mux](https://github.com/gorilla/mux)
-
-</td>
-<td>
-
-[nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware)
-
-</td>
-
-</tr>
-
-<tr>
-<td>
-
-[Iris](https://github.com/kataras/iris)
-
-</td>
-<td>
-
-[iris-middleware](https://github.com/oapi-codegen/iris-middleware)
-
-</td>
-
-</tr>
-
-<tr>
-<td>
-
-[`net/http`](https://pkg.go.dev/net/http)
-
-</td>
-<td>
-
-[nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware)
-
-</td>
-
-</tr>
-
-<tr>
-<td>
-
-Any other server (which conforms to `net/http`)
-
-</td>
-<td>
-
-[nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware)
-
-</td>
-
-</tr>
-
-</table>
+To simplify this, use [nethttp-middleware](https://github.com/oapi-codegen/nethttp-middleware), which validates requests against the spec and wraps any `http.Handler`.
 
 > [!NOTE]
 > It is [not currently possible](https://github.com/oapi-codegen/oapi-codegen/issues/1038) to validate the HTTP response with a middleware.
@@ -1505,26 +1370,7 @@ If you're using a specification with [Security Schemes](https://spec.openapis.or
 >
 > To perform authentication, you will need to use the [validation middleware](#requestresponse-validation-middleware), which validates each request against the spec's security requirements and calls your `AuthenticationFunc` with the scheme name and required scopes.
 
-To see how this can work, check out the [authenticated API example](examples/authenticated-api/echo).
-
-#### Deprecated: auth scopes on the request context
-
-Historically, generated server code embedded each operation's security scopes into the request context:
-a context key type per security scheme (e.g. `bearerAuthContextKey`), a scope constant (e.g. `BearerAuthScopes`),
-and a per-operation call storing the operation's scopes into the request context.
-
-This mechanism is deprecated and no longer generated by default. It flattens the
-spec's `security` requirements into a per-scheme list of scopes, and cannot represent
-alternative schemes (OR), combined schemes (AND), or anonymous (`{}`) alternatives, so middleware built on it can't correctly enforce the spec. Use the [validation middleware](#requestresponse-validation-middleware) instead. Please see [#1524](https://github.com/oapi-codegen/oapi-codegen/issues/1524) for more background.
-
-If you have existing middleware that relies on these constants, you can re-enable them with:
-
-```yaml
-compatibility:
-  enable-auth-scopes-on-context: true
-```
-
-Note that even when re-enabled, an operation that includes an empty `{}` security alternative allows anonymous requests, and no scopes are embedded into the request context for that operation.
+To see how this can work, check out the [authenticated API example](examples/authenticated-api/stdhttp).
 
 ### On the client
 
@@ -2308,11 +2154,9 @@ We love reading posts by the community about how to use the project.
 Here are a few we've found around the Web:
 
 - [Building a Go RESTful API with design-first OpenAPI contracts](https://www.jvt.me/posts/2022/07/12/go-openapi-server/)
-- [A Practical Guide to Using oapi-codegen in Golang API Development with the Fiber Framework](https://medium.com/@fikihalan/a-practical-guide-to-using-oapi-codegen-in-golang-api-development-with-the-fiber-framework-bce2a59380ae)
 - [Generating Go server code from OpenAPI 3 definitions](https://ldej.nl/post/generating-go-from-openapi-3/)
 - [Go Client Code Generation from Swagger and OpenAPI](https://medium.com/@kyodo-tech/go-client-code-generation-from-swagger-and-openapi-a0576831836c)
 - [Go oapi-codegen + request validation](https://blog.commitsmart.com/go-oapi-codegen-request-validation-285398b37dc8)
-- [Streamlining Go + Chi Development: Generating Code from an OpenAPI Spec](https://i4o.dev/blog/oapi-codegen-with-chi-router)
 
 Got one to add? Please raise a PR!
 
@@ -2330,13 +2174,7 @@ If you're on an older release that predates this, you can [use OpenAPI Overlay](
 
 `oapi-codegen` supports `anyOf`, `allOf` and `oneOf` for generated code.
 
-There are three ways of turning them into Go types, which the `compatibility.schema-merging-behavior` setting chooses between:
-
-- `v1` is the original behavior. It embeds the types of an `allOf`'s members in a struct, and is very limited.
-- `v2` merges an `allOf`'s members into one type. It is the current default.
-- `v3` merges them by what `allOf` means, reports conflicting members as errors, and models more of what `anyOf` and `oneOf` say. It is an option for now, and will become the default once it has been available as an option for at least one release.
-
-[How `allOf`, `anyOf` and `oneOf` become Go types](docs/schema-merging.md) describes how `v1` differs from the others, and compares `v2` and `v3` side by side. The example below generates the same code under `v2` and `v3`.
+An `allOf`'s members are merged into one type by what `allOf` means, conflicting members are reported as errors, and `anyOf` and `oneOf` become union types. [How `allOf`, `anyOf` and `oneOf` become Go types](docs/schema-merging.md) describes the rules in detail.
 
 For instance, through the following OpenAPI spec:
 
@@ -2376,7 +2214,7 @@ components:
 
     # a property several schemas declare is merged: here, the second schema
     # adds a description and a length limit to Identity's `issuer`. Their
-    # types have to agree; `v3` reports an error when they can't
+    # types have to agree; generation fails when they can't
     IdentityWithDuplicateField:
       allOf:
         - $ref: '#/components/schemas/Identity'
@@ -2446,8 +2284,6 @@ type IdentityWithDuplicateField struct {
 ```go
 import (
 	"encoding/json"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 // ClientAndMaybeIdentity defines model for ClientAndMaybeIdentity.
@@ -2476,7 +2312,7 @@ func (t *ClientAndMaybeIdentity) MergeClient(v Client) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForClientAndMaybeIdentity(t.union, b)
 	t.union = merged
 	return err
 }
@@ -2502,7 +2338,7 @@ func (t *ClientAndMaybeIdentity) MergeIdentity(v Identity) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForClientAndMaybeIdentity(t.union, b)
 	t.union = merged
 	return err
 }
@@ -2548,7 +2384,7 @@ func (t *ClientOrIdentity) MergeClient(v Client) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForClientAndMaybeIdentity(t.union, b)
 	t.union = merged
 	return err
 }
@@ -2574,7 +2410,7 @@ func (t *ClientOrIdentity) MergeIdentity(v Identity) error {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
+	merged, err := oapiJSONMergeForClientAndMaybeIdentity(t.union, b)
 	t.union = merged
 	return err
 }
@@ -2616,7 +2452,7 @@ Check [the docs](https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/
 
 We recommend doing so, yes, for the following reasons:
 
-- It means it's easier to view the impact of a change - be it due to an upgrade of `oapi-codegen`, or a change to your spec - and has helped catch (possibly) breaking changes in the past more easily
+- It means it's easier to view the impact of a change - be it due to an upgrade of `oapi-codegen`, or a change to your spec
 - It then allows your codebase to be consumed as a library, as all the files are committed
 
 This means you'll need to have your CI/CD pipeline validate that generated files are all up-to-date, but that's a fairly straightforward piece of work.

@@ -1,4 +1,3 @@
-versions: [v1, v2, v3]
 description: >-
   allOf over a single $ref to an untyped schema. The composition is the
   untyped schema's type. v1 used to embed it in a struct, which encoding/json

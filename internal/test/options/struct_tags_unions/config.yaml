@@ -10,5 +10,3 @@ output-options:
       # A key that depends on the field's flags: optional fields get a prefix.
       - name: json
         template: '{{if .IsOptional}}opt_{{end}}{{.FieldName}}_wire{{if .OmitEmpty}},omitempty{{end}}'
-compatibility:
-  schema-merging-behavior: v3

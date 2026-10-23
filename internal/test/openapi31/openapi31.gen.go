@@ -4,7 +4,11 @@
 package openapi31
 
 import (
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"bytes"
+	"encoding/json"
+	"io"
+	"mime/multipart"
+	"time"
 )
 
 // Defines values for Color.
@@ -149,22 +153,22 @@ type FileUploadFields struct {
 	// media type), the file mapping wins: openapi_types.File.
 	// This matches the 3.0 behavior where `format: binary` would
 	// dominate over any encoding hint.
-	BothKeywords *openapi_types.File `json:"bothKeywords,omitempty"`
+	BothKeywords *OpenAPIFile `json:"bothKeywords,omitempty"`
 
 	// ExplicitFormatWins An explicit `format` always overrides the contentMediaType-
 	// derived synthesis. Here `format: date` keeps its Go type
 	// (openapi_types.Date) even though contentMediaType would
 	// otherwise have routed to openapi_types.File.
-	ExplicitFormatWins *openapi_types.Date `json:"explicitFormatWins,omitempty"`
+	ExplicitFormatWins *OpenAPIDate `json:"explicitFormatWins,omitempty"`
 
 	// ImageFile A non-octet-stream contentMediaType still routes to
 	// openapi_types.File -- any contentMediaType signals
 	// "this string is binary content of a specific type."
-	ImageFile *openapi_types.File `json:"imageFile,omitempty"`
-	OrderId   int                 `json:"orderId"`
+	ImageFile *OpenAPIFile `json:"imageFile,omitempty"`
+	OrderId   int          `json:"orderId"`
 
 	// RawFile Raw binary file content.
-	RawFile openapi_types.File `json:"rawFile"`
+	RawFile OpenAPIFile `json:"rawFile"`
 }
 
 // Measurement defines model for Measurement.
@@ -210,3 +214,119 @@ type UnionEnum = any
 
 // UnionValue defines model for UnionValue.
 type UnionValue = any
+
+// OpenAPIDate is a calendar date in the OpenAPI "date" format (RFC 3339
+// full-date, e.g. "2006-01-02"), without a time of day or time zone.
+type OpenAPIDate struct {
+	time.Time
+}
+
+func (d OpenAPIDate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.Format(time.DateOnly))
+}
+
+func (d *OpenAPIDate) UnmarshalJSON(data []byte) error {
+	var dateStr string
+	err := json.Unmarshal(data, &dateStr)
+	if err != nil {
+		return err
+	}
+	parsed, err := time.Parse(time.DateOnly, dateStr)
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+func (d OpenAPIDate) String() string {
+	return d.Format(time.DateOnly)
+}
+
+func (d *OpenAPIDate) UnmarshalText(data []byte) error {
+	parsed, err := time.Parse(time.DateOnly, string(data))
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+// Bind binds a parameter value, treating it as a scalar rather than a struct
+// of key-value pairs. An empty value leaves the date unchanged.
+func (d *OpenAPIDate) Bind(src string) error {
+	if src == "" {
+		return nil
+	}
+	parsed, err := time.Parse(time.DateOnly, src)
+	if err != nil {
+		return err
+	}
+	d.Time = parsed
+	return nil
+}
+
+// OpenAPIFile is file content in the OpenAPI "binary" format, either
+// uploaded as a multipart part or held in memory.
+type OpenAPIFile struct {
+	multipart *multipart.FileHeader
+	data      []byte
+	filename  string
+}
+
+func (file *OpenAPIFile) InitFromMultipart(header *multipart.FileHeader) {
+	file.multipart = header
+	file.data = nil
+	file.filename = ""
+}
+
+func (file *OpenAPIFile) InitFromBytes(data []byte, filename string) {
+	file.data = data
+	file.filename = filename
+	file.multipart = nil
+}
+
+func (file OpenAPIFile) MarshalJSON() ([]byte, error) {
+	b, err := file.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(b)
+}
+
+func (file *OpenAPIFile) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, &file.data)
+}
+
+func (file OpenAPIFile) Bytes() ([]byte, error) {
+	if file.multipart != nil {
+		f, err := file.multipart.Open()
+		if err != nil {
+			return nil, err
+		}
+		defer func() { _ = f.Close() }()
+		return io.ReadAll(f)
+	}
+	return file.data, nil
+}
+
+func (file OpenAPIFile) Reader() (io.ReadCloser, error) {
+	if file.multipart != nil {
+		return file.multipart.Open()
+	}
+	return io.NopCloser(bytes.NewReader(file.data)), nil
+}
+
+func (file OpenAPIFile) Filename() string {
+	if file.multipart != nil {
+		return file.multipart.Filename
+	}
+	return file.filename
+}
+
+func (file OpenAPIFile) FileSize() int64 {
+	if file.multipart != nil {
+		return file.multipart.Size
+	}
+	return int64(len(file.data))
+}

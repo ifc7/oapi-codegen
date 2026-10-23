@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../../../configuration-schema.json
+package: optionsfilteroperations
+output: operations/server.gen.go
+generate:
+  std-http-server: true
+output-options:
+  include-operation-ids: [included-operation1, included-operation2]

@@ -14,7 +14,6 @@ import (
 	"strings"
 	"testing"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,9 +23,9 @@ import (
 // ----------------------------------------------------------------------------
 
 // contentMediaType: application/octet-stream -- raw binary -- must produce
-// openapi_types.File, matching 3.0 `format: binary`.
+// OpenAPIFile, matching 3.0 `format: binary`.
 func TestContentMediaTypeMapsToFile(t *testing.T) {
-	var f openapi_types.File
+	var f OpenAPIFile
 	fields := FileUploadFields{
 		OrderId:     1,
 		RawFile:     f,
@@ -36,13 +35,13 @@ func TestContentMediaTypeMapsToFile(t *testing.T) {
 }
 
 // A non-octet-stream contentMediaType (image/png) still routes to
-// openapi_types.File: the keyword signals "this string is binary content,"
+// OpenAPIFile: the keyword signals "this string is binary content,"
 // regardless of the specific media type.
 func TestContentMediaTypeImageMapsToFile(t *testing.T) {
-	var f openapi_types.File
+	var f OpenAPIFile
 	fields := FileUploadFields{
 		OrderId:     1,
-		RawFile:     openapi_types.File{},
+		RawFile:     OpenAPIFile{},
 		Base64Field: []byte("data"),
 		ImageFile:   &f,
 	}
@@ -55,7 +54,7 @@ func TestContentMediaTypeImageMapsToFile(t *testing.T) {
 func TestContentEncodingBase64MapsToByteSlice(t *testing.T) {
 	fields := FileUploadFields{
 		OrderId:     1,
-		RawFile:     openapi_types.File{},
+		RawFile:     OpenAPIFile{},
 		Base64Field: []byte("hello"),
 	}
 	assert.Equal(t, "hello", string(fields.Base64Field))
@@ -69,7 +68,7 @@ func TestContentEncodingBase64UrlStaysString(t *testing.T) {
 	v := "abc-def_ghi"
 	fields := FileUploadFields{
 		OrderId:        1,
-		RawFile:        openapi_types.File{},
+		RawFile:        OpenAPIFile{},
 		Base64Field:    []byte("data"),
 		Base64UrlField: &v,
 	}
@@ -81,10 +80,10 @@ func TestContentEncodingBase64UrlStaysString(t *testing.T) {
 // -- the field is a binary blob of a specific media type. Matches the 3.0 model
 // where `format: binary` dominated.
 func TestContentMediaTypeWinsOverContentEncoding(t *testing.T) {
-	var f openapi_types.File
+	var f OpenAPIFile
 	fields := FileUploadFields{
 		OrderId:      1,
-		RawFile:      openapi_types.File{},
+		RawFile:      OpenAPIFile{},
 		Base64Field:  []byte("data"),
 		BothKeywords: &f,
 	}
@@ -92,14 +91,14 @@ func TestContentMediaTypeWinsOverContentEncoding(t *testing.T) {
 }
 
 // An explicit `format` must continue to win over the contentMediaType-derived
-// synthesis. Here `format: date` keeps its openapi_types.Date Go type even
+// synthesis. Here `format: date` keeps its OpenAPIDate Go type even
 // though contentMediaType: application/octet-stream would otherwise have routed
-// to openapi_types.File.
+// to OpenAPIFile.
 func TestExplicitFormatOverridesContentMediaType(t *testing.T) {
-	var d openapi_types.Date
+	var d OpenAPIDate
 	fields := FileUploadFields{
 		OrderId:            1,
-		RawFile:            openapi_types.File{},
+		RawFile:            OpenAPIFile{},
 		Base64Field:        []byte("data"),
 		ExplicitFormatWins: &d,
 	}

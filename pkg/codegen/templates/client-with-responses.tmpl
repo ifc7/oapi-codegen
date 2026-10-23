@@ -153,12 +153,24 @@ func Parse{{genResponseTypeName $opid | ucFirst}}(rsp *http.Response) (*{{genRes
     {{- range $headerResponses}}
     case {{getConditionOfResponseName "rsp.StatusCode" .StatusCode}}:
         var headers {{genResponseTypeName $opid | ucFirst}}{{.StatusCode | ucFirst}}Headers
-        {{- range .Headers}}
+        {{- range $header := .Headers}}
         if values := rsp.Header.Values({{.Name | toGoString}}); len(values) > 0 {
             var value {{.Schema.TypeDecl}}
-            if err := runtime.BindStyledParameterWithOptions("simple", {{.Name | toGoString}}, values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: {{.Required}}, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"{{unionTypes .SchemaTypes}}}); err != nil {
+            {{with .Codec -}}
+            var err error
+            {{if $header.Required -}}
+            if values[0] == "" {
+                err = errors.New({{printf "parameter '%s' is empty, can't bind its value" $header.Name | toGoString}})
+            } else {
+                {{.BindStyled "values[0]" "value"}}
+            }
+            {{- else -}}
+            {{.BindStyled "values[0]" "value"}}
+            {{- end}}
+            if err != nil {
                 return nil, err
             }
+            {{- end}}
             {{- if .IsNullable}}
             headers.{{.GoName}}.Set(value)
             {{- else if .IsOptional}}

@@ -43,8 +43,9 @@ func (siw *ServerInterfaceWrapper) GetStream(w http.ResponseWriter, r *http.Requ
 		siw.Handler.GetStream(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -300,12 +301,12 @@ func (sh *strictHandler) GetStream(w http.ResponseWriter, r *http.Request) {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"ZFLNbtswDH4VgqcNcFI5uekFhg3FNsA97abaTMLCojSJMVYUfveB6pIt2cU0PuL74Qe9IcshoX9DZZ0J",
-	"PQ4c80zwZfj29REGLRQiyxEGKguPhB0uVConQY/91m0drh2mTBIyo8d9gzrMQU/VZB/scyS1MVEdC2d9",
-	"Z38vaeGJKgSozQbSodnClMZzJNEKH5IQZCows1AHIeeZx2ACDy81yfwRxiQaWCxiAOVIVUPMEGSCSj/P",
-	"JCOBnOMzlS22oKXRP0/o8RPp+4HYYaGak1RqoXfO2TBtkhb9P2cD6Vewruz34oW+79BioMed2+03fb/Z",
-	"uafe+b3zzv2wtup4ohiMlYsFUqZ6q3Ff1XB7iRWlJwJaSNTO0tdshixKRyq4XiLc6zxd+7lXOKQSg6LH",
-	"KShtGvsqW7WwHHFdr0h6fqFRcTXo1uHfZ9MY9RxjKK9/VvDIQvXvfl1/DwA=",
+	"ZJJBb9swDIX/CsHTBjipnNz0DzYU2wD3tJtqMwkLi9IkxlhR+L8PVJdsSS+WQeG99/FBb8hySOjfUFln",
+	"Qo8DxzwTfB2+f3uEQQuFyHKEgcrCI2GHC5XKSdBjv3Vbh2uHKZOEzOhx30Yd5qCnarYP9jmS2jFRHQtn",
+	"fVf/KGnhiSoEqC0G0qHFwpTGcyTRCp+SEGQqMLNQByHnmcdgBg8vNcn8GcYkGlgMMYBypKohZggyQaVf",
+	"Z5KRQM7xmcoWG2hp8i8TesN6XxA7LFRzkkoNeuecHeZN0tA/JNuQfgfryn4vWej7Dg0DPe7cbr/p+83O",
+	"PfXO75137qe1VccTxWCqXAxImeqtx31Vw+0mVpSeCGghUVtLX7MFsigdqeB6Qbj3ebr2c+9wSCUGRY9T",
+	"UNo09dW2amE54rpeJ+n5hUbF1Ua3Cf8/m6ao5xhDef17BY8sVP/dr+ufAQA=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
@@ -387,14 +388,4 @@ func GetSpec() (swagger *openapi3.T, err error) {
 // are cheap.
 func GetSpecJSON() ([]byte, error) {
 	return rawSpec()
-}
-
-// GetSwagger returns the OpenAPI specification corresponding to the
-// generated code in this file.
-//
-// Deprecated: GetSwagger predates kin-openapi renaming openapi3.Swagger
-// to openapi3.T. Use [GetSpec] instead. This wrapper is retained for
-// backwards compatibility.
-func GetSwagger() (*openapi3.T, error) {
-	return GetSpec()
 }

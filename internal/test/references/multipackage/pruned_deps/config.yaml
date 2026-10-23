@@ -3,7 +3,7 @@ package: prunedeps
 output:
   api.gen.go
 generate:
-  chi-server: true
+  std-http-server: true
   models: true
   embedded-spec: false
   client: true

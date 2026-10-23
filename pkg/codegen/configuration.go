@@ -29,8 +29,6 @@ type Configuration struct {
 	PackageName string `yaml:"package"`
 	// Generate specifies which supported output formats to generate
 	Generate GenerateOptions `yaml:"generate,omitempty"`
-	// CompatibilityOptions specifies backward compatibility settings for the code generator
-	Compatibility CompatibilityOptions `yaml:"compatibility,omitempty"`
 	// OutputOptions are used to modify the output code in some way.
 	OutputOptions OutputOptions `yaml:"output-options,omitempty"`
 	// ImportMapping specifies the golang package path for each external reference
@@ -48,49 +46,10 @@ func (o Configuration) Validate() error {
 		return errors.New("package name must be specified")
 	}
 
-	// Only one server type should be specified at a time.
-	nServers := 0
-	if o.Generate.IrisServer {
-		nServers++
-	}
-	if o.Generate.ChiServer {
-		nServers++
-	}
-	if o.Generate.FiberServer {
-		nServers++
-	}
-	if o.Generate.FiberV3Server {
-		nServers++
-	}
-	if o.Generate.EchoServer {
-		nServers++
-	}
-	if o.Generate.Echo5Server {
-		nServers++
-	}
-	if o.Generate.GorillaServer {
-		nServers++
-	}
-	if o.Generate.StdHTTPServer {
-		nServers++
-	}
-	if o.Generate.GinServer {
-		nServers++
-	}
-	if nServers > 1 {
-		return errors.New("only one server type is supported at a time")
-	}
-
 	var errs []error
 	if problems := o.Generate.Validate(); problems != nil {
 		for k, v := range problems {
 			errs = append(errs, fmt.Errorf("`generate` configuration for %v was incorrect: %v", k, v))
-		}
-	}
-
-	if problems := o.Compatibility.Validate(); problems != nil {
-		for k, v := range problems {
-			errs = append(errs, fmt.Errorf("`compatibility-options` configuration for %v was incorrect: %v", k, v))
 		}
 	}
 
@@ -143,10 +102,6 @@ func (o Configuration) Warnings() map[string]string {
 		warnings["generate-types-for-anonymous-schemas"] = "the flag is set with `generate.models: false` and a client/server generator. The hoisted named types this config emits references to will not be declared by this config. If a sibling config emits `generate.models: true` into the same Go package with the same flag setting, you can ignore this warning. Otherwise, set `generate.models: true` in this config or remove the flag to fall back to anonymous structs."
 	}
 
-	if o.Compatibility.OldMergeSchemas {
-		warnings["old-merge-schemas"] = fmt.Sprintf("is deprecated; set `compatibility.schema-merging-behavior: %s` instead, which it is an alias for.", SchemaMergingV1)
-	}
-
 	return warnings
 }
 
@@ -154,9 +109,9 @@ func (o Configuration) Warnings() map[string]string {
 func (o Configuration) UpdateDefaults() Configuration {
 	if reflect.ValueOf(o.Generate).IsZero() {
 		o.Generate = GenerateOptions{
-			EchoServer:   true,
-			Models:       true,
-			EmbeddedSpec: true,
+			StdHTTPServer: true,
+			Models:        true,
+			EmbeddedSpec:  true,
 		}
 	}
 	return o
@@ -164,22 +119,6 @@ func (o Configuration) UpdateDefaults() Configuration {
 
 // GenerateOptions specifies which supported output formats to generate.
 type GenerateOptions struct {
-	// IrisServer specifies whether to generate iris server boilerplate
-	IrisServer bool `yaml:"iris-server,omitempty"`
-	// ChiServer specifies whether to generate chi server boilerplate
-	ChiServer bool `yaml:"chi-server,omitempty"`
-	// FiberServer specifies whether to generate fiber server boilerplate
-	FiberServer bool `yaml:"fiber-server,omitempty"`
-	// FiberV3Server specifies whether to generate fiber v3 server boilerplate
-	FiberV3Server bool `yaml:"fiber-v3-server,omitempty"`
-	// EchoServer specifies whether to generate echo server boilerplate
-	EchoServer bool `yaml:"echo-server,omitempty"`
-	// Echo5Server specifies whether to generate echo v5 server boilerplate
-	Echo5Server bool `yaml:"echo5-server,omitempty"`
-	// GinServer specifies whether to generate gin server boilerplate
-	GinServer bool `yaml:"gin-server,omitempty"`
-	// GorillaServer specifies whether to generate Gorilla server boilerplate
-	GorillaServer bool `yaml:"gorilla-server,omitempty"`
 	// StdHTTPServer specifies whether to generate stdlib http server boilerplate
 	StdHTTPServer bool `yaml:"std-http-server,omitempty"`
 	// Strict specifies whether to generate strict server wrapper
@@ -194,43 +133,12 @@ type GenerateOptions struct {
 	ServerURLs bool `yaml:"server-urls,omitempty"`
 }
 
-// RouterImports returns the framework-specific and strict middleware imports
-// needed based on which server type is selected.
-func (g GenerateOptions) RouterImports() []AdditionalImport {
-	var imports []AdditionalImport
-
-	switch {
-	case g.EchoServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/labstack/echo/v4"})
-	case g.Echo5Server:
-		imports = append(imports, AdditionalImport{Package: "github.com/labstack/echo/v5"})
-	case g.ChiServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/go-chi/chi/v5"})
-	case g.GinServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/gin-gonic/gin"})
-	case g.GorillaServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/gorilla/mux"})
-	case g.FiberServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/gofiber/fiber/v2"})
-	case g.FiberV3Server:
-		imports = append(imports, AdditionalImport{Package: "github.com/gofiber/fiber/v3"})
-	case g.IrisServer:
-		imports = append(imports, AdditionalImport{Package: "github.com/kataras/iris/v12"})
-		imports = append(imports, AdditionalImport{Package: "github.com/kataras/iris/v12/core/router"})
-	case g.StdHTTPServer:
-	}
-
-	return imports
-}
-
 // AnyOperationGenerator returns true if any code generator that emits
 // per-operation Go code (clients, server frameworks, strict-server) is
 // enabled. Used to detect configurations where operation-derived type
 // references would be emitted without a corresponding declaration.
 func (g GenerateOptions) AnyOperationGenerator() bool {
-	return g.Client || g.IrisServer || g.EchoServer || g.Echo5Server ||
-		g.ChiServer || g.FiberServer || g.FiberV3Server || g.GinServer || g.GorillaServer ||
-		g.StdHTTPServer || g.Strict
+	return g.Client || g.StdHTTPServer || g.Strict
 }
 
 func (oo GenerateOptions) Validate() map[string]string {
@@ -266,100 +174,20 @@ func (oo GenerateOptions) warningForStdHTTP() string {
 	return ""
 }
 
-// CompatibilityOptions specifies backward compatibility settings for the
-// code generator.
-type CompatibilityOptions struct {
-	// In the past, we merged schemas for `allOf` by inlining each schema
-	// within the schema list. This approach, though, is incorrect because
-	// `allOf` merges at the schema definition level, not at the resulting model
-	// level. So, new behavior merges OpenAPI specs but generates different code
-	// than we have in the past. Set OldMergeSchemas to true for the old behavior.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/531
-	//
-	// Deprecated: set SchemaMergingBehavior to "v1" instead, which this is an
-	// alias for.
-	OldMergeSchemas bool `yaml:"old-merge-schemas,omitempty"`
-	// SchemaMergingBehavior selects how schemas composed with allOf are merged
-	// into Go types, and how anyOf and oneOf are turned into Go unions. Each
-	// value is a version of that behavior:
-	//
-	//   - "v1": allOf members that are $refs are embedded in the Go struct, and
-	//     the fields of inline members are inlined. This was the only behavior
-	//     before v1.11.0; OldMergeSchemas: true is an alias for it. For anyOf and
-	//     oneOf it does what v2 does.
-	//   - "v2": allOf members are merged keyword by keyword into one Go type,
-	//     and anyOf and oneOf become a union type with As*, From* and Merge*
-	//     methods. The default since v1.11.0.
-	//   - "v3": allOf members are merged by what allOf means, a value that
-	//     matches every member, and members no value can match are an error.
-	//     Unions model more of the spec: an allOf of several unions keeps each,
-	//     a oneOf or anyOf that only adds constraints makes no union, and the
-	//     As* of a variant with additionalProperties: false rejects keys no
-	//     part of the object declares. Added in v2.9.0 as an option; it becomes
-	//     the default after at least one release as an option.
-	//
-	// Leaving it unset means "v2". The versions are compared in
-	// https://github.com/oapi-codegen/oapi-codegen/blob/main/docs/schema-merging.md
-	SchemaMergingBehavior string `yaml:"schema-merging-behavior,omitempty"`
-	// In the past, when a schema combined `allOf` with sibling fields at the
-	// same level (`properties`, `required`, `additionalProperties`,
-	// `description`), those siblings were silently discarded and the schema
-	// was emitted as a Go type alias to its sole `allOf` target. New behavior
-	// merges the parent's siblings with the `allOf` members so the generated
-	// type carries every field declared in the spec. This is a more accurate
-	// translation of OpenAPI semantics, but it changes the shape of generated
-	// types: a schema that previously produced `type X = Y` may now produce
-	// a distinct struct embedding Y with extra fields, which is not
-	// interchangeable with Y in downstream Go code. Set OldAllOfSiblingMerging
-	// to true to restore the prior behavior.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/697
-	OldAllOfSiblingMerging bool `yaml:"old-allof-sibling-merging,omitempty"`
-	// Enum values can generate conflicting typenames, so we've updated the
-	// code for enum generation to avoid these conflicts, but it will result
-	// in some enum types being renamed in existing code. Set OldEnumConflicts to true
-	// to revert to old behavior. Please see:
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/549
-	OldEnumConflicts bool `yaml:"old-enum-conflicts,omitempty"`
-	// It was a mistake to generate a go type definition for every $ref in
-	// the OpenAPI schema. New behavior uses type aliases where possible, but
-	// this can generate code which breaks existing builds. Set OldAliasing to true
-	// for old behavior.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/549
-	OldAliasing bool `yaml:"old-aliasing,omitempty"`
-	// When an object contains no members, and only an additionalProperties specification,
-	// it is flattened to a map
-	DisableFlattenAdditionalProperties bool `yaml:"disable-flatten-additional-properties,omitempty"`
-	// When an object property is both required and readOnly the go model is generated
-	// as a pointer. Set DisableRequiredReadOnlyAsPointer to true to mark them as non pointer.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/604
-	DisableRequiredReadOnlyAsPointer bool `yaml:"disable-required-readonly-as-pointer,omitempty"`
+// OutputOptions are used to modify the output code in some way.
+type OutputOptions struct {
+	// Whether to skip go imports on the generated code
+	SkipFmt bool `yaml:"skip-fmt,omitempty"`
+	// Whether to skip pruning unused components on the generated code
+	SkipPrune bool `yaml:"skip-prune,omitempty"`
+	// SkipFormatTypes stops the models from declaring the types that string
+	// formats map to by default (OpenAPIDate, OpenAPIDuration, OpenAPIEmail
+	// and OpenAPIFile). Set it when another generated file in the same
+	// package already declares them, so they aren't declared twice.
+	SkipFormatTypes bool `yaml:"skip-format-types,omitempty"`
 	// When set to true, always prefix enum values with their type name instead of only
 	// when typenames would be conflicting.
 	AlwaysPrefixEnumValues bool `yaml:"always-prefix-enum-values,omitempty"`
-	// DisableEnumValueConflictResolution turns off cross-enum value conflict
-	// resolution. By default, when two enums declare the same value, the
-	// generated constants are prefixed with their type name so they don't
-	// collide. Set this to true to disable that resolution and restore the
-	// prior behavior, in which conflict detection compared already-prefixed
-	// constant names and could miss overlaps depending on declaration order.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/2391
-	DisableEnumValueConflictResolution bool `yaml:"disable-enum-value-conflict-resolution,omitempty"`
-	// Our generated code for Chi has historically inverted the order in which Chi middleware is
-	// applied such that the last invoked middleware ends up executing first in the Chi chain
-	// This resolves the behavior such that middlewares are chained in the order they are invoked.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/786
-	ApplyChiMiddlewareFirstToLast bool `yaml:"apply-chi-middleware-first-to-last,omitempty"`
-	// Our generated code for gorilla/mux has historically inverted the order in which gorilla/mux middleware is
-	// applied such that the last invoked middleware ends up executing first in the middlewares chain
-	// This resolves the behavior such that middlewares are chained in the order they are invoked.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/841
-	ApplyGorillaMiddlewareFirstToLast bool `yaml:"apply-gorilla-middleware-first-to-last,omitempty"`
-	// CircularReferenceLimit allows controlling the limit for circular reference checking.
-	// In some OpenAPI specifications, we have a higher number of circular
-	// references than is allowed out-of-the-box, but can be tuned to allow
-	// traversing them.
-	// Deprecated: In kin-openapi v0.126.0 (https://github.com/getkin/kin-openapi/tree/v0.126.0?tab=readme-ov-file#v01260) the Circular Reference Counter functionality was removed, instead resolving all references with backtracking, to avoid needing to provide a limit to reference counts.
-	CircularReferenceLimit int `yaml:"circular-reference-limit"`
 	// AllowUnexportedStructFieldNames makes it possible to output structs that have fields that are unexported.
 	//
 	// This is expected to be used in conjunction with `x-go-name` and `x-oapi-codegen-only-honour-go-name` to override the resulting output field name, and `x-oapi-codegen-extra-tags` to not produce JSON tags for `encoding/json`, such as:
@@ -374,115 +202,7 @@ type CompatibilityOptions struct {
 	//   ```
 	//
 	// NOTE that this can be confusing to users of your OpenAPI specification, who may see a field present and therefore be expecting to see/use it in the request/response, without understanding the nuance of how `oapi-codegen` generates the code.
-	AllowUnexportedStructFieldNames bool `yaml:"allow-unexported-struct-field-names"`
-
-	// PreserveOriginalOperationIdCasingInEmbeddedSpec ensures that the `operationId` from the source spec is kept intact in case when embedding it into the Embedded Spec output.
-	// When `oapi-codegen` parses the original OpenAPI specification, it will apply the configured `output-options.name-normalizer` to each operation's `operationId` before that is used to generate code from.
-	// However, this is also applied to the copy of the `operationId`s in the `embedded-spec` generation, which means that the embedded OpenAPI specification is then out-of-sync with the input specificiation.
-	// To ensure that the `operationId` in the embedded spec is preserved as-is from the input specification, set this.
-	// NOTE that this will not impact generated code.
-	// NOTE that if you're using `include-operation-ids` or `exclude-operation-ids` you may want to ensure that the `operationId`s used are correct.
-	PreserveOriginalOperationIdCasingInEmbeddedSpec bool `yaml:"preserve-original-operation-id-casing-in-embedded-spec"`
-
-	// HeadersImplicitlyRequired treats all response headers as required, ignoring
-	// the `required` property from the header definition. Prior to v2.6.0,
-	// oapi-codegen generated all response headers as direct values (implicitly
-	// required). The OpenAPI specification defaults headers to optional
-	// (required: false), so the corrected behavior generates optional headers as
-	// pointers. Set this to true to restore the old behavior where all headers
-	// are treated as required.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/2267
-	HeadersImplicitlyRequired bool `yaml:"headers-implicitly-required,omitempty"`
-
-	// EnableAuthScopesOnContext re-enables the legacy emission of security
-	// scheme scopes by generated server code: the per-scheme context key
-	// types (e.g. `bearerAuthContextKey`), the scope constants (e.g.
-	// `BearerAuthScopes`), and the per-operation calls that store the
-	// operation's scopes into the request context.
-	//
-	// A security scheme that is a $ref into a spec covered by import-mapping
-	// does not declare its own context key type; its scopes constant is an
-	// alias of the one in the mapped package, so `context.Value` lookups use
-	// the same key across the generated packages. This requires the mapped
-	// spec's config to also set this flag, so that the referenced constant
-	// exists. Please see
-	// https://github.com/oapi-codegen/oapi-codegen/issues/2383
-	//
-	// Deprecated: this mechanism is off by default because it flattens the
-	// OpenAPI `security` requirements into a per-scheme list of scopes, and
-	// cannot represent alternative schemes (OR), combined schemes (AND), or
-	// anonymous (`{}`) alternatives. Authentication and authorization should
-	// instead be performed at runtime using the request validation
-	// middleware, which evaluates the spec's security requirements directly.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/1524
-	EnableAuthScopesOnContext bool `yaml:"enable-auth-scopes-on-context,omitempty"`
-
-	// SortHandlerRegistrations restores the historical behavior of registering
-	// generated route handlers in sorted (lexicographic, by path then method)
-	// order. By default handlers are registered in the order their paths are
-	// declared in the spec, so that on routers which match in registration
-	// order (e.g. Fiber, Gorilla/mux) overlapping paths can be disambiguated by
-	// ordering them in the spec. Set this to true to opt out and go back to the
-	// old sorted registration order.
-	// Please see https://github.com/oapi-codegen/oapi-codegen/issues/1887
-	SortHandlerRegistrations bool `yaml:"sort-handler-registrations,omitempty"`
-}
-
-// The values of CompatibilityOptions.SchemaMergingBehavior.
-const (
-	SchemaMergingV1 = "v1"
-	SchemaMergingV2 = "v2"
-	SchemaMergingV3 = "v3"
-)
-
-// schemaMergingVersion returns the schema-merging-behavior these options
-// select: the configured version, v1 for the deprecated OldMergeSchemas, and
-// v2 when neither is set. Both Validate and Generate reject the options when
-// it returns an error.
-func (co CompatibilityOptions) schemaMergingVersion() (string, error) {
-	switch co.SchemaMergingBehavior {
-	case "":
-		if co.OldMergeSchemas {
-			return SchemaMergingV1, nil
-		}
-		return SchemaMergingV2, nil
-	case SchemaMergingV1:
-		return SchemaMergingV1, nil
-	case SchemaMergingV2:
-		if co.OldMergeSchemas {
-			return "", fmt.Errorf("`old-merge-schemas: true` is an alias for `schema-merging-behavior: %s`, which conflicts with `schema-merging-behavior: %s`",
-				SchemaMergingV1, co.SchemaMergingBehavior)
-		}
-		return SchemaMergingV2, nil
-	case SchemaMergingV3:
-		if co.OldMergeSchemas {
-			return "", fmt.Errorf("`old-merge-schemas: true` is an alias for `schema-merging-behavior: %s`, which conflicts with `schema-merging-behavior: %s`",
-				SchemaMergingV1, co.SchemaMergingBehavior)
-		}
-		if co.OldAllOfSiblingMerging {
-			return "", fmt.Errorf("`old-allof-sibling-merging` applies only to `schema-merging-behavior` %s and %s",
-				SchemaMergingV1, SchemaMergingV2)
-		}
-		return SchemaMergingV3, nil
-	default:
-		return "", fmt.Errorf("unknown `schema-merging-behavior` %q; valid values are %q, %q and %q",
-			co.SchemaMergingBehavior, SchemaMergingV1, SchemaMergingV2, SchemaMergingV3)
-	}
-}
-
-func (co CompatibilityOptions) Validate() map[string]string {
-	if _, err := co.schemaMergingVersion(); err != nil {
-		return map[string]string{"schema-merging-behavior": err.Error()}
-	}
-	return nil
-}
-
-// OutputOptions are used to modify the output code in some way.
-type OutputOptions struct {
-	// Whether to skip go imports on the generated code
-	SkipFmt bool `yaml:"skip-fmt,omitempty"`
-	// Whether to skip pruning unused components on the generated code
-	SkipPrune bool `yaml:"skip-prune,omitempty"`
+	AllowUnexportedStructFieldNames bool `yaml:"allow-unexported-struct-field-names,omitempty"`
 	// SkipEnumValidate disables the generation of the `Valid()` method on
 	// enum types. By default each generated enum type includes a `Valid()
 	// bool` method which returns true when the value matches one of the
@@ -497,11 +217,10 @@ type OutputOptions struct {
 	SkipEnumViaOneOf bool `yaml:"skip-enum-via-oneof,omitempty"`
 	// LenientUnionAccessors makes a union's As* methods ignore the properties
 	// a variant with `additionalProperties: false` doesn't declare, as they
-	// do for any other variant. By default, with schema-merging-behavior v3,
-	// such a variant's As* returns an error for a property that neither the
-	// variant nor anything else in the union's object declares, so that data
-	// of another variant isn't taken for it. The older values ignore this
-	// option: their As* always ignore such properties.
+	// do for any other variant. By default such a variant's As* returns an
+	// error for a property that neither the variant nor anything else in the
+	// union's object declares, so that data of another variant isn't taken
+	// for it.
 	LenientUnionAccessors bool `yaml:"lenient-union-accessors,omitempty"`
 	// Only include operations that have one of these tags. Ignored when empty.
 	IncludeTags []string `yaml:"include-tags,omitempty"`
@@ -545,11 +264,6 @@ type OutputOptions struct {
 
 	// Overlay defines configuration for the OpenAPI Overlay (https://github.com/OAI/Overlay-Specification) to manipulate the OpenAPI specification before generation. This allows modifying the specification without needing to apply changes directly to it, making it easier to keep it up-to-date.
 	Overlay OutputOptionsOverlay `yaml:"overlay"`
-
-	// EnableYamlTags adds YAML tags to generated structs, in addition to default JSON ones.
-	// Superseded by StructTags: when a `yaml` entry is present in `struct-tags`, this flag
-	// has no effect.
-	EnableYamlTags bool `yaml:"yaml-tags,omitempty"`
 
 	// StructTags configures which struct tags are generated on struct fields and how their
 	// values are rendered. Each entry is a tag name plus a Go text/template evaluated
@@ -673,7 +387,7 @@ func (oo OutputOptions) Validate() map[string]string {
 		}
 	}
 
-	if _, err := newStructTagGenerator(defaultStructTagsConfig(oo.EnableYamlTags).Merge(oo.StructTags)); err != nil {
+	if _, err := newStructTagGenerator(defaultStructTagsConfig().Merge(oo.StructTags)); err != nil {
 		return map[string]string{
 			"struct-tags": err.Error(),
 		}

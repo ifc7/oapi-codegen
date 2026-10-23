@@ -1,9 +1,9 @@
-// Package parametersroundtrip is the multi-framework parameter binding roundtrip
-// harness: one shared spec (parameters.yaml), one generated client, one table-driven
-// test (param_roundtrip_test.go), and a thin per-framework server adapter + generated
-// server under each framework subdirectory (chi, echo, echov5, fiber, gin, gorilla,
-// iris, stdhttp). The client serializes Go values into a request, the server echoes
+// Package parametersroundtrip is the parameter binding roundtrip harness: one
+// shared spec (parameters.yaml), one generated client, one table-driven test
+// (param_roundtrip_test.go), and a thin server adapter + generated net/http server
+// in stdhttp/. The client serializes Go values into a request, the server echoes
 // them back as JSON, and the test asserts the roundtrip for every parameter style.
+// wire_format_test.go pins the server's parsing of hand-written requests.
 //
-// Folds in: parameters/{chi,client,echo,echov5,fiber,gin,gorilla,iris,stdhttp}
+// Folds in: parameters/{client,stdhttp}
 package parametersroundtrip

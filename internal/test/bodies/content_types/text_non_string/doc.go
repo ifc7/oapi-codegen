@@ -2,9 +2,8 @@
 // responses whose schema is a non-string primitive (integer, boolean).
 // The generated Visit* method must compile and write the value's decimal /
 // literal text form. Before the fix, the generated code did
-// []byte(response) on a non-string-underlying type, which either failed to
-// compile (integer, boolean) or, on the fiber/iris path, string(response)
-// silently produced a single rune instead of the number.
+// []byte(response) on a non-string-underlying type, which failed to compile
+// (integer, boolean).
 //
 // From issue-1897.
 package textnonstring

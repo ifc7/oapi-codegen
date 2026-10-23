@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -69,19 +68,16 @@ func TestClient_WhenPathHasIdContainingReservedCharacter_RequestHasCorrectPath(t
 
 func TestClient_ServerUnescapesEscapedArg(t *testing.T) {
 
-	e := echo.New()
 	m := &MockClient{}
-	RegisterHandlers(e, m)
-
-	svr := httptest.NewServer(e)
+	svr := httptest.NewServer(Handler(m))
 	defer svr.Close()
 
 	// We'll make a function in the mock client which records the value of
 	// the petId variable
 	receivedPetID := ""
-	m.getPet = func(ctx echo.Context, petId string) error {
+	m.getPet = func(w http.ResponseWriter, r *http.Request, petId string) {
 		receivedPetID = petId
-		return ctx.NoContent(http.StatusOK)
+		w.WriteHeader(http.StatusOK)
 	}
 
 	client, err := NewClientWithResponses(svr.URL)
@@ -117,28 +113,31 @@ func (m *HTTPRequestDoerMock) Do(req *http.Request) (*http.Response, error) {
 // An implementation of the server interface which helps us check server
 // expectations for funky paths and parameters.
 type MockClient struct {
-	getPet             func(ctx echo.Context, petId string) error
-	validatePets       func(ctx echo.Context) error
-	getSimplePrimitive func(ctx echo.Context, param string) error
+	getPet             func(w http.ResponseWriter, r *http.Request, petId string)
+	validatePets       func(w http.ResponseWriter, r *http.Request)
+	getSimplePrimitive func(w http.ResponseWriter, r *http.Request, param string)
 }
 
-func (m *MockClient) GetPet(ctx echo.Context, petId string) error {
+func (m *MockClient) GetPet(w http.ResponseWriter, r *http.Request, petId string) {
 	if m.getPet != nil {
-		return m.getPet(ctx, petId)
+		m.getPet(w, r, petId)
+		return
 	}
-	return ctx.NoContent(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusNotImplemented)
 }
 
-func (m *MockClient) ValidatePets(ctx echo.Context) error {
+func (m *MockClient) ValidatePets(w http.ResponseWriter, r *http.Request) {
 	if m.validatePets != nil {
-		return m.validatePets(ctx)
+		m.validatePets(w, r)
+		return
 	}
-	return ctx.NoContent(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusNotImplemented)
 }
 
-func (m *MockClient) GetSimplePrimitive(ctx echo.Context, param string) error {
+func (m *MockClient) GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param string) {
 	if m.getSimplePrimitive != nil {
-		return m.getSimplePrimitive(ctx, param)
+		m.getSimplePrimitive(w, r, param)
+		return
 	}
-	return ctx.NoContent(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusNotImplemented)
 }

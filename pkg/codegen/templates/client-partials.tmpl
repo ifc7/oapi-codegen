@@ -32,10 +32,12 @@ locals, which both call sites declare.
         headerParam{{$paramIdx}} = string(headerParamBuf{{$paramIdx}})
         {{end}}
         {{if .IsStyled}}
-        headerParam{{$paramIdx}}, err = runtime.StyleParamWithOptions("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if .HasOptionalPointer}}*{{end}}params.{{.GoName}}, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "{{.SchemaType}}", Format: "{{.SchemaFormat}}"})
+        {{with .Codec -}}
+        {{.Style (printf "%sparams.%s" (or (and $param.HasOptionalPointer "*") "") $param.GoName) (printf "headerParam%d" $paramIdx)}}
         if err != nil {
             return nil, err
         }
+        {{- end}}
         {{end}}
         req.Header.Set("{{.ParamName}}", headerParam{{$paramIdx}})
         {{if .RequiresNilCheck}}}{{end}}
@@ -43,3 +45,18 @@ locals, which both call sites declare.
     }
 {{- end }}{{/* if .HeaderParams */}}
 {{- end}}{{/* define client.headerParams */}}
+
+{{/*
+"client.styleQuery" appends a styled query parameter's `key=value` fragments
+to rawQueryFragments. The dot is the ParameterDefinition; params is the
+enclosing builder's params.
+*/}}
+{{define "client.styleQuery" -}}
+{{- $p := . -}}
+{{- with .Codec -}}
+{{.StyleQuery (printf "%sparams.%s" (or (and $p.RequiresNilCheck $p.HasOptionalPointer "*") "") $p.GoName) "rawQueryFragments"}}
+if err != nil {
+    return nil, err
+}
+{{- end}}
+{{- end}}

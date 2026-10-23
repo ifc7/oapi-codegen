@@ -15,7 +15,7 @@ import (
 	"net/url"
 	"strings"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/google/uuid"
 )
 
 // Error defines model for Error.
@@ -52,7 +52,7 @@ type TreePlantingRequest struct {
 // TreePlantingResult The result of a tree planting operation, sent via callback
 type TreePlantingResult struct {
 	// ID Unique identifier for this planting request
-	ID openapi_types.UUID `json:"id"`
+	ID uuid.UUID `json:"id"`
 
 	// Kind What kind of tree to plant (e.g. "oak")
 	Kind string `json:"kind"`
@@ -67,7 +67,7 @@ type TreePlantingResult struct {
 // TreeWithID A tree with a server-assigned identifier
 type TreeWithID struct {
 	// ID Unique identifier for this planting request
-	ID openapi_types.UUID `json:"id"`
+	ID uuid.UUID `json:"id"`
 
 	// Kind What kind of tree to plant (e.g. "oak")
 	Kind string `json:"kind"`
@@ -598,8 +598,9 @@ func (siw *ServerInterfaceWrapper) PlantTree(w http.ResponseWriter, r *http.Requ
 		siw.Handler.PlantTree(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)

@@ -1,4 +1,3 @@
-versions: [v2, v3]
 description: >-
   The case of issue #668: a oneOf of a closed base and a schema that extends
   it with allOf, which the base's additionalProperties: false closes too. In

@@ -13,12 +13,11 @@ import (
 
 func TestProperty_GoTypeDef(t *testing.T) {
 	type fields struct {
-		GlobalStateDisableRequiredReadOnlyAsPointer bool
-		Schema                                      Schema
-		Required                                    bool
-		Nullable                                    bool
-		ReadOnly                                    bool
-		WriteOnly                                   bool
+		Schema    Schema
+		Required  bool
+		Nullable  bool
+		ReadOnly  bool
+		WriteOnly bool
 	}
 	tests := []struct {
 		name   string
@@ -138,35 +137,8 @@ func TestProperty_GoTypeDef(t *testing.T) {
 		},
 
 		{
-			name: "When field is readOnly and read only pointer disabled",
-			fields: fields{
-				GlobalStateDisableRequiredReadOnlyAsPointer: true,
-				Schema: Schema{
-					SkipOptionalPointer: false,
-					GoType:              "int",
-				},
-				ReadOnly: true,
-				Required: true,
-			},
-			want: "int",
-		},
-
-		{
 			name: "When field is readOnly and optional",
 			fields: fields{
-				Schema: Schema{
-					SkipOptionalPointer: false,
-					GoType:              "int",
-				},
-				ReadOnly: true,
-				Required: false,
-			},
-			want: "*int",
-		},
-		{
-			name: "When field is readOnly and optional and read only pointer disabled",
-			fields: fields{
-				GlobalStateDisableRequiredReadOnlyAsPointer: true,
 				Schema: Schema{
 					SkipOptionalPointer: false,
 					GoType:              "int",
@@ -179,23 +151,10 @@ func TestProperty_GoTypeDef(t *testing.T) {
 
 		// When field is write only, it will always be pointer unless pointer is
 		// skipped by setting SkipOptionalPointer flag
-		{
-			name: "When field is write only and read only pointer disabled",
-			fields: fields{
-				GlobalStateDisableRequiredReadOnlyAsPointer: true,
-				Schema: Schema{
-					SkipOptionalPointer: false,
-					GoType:              "int",
-				},
-				WriteOnly: true,
-			},
-			want: "*int",
-		},
 
 		{
 			name: "When field is write only and read only pointer enabled",
 			fields: fields{
-				GlobalStateDisableRequiredReadOnlyAsPointer: false,
 				Schema: Schema{
 					SkipOptionalPointer: false,
 					GoType:              "int",
@@ -207,7 +166,6 @@ func TestProperty_GoTypeDef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			globalState.options.Compatibility.DisableRequiredReadOnlyAsPointer = tt.fields.GlobalStateDisableRequiredReadOnlyAsPointer
 			p := Property{
 				Schema:    tt.fields.Schema,
 				Required:  tt.fields.Required,
@@ -222,13 +180,12 @@ func TestProperty_GoTypeDef(t *testing.T) {
 
 func TestProperty_GoTypeDef_nullable(t *testing.T) {
 	type fields struct {
-		GlobalStateDisableRequiredReadOnlyAsPointer bool
-		GlobalStateNullableType                     bool
-		Schema                                      Schema
-		Required                                    bool
-		Nullable                                    bool
-		ReadOnly                                    bool
-		WriteOnly                                   bool
+		GlobalStateNullableType bool
+		Schema                  Schema
+		Required                bool
+		Nullable                bool
+		ReadOnly                bool
+		WriteOnly               bool
 	}
 	tests := []struct {
 		name   string
@@ -359,21 +316,6 @@ func TestProperty_GoTypeDef_nullable(t *testing.T) {
 		},
 
 		{
-			name: "When field is readOnly, required, non-nullable and read only pointer disabled",
-			fields: fields{
-				GlobalStateNullableType:                     true,
-				GlobalStateDisableRequiredReadOnlyAsPointer: true,
-				Schema: Schema{
-					SkipOptionalPointer: false,
-					GoType:              "int",
-				},
-				ReadOnly: true,
-				Required: true,
-			},
-			want: "int",
-		},
-
-		{
 			name: "When field is readOnly, optional and non nullable",
 			fields: fields{
 				GlobalStateNullableType: true,
@@ -385,49 +327,6 @@ func TestProperty_GoTypeDef_nullable(t *testing.T) {
 				Required: false,
 			},
 			want: "*int",
-		},
-		{
-			name: "When field is readOnly and optional and read only pointer disabled",
-			fields: fields{
-				GlobalStateNullableType:                     true,
-				GlobalStateDisableRequiredReadOnlyAsPointer: true,
-				Schema: Schema{
-					SkipOptionalPointer: false,
-					GoType:              "int",
-				},
-				ReadOnly: true,
-				Required: false,
-			},
-			want: "*int",
-		},
-
-		{
-			name: "When field is write only and non nullable",
-			fields: fields{
-				GlobalStateNullableType:                     true,
-				GlobalStateDisableRequiredReadOnlyAsPointer: true,
-				Schema: Schema{
-					SkipOptionalPointer: false,
-					GoType:              "int",
-				},
-				WriteOnly: true,
-			},
-			want: "*int",
-		},
-
-		{
-			name: "When field is write only and nullable",
-			fields: fields{
-				GlobalStateNullableType:                     true,
-				GlobalStateDisableRequiredReadOnlyAsPointer: true,
-				Schema: Schema{
-					SkipOptionalPointer: false,
-					GoType:              "int",
-				},
-				WriteOnly: true,
-				Nullable:  true,
-			},
-			want: "nullable.Nullable[int]",
 		},
 
 		{
@@ -446,7 +345,6 @@ func TestProperty_GoTypeDef_nullable(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			globalState.options.Compatibility.DisableRequiredReadOnlyAsPointer = tt.fields.GlobalStateDisableRequiredReadOnlyAsPointer
 			globalState.options.OutputOptions.NullableType = tt.fields.GlobalStateNullableType
 			p := Property{
 				Schema:    tt.fields.Schema,
@@ -1060,32 +958,6 @@ func TestSchemaUnionTypes(t *testing.T) {
 	}
 }
 
-// SchemaType feeds the Type bind option: the single declared type with the
-// 3.1 "null" marker stripped, or "" for unions (carried by SchemaTypes) and
-// typeless schemas. The previous first-entry behavior emitted "null" for
-// ["null", "string"] and a lone member for unions.
-func TestParameterDefinitionSchemaType(t *testing.T) {
-	prev := globalState
-	t.Cleanup(func() { globalState = prev })
-	globalState.is31 = true
-
-	paramWithTypes := func(types *openapi3.Types) *ParameterDefinition {
-		return &ParameterDefinition{
-			Spec: &openapi3.Parameter{
-				Schema: &openapi3.SchemaRef{Value: &openapi3.Schema{Type: types}},
-			},
-		}
-	}
-
-	assert.Equal(t, "string", paramWithTypes(&openapi3.Types{"string"}).SchemaType())
-	assert.Equal(t, "string", paramWithTypes(&openapi3.Types{"null", "string"}).SchemaType(),
-		"null is the nullability marker, not the parameter's type")
-	assert.Equal(t, "", paramWithTypes(&openapi3.Types{"string", "integer"}).SchemaType(),
-		"unions carry no single Type; SchemaTypes has the members")
-	assert.Equal(t, []string{"string", "integer"}, paramWithTypes(&openapi3.Types{"string", "integer", "null"}).SchemaTypes())
-	assert.Nil(t, paramWithTypes(&openapi3.Types{"string"}).SchemaTypes())
-}
-
 // TestStrictResponseDelegatesCustomMarshalJSON pins which strict-server
 // response envelopes get a delegating MarshalJSON/UnmarshalJSON pair.
 // See https://github.com/oapi-codegen/oapi-codegen/issues/2549.
@@ -1339,7 +1211,7 @@ components:
 }
 
 // A form response reached through $ref embeds the reusable envelope, and
-// runtime.MarshalForm would encode that untagged embedded field under an
+// encoding the wrapper would encode that untagged embedded field under an
 // empty name ("[value]=..."), so the visitor marshals the envelope itself.
 func TestStrictReusableFormResponseMarshalsEnvelope(t *testing.T) {
 	const spec = `
@@ -1410,8 +1282,6 @@ components:
 		generate GenerateOptions
 	}{
 		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
-		{name: "fiber", generate: GenerateOptions{FiberServer: true}},
-		{name: "iris", generate: GenerateOptions{IrisServer: true}},
 	} {
 		t.Run(server.name, func(t *testing.T) {
 			loader := openapi3.NewLoader()
@@ -1432,10 +1302,10 @@ components:
 			require.NoError(t, err)
 
 			assert.Contains(t, code, "type LocalRef200FormdataResponse struct{ FormFormdataResponse }")
-			assert.Contains(t, visitor(t, code, "LocalRef200FormdataResponse"), "runtime.MarshalForm(response.FormFormdataResponse, nil)")
+			assert.Contains(t, visitor(t, code, "LocalRef200FormdataResponse"), "any(response.FormFormdataResponse).(url.Values)")
 			assert.Contains(t, code, "type ExternalRef200FormdataResponse struct {\n\texternalRef0.ExternalFormFormdataResponse\n}")
-			assert.Contains(t, visitor(t, code, "ExternalRef200FormdataResponse"), "runtime.MarshalForm(response.ExternalFormFormdataResponse, nil)")
-			assert.Contains(t, visitor(t, code, "Inline200FormdataResponse"), "runtime.MarshalForm(response, nil)")
+			assert.Contains(t, visitor(t, code, "ExternalRef200FormdataResponse"), "any(response.ExternalFormFormdataResponse).(url.Values)")
+			assert.Contains(t, visitor(t, code, "Inline200FormdataResponse"), "any(response).(url.Values)")
 		})
 	}
 }

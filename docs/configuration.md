@@ -23,47 +23,17 @@ Every setting is shown below with its default value. Each section links to the G
 # Required: Go package name
 package: api
 
-# What to generate (only one server type at a time).
+# What to generate.
 # If the `generate` block is omitted entirely, it defaults to generating
-# an Echo server with models and an embedded spec.
+# a net/http server with models and an embedded spec.
 # See <a href="https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#GenerateOptions">GenerateOptions</a>
 generate:
-  chi-server: false
-  echo-server: false
-  echo5-server: false      # requires Go 1.25+
-  fiber-server: false
-  fiber-v3-server: false   # requires Go 1.25+
-  gin-server: false
-  gorilla-server: false
-  iris-server: false
   std-http-server: false
-  strict-server: false     # used alongside one of the server types above
+  strict-server: false     # used alongside std-http-server
   client: false
   models: false
   embedded-spec: false
   server-urls: false
-
-# Backward compatibility settings. These preserve backward-compatible
-# behavior when a bug fix or improvement changes generated output.
-# See <a href="https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#CompatibilityOptions">CompatibilityOptions</a>
-compatibility:
-  schema-merging-behavior: v2   # v1, v2 or v3: how allOf, anyOf and oneOf become Go types; see <a href="schema-merging.md">schema-merging.md</a>
-  old-merge-schemas: false      # deprecated: an alias for schema-merging-behavior: v1
-  old-allof-sibling-merging: false
-  old-enum-conflicts: false
-  old-aliasing: false
-  disable-flatten-additional-properties: false
-  disable-required-readonly-as-pointer: false
-  always-prefix-enum-values: false
-  apply-chi-middleware-first-to-last: false
-  apply-gorilla-middleware-first-to-last: false
-  circular-reference-limit: 0   # deprecated: no longer used
-  allow-unexported-struct-field-names: false
-  preserve-original-operation-id-casing-in-embedded-spec: false
-  disable-enum-value-conflict-resolution: false
-  headers-implicitly-required: false
-  enable-auth-scopes-on-context: false
-  sort-handler-registrations: false
 
 # Output modification options
 # See <a href="https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#OutputOptions">OutputOptions</a>
@@ -75,6 +45,16 @@ output-options:
   exclude-schemas: []
   skip-fmt: false
   skip-prune: false
+  # Don't declare the types that string formats map to by default (OpenAPIDate,
+  # OpenAPIDuration, OpenAPIEmail, OpenAPIFile); set this when another
+  # generated file in the same package already declares them.
+  skip-format-types: false
+  # Always prefix enum values with their type name, rather than only when
+  # they would conflict.
+  always-prefix-enum-values: false
+  # Allow struct fields that x-go-name names to be unexported; see
+  # <a href="extensions.md#x-oapi-codegen-only-honour-go-name">extensions.md</a>
+  allow-unexported-struct-field-names: false
   name-normalizer: ""
   initialism-overrides: false
   additional-initialisms: []
@@ -88,7 +68,7 @@ output-options:
   prefer-skip-optional-pointer-on-container-types: false
   skip-enum-validate: false
   skip-enum-via-oneof: false
-  lenient-union-accessors: false   # schema-merging-behavior v3 only: see <a href="schema-merging.md#variants-with-additionalproperties-false">schema-merging.md</a>
+  lenient-union-accessors: false   # see <a href="schema-merging.md#variants-with-additionalproperties-false">schema-merging.md</a>
   generate-types-for-anonymous-schemas: false
   # How OpenAPI type/format combinations map to Go types; user-specified
   # mappings are merged on top of these defaults.
@@ -121,14 +101,13 @@ output-options:
         type: string
       formats:
         byte:      { type: "[]byte" }
-        email:     { type: openapi_types.Email }
-        date:      { type: openapi_types.Date }
+        email:     { type: OpenAPIEmail }
+        date:      { type: OpenAPIDate }
         date-time: { type: time.Time, import: time }
         json:      { type: json.RawMessage, import: encoding/json }
-        uuid:      { type: openapi_types.UUID }
-        binary:    { type: openapi_types.File }
-  # Superseded by struct-tags: a `yaml` entry there takes precedence over this flag
-  yaml-tags: false
+        duration:  { type: OpenAPIDuration }
+        uuid:      { type: uuid.UUID, import: github.com/google/uuid }
+        binary:    { type: OpenAPIFile }
   # Configure generated struct tags. Entries are merged by name on top of the
   # defaults shown below, so redefining `json` replaces its template while new
   # names add tags. Values are Go text/templates over the variables

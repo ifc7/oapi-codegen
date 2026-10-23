@@ -50,7 +50,7 @@ func TestTypeMapping_Merge(t *testing.T) {
 	// String default still inherited from base
 	assert.Equal(t, "string", merged.String.Default.Type)
 	// Other string formats still inherited
-	assert.Equal(t, "openapi_types.UUID", merged.String.Formats["uuid"].Type)
+	assert.Equal(t, "uuid.UUID", merged.String.Formats["uuid"].Type)
 
 	// Number and Boolean unchanged
 	assert.Equal(t, "float32", merged.Number.Default.Type)
@@ -80,18 +80,18 @@ func TestDefaultTypeMapping_Completeness(t *testing.T) {
 	// String
 	assert.Equal(t, "string", dm.String.Resolve("").Type)
 	assert.Equal(t, "[]byte", dm.String.Resolve("byte").Type)
-	assert.Equal(t, "openapi_types.Email", dm.String.Resolve("email").Type)
-	assert.Equal(t, "openapi_types.Date", dm.String.Resolve("date").Type)
+	assert.Equal(t, "OpenAPIEmail", dm.String.Resolve("email").Type)
+	assert.Equal(t, "OpenAPIDate", dm.String.Resolve("date").Type)
 	assert.Equal(t, "time.Time", dm.String.Resolve("date-time").Type)
-	assert.Equal(t, "openapi_types.Duration", dm.String.Resolve("duration").Type)
+	assert.Equal(t, "OpenAPIDuration", dm.String.Resolve("duration").Type)
 	assert.Equal(t, "json.RawMessage", dm.String.Resolve("json").Type)
-	assert.Equal(t, "openapi_types.UUID", dm.String.Resolve("uuid").Type)
-	assert.Equal(t, "openapi_types.File", dm.String.Resolve("binary").Type)
+	assert.Equal(t, "uuid.UUID", dm.String.Resolve("uuid").Type)
+	assert.Equal(t, "OpenAPIFile", dm.String.Resolve("binary").Type)
 	assert.Equal(t, "string", dm.String.Resolve("unknown").Type)
 }
 
 // TestDurationFormatMapping verifies that `type: string, format: duration`
-// generates the openapi_types.Duration runtime type by default, and that the
+// generates the OpenAPIDuration type, declared in the generated package, by default, and that the
 // historical plain-string behavior is restored by explicitly mapping the
 // format back to string via type-mapping.
 // Please see https://github.com/oapi-codegen/oapi-codegen/issues/2456
@@ -124,8 +124,9 @@ components:
 
 	code, err := Generate(swagger, opts)
 	require.NoError(t, err)
-	assert.Contains(t, code, "Backoff openapi_types.Duration `json:\"backoff\"`")
-	assert.Contains(t, code, `openapi_types "github.com/oapi-codegen/runtime/types"`)
+	assert.Contains(t, code, "Backoff OpenAPIDuration `json:\"backoff\"`")
+	assert.Contains(t, code, "type OpenAPIDuration struct {")
+	assert.NotContains(t, code, "github.com/oapi-codegen/runtime")
 
 	// The pre-duration behavior is a plain string; restore it by mapping
 	// the format back explicitly.
@@ -139,5 +140,126 @@ components:
 	code, err = Generate(swagger, opts)
 	require.NoError(t, err)
 	assert.Contains(t, code, "Backoff string `json:\"backoff\"`")
-	assert.NotContains(t, code, "openapi_types.Duration")
+	assert.NotContains(t, code, "OpenAPIDuration", "an unused format type isn't declared")
+}
+
+// TestTypeMappingImport verifies that a type mapping's import is emitted with
+// the generated code rather than left for goimports to guess, for both the
+// default uuid mapping and a user-specified one.
+func TestTypeMappingImport(t *testing.T) {
+	const spec = `
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Imports
+paths: {}
+components:
+  schemas:
+    Event:
+      type: object
+      required: [id, at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        at:
+          type: string
+          format: date-time
+`
+	loader := openapi3.NewLoader()
+	swagger, err := loader.LoadFromData([]byte(spec))
+	require.NoError(t, err)
+
+	opts := Configuration{
+		PackageName:   "api",
+		Generate:      GenerateOptions{Models: true},
+		OutputOptions: OutputOptions{SkipPrune: true},
+	}
+	code, err := Generate(swagger, opts)
+	require.NoError(t, err)
+	assert.Contains(t, code, "Id uuid.UUID `json:\"id\"`")
+	assert.Contains(t, code, `"github.com/google/uuid"`)
+
+	opts.OutputOptions.TypeMapping = &TypeMapping{
+		String: FormatMapping{
+			Formats: map[string]SimpleTypeSpec{
+				"date-time": {Type: "civil.DateTime", Import: "cloud.google.com/go/civil"},
+			},
+		},
+	}
+	code, err = Generate(swagger, opts)
+	require.NoError(t, err)
+	assert.Contains(t, code, "At civil.DateTime `json:\"at\"`")
+	assert.Contains(t, code, `"cloud.google.com/go/civil"`)
+}
+
+// TestSkipFormatTypes verifies that skip-format-types leaves declaring the
+// format types to another file in the package while still using them.
+func TestSkipFormatTypes(t *testing.T) {
+	const spec = `
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Dates
+paths: {}
+components:
+  schemas:
+    Holiday:
+      type: object
+      required: [on]
+      properties:
+        on:
+          type: string
+          format: date
+`
+	loader := openapi3.NewLoader()
+	swagger, err := loader.LoadFromData([]byte(spec))
+	require.NoError(t, err)
+
+	opts := Configuration{
+		PackageName:   "api",
+		Generate:      GenerateOptions{Models: true},
+		OutputOptions: OutputOptions{SkipPrune: true},
+	}
+	code, err := Generate(swagger, opts)
+	require.NoError(t, err)
+	assert.Contains(t, code, "type OpenAPIDate struct {")
+
+	opts.OutputOptions.SkipFormatTypes = true
+	code, err = Generate(swagger, opts)
+	require.NoError(t, err)
+	assert.Contains(t, code, "On OpenAPIDate `json:\"on\"`")
+	assert.NotContains(t, code, "type OpenAPIDate struct {")
+}
+
+// TestParameterNamedAfterMappedPackage verifies that a parameter named after a
+// package the type mapping uses doesn't shadow it: with two uuid path
+// parameters, `var uuid uuid.UUID` would leave the second's type undefined.
+func TestParameterNamedAfterMappedPackage(t *testing.T) {
+	const spec = `
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Shadowing
+paths:
+  /things/{uuid}/parts/{partId}:
+    get:
+      operationId: getPart
+      parameters:
+        - {name: uuid, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: partId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: ok}
+`
+	loader := openapi3.NewLoader()
+	swagger, err := loader.LoadFromData([]byte(spec))
+	require.NoError(t, err)
+
+	code, err := Generate(swagger, Configuration{
+		PackageName: "api",
+		Generate:    GenerateOptions{StdHTTPServer: true},
+	})
+	require.NoError(t, err)
+	assert.Contains(t, code, "var pUuid uuid.UUID")
+	assert.NotContains(t, code, "var uuid uuid.UUID")
 }

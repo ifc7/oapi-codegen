@@ -1,6 +1,3 @@
-versions: [v1, v2, v3]
-broken:
-  v1: "v1 drops the members' additionalProperties."
 description: >-
   allOf over two $refs that each allow the same additionalProperties. Failed
   with "merging two schemas with additional properties, this is unhandled".

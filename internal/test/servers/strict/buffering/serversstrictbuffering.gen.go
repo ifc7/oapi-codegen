@@ -9,12 +9,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"math"
 	"mime/multipart"
 	"net/http"
-
-	"github.com/oapi-codegen/runtime"
+	"net/url"
+	"strconv"
+	"strings"
 )
 
 // Request defines model for Request.
@@ -82,8 +85,9 @@ func (siw *ServerInterfaceWrapper) BinaryEndpoint(w http.ResponseWriter, r *http
 		siw.Handler.BinaryEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -96,8 +100,9 @@ func (siw *ServerInterfaceWrapper) FormdataEndpoint(w http.ResponseWriter, r *ht
 		siw.Handler.FormdataEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -110,8 +115,9 @@ func (siw *ServerInterfaceWrapper) JsonEndpoint(w http.ResponseWriter, r *http.R
 		siw.Handler.JsonEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -124,8 +130,9 @@ func (siw *ServerInterfaceWrapper) MultipartEndpoint(w http.ResponseWriter, r *h
 		siw.Handler.MultipartEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -138,8 +145,9 @@ func (siw *ServerInterfaceWrapper) TextEndpoint(w http.ResponseWriter, r *http.R
 		siw.Handler.TextEndpoint(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// Wrap in reverse, so the first middleware is the outermost and runs first.
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r)
@@ -314,7 +322,46 @@ type FormdataEndpoint200FormdataResponse Response
 
 func (response FormdataEndpoint200FormdataResponse) VisitFormdataEndpointResponse(w http.ResponseWriter) error {
 
-	form, err := runtime.MarshalForm(response, nil)
+	form := url.Values{}
+	var err error
+	if values_, ok_ := any(response).(url.Values); ok_ {
+		for k_, vs_ := range values_ {
+			form[k_] = append(form[k_], vs_...)
+		}
+	} else if b_, err_ := json.Marshal(response); err_ != nil {
+		err = err_
+	} else {
+		var tree_ any
+		dec_ := json.NewDecoder(bytes.NewReader(b_))
+		dec_.UseNumber()
+		if err = dec_.Decode(&tree_); err == nil {
+			var walk_ func(key string, node any)
+			walk_ = func(key string, node any) {
+				child := func(name string) string {
+					if key == "" {
+						return name
+					}
+					return key + "[" + name + "]"
+				}
+				switch node := node.(type) {
+				case map[string]any:
+					for k, e := range node {
+						walk_(child(k), e)
+					}
+				case []any:
+					for i, e := range node {
+						walk_(child(strconv.Itoa(i)), e)
+					}
+				case nil:
+				case string:
+					form.Add(key, node)
+				default:
+					form.Add(key, fmt.Sprint(node))
+				}
+			}
+			walk_("", tree_)
+		}
+	}
 	if err != nil {
 		return err
 	}
@@ -478,9 +525,230 @@ func (sh *strictHandler) FormdataEndpoint(w http.ResponseWriter, r *http.Request
 		return
 	}
 	var body FormdataEndpointFormdataRequestBody
-	if err := runtime.BindForm(&body, r.Form, nil, nil); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
-		return
+	{
+		var err error
+		{
+			found_ := false
+			{
+				form_ := true
+				_ = form_
+				tree_ := map[string]any{}
+				insert_ := func(path []string, value string) {
+					node := tree_
+					for _, key := range path[:len(path)-1] {
+						next, ok := node[key].(map[string]any)
+						if !ok {
+							next = map[string]any{}
+							node[key] = next
+						}
+						node = next
+					}
+					node[path[len(path)-1]] = value
+				}
+				for key_, values_ := range r.Form {
+					key_ = strings.TrimSuffix(key_, "[]")
+					name_, rest_, _ := strings.Cut(key_, "[")
+					path_ := []string{name_}
+					if rest_ != "" {
+						path_ = append(path_, strings.Split(strings.TrimRight(rest_, "]"), "][")...)
+					}
+					found_ = true
+					if len(values_) == 1 {
+						insert_(path_, values_[0])
+					} else {
+						for i_, value_ := range values_ {
+							insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
+						}
+					}
+				}
+				if found_ {
+					kinds_ := map[string]map[string]string{
+						"Request": {"value": "string"},
+					}
+					// In a form, a value of the wrong shape is skipped, as the runtime
+					// library skipped it.
+					skip_ := &struct{}{}
+					var convert_ func(node any, kind string) (any, error)
+					convert_ = func(node any, kind string) (any, error) {
+						fields, isMap := node.(map[string]any)
+						if form_ {
+							compound := strings.HasPrefix(kind, "object:") || strings.HasPrefix(kind, "map:") || strings.HasPrefix(kind, "array:")
+							switch {
+							case isMap && !compound && kind != "any":
+								// A repeated value: the first one counts.
+								first, ok := fields["0"]
+								if !ok {
+									return skip_, nil
+								}
+								return convert_(first, kind)
+							case !isMap && compound && !strings.HasPrefix(kind, "array:"):
+								return skip_, nil
+							}
+						}
+						text, _ := node.(string)
+						switch {
+						case strings.HasPrefix(kind, "object:"):
+							if !isMap {
+								return nil, fmt.Errorf("expected an object, got %q", text)
+							}
+							object := kinds_[strings.TrimPrefix(kind, "object:")]
+							out := make(map[string]any, len(fields))
+							for key, value := range fields {
+								fieldKind, ok := object[key]
+								if !ok {
+									if fieldKind, ok = object["*"]; !ok {
+										if form_ {
+											continue
+										}
+										return nil, fmt.Errorf("field [%s] is not present in destination object", key)
+									}
+								}
+								if fieldKind == "skip" {
+									continue
+								}
+								v, err := convert_(value, fieldKind)
+								if err != nil {
+									return nil, fmt.Errorf("error assigning field [%s]: %w", key, err)
+								}
+								if v == skip_ {
+									continue
+								}
+								out[key] = v
+							}
+							return out, nil
+						case strings.HasPrefix(kind, "map:"):
+							if !isMap {
+								return nil, fmt.Errorf("expected an object, got %q", text)
+							}
+							out := make(map[string]any, len(fields))
+							for key, value := range fields {
+								v, err := convert_(value, strings.TrimPrefix(kind, "map:"))
+								if err != nil {
+									return nil, err
+								}
+								if v == skip_ {
+									continue
+								}
+								out[key] = v
+							}
+							return out, nil
+						case strings.HasPrefix(kind, "array:"):
+							if !isMap && form_ {
+								v, err := convert_(node, strings.TrimPrefix(kind, "array:"))
+								if err != nil {
+									return nil, fmt.Errorf("error binding array element 0: %w", err)
+								}
+								return []any{v}, nil
+							}
+							if !isMap {
+								return nil, fmt.Errorf("expected an array, got %q", text)
+							}
+							size := len(fields)
+							if form_ {
+								// Missing elements of a form's array are zero values.
+								size = 0
+								for key := range fields {
+									if i, err := strconv.Atoi(key); err == nil && i >= size {
+										size = i + 1
+									}
+								}
+							}
+							out := make([]any, size)
+							for i := range out {
+								value, ok := fields[strconv.Itoa(i)]
+								if !ok && form_ {
+									continue
+								}
+								if !ok {
+									return nil, errors.New("array deepObjects must have consecutive indices")
+								}
+								v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
+								if err != nil {
+									return nil, fmt.Errorf("error binding array element %d: %w", i, err)
+								}
+								if v == skip_ {
+									v = nil
+								}
+								out[i] = v
+							}
+							return out, nil
+						case isMap:
+							if kind != "any" {
+								return nil, fmt.Errorf("expected a value, got an object")
+							}
+							keys := make([]int, 0, len(fields))
+							for key := range fields {
+								if i, err := strconv.Atoi(key); err == nil && i >= 0 && i < len(fields) {
+									keys = append(keys, i)
+								}
+							}
+							out := make(map[string]any, len(fields))
+							for key, value := range fields {
+								v, err := convert_(value, "any")
+								if err != nil {
+									return nil, err
+								}
+								out[key] = v
+							}
+							if len(keys) != len(fields) {
+								return out, nil
+							}
+							array := make([]any, len(fields))
+							for key, value := range out {
+								i, _ := strconv.Atoi(key)
+								array[i] = value
+							}
+							return array, nil
+						case kind == "int":
+							i, err := strconv.ParseInt(text, 10, 64)
+							if err != nil {
+								return nil, fmt.Errorf("expected a valid int, got %s", text)
+							}
+							return i, nil
+						case kind == "float":
+							f, err := strconv.ParseFloat(text, 64)
+							if err != nil || math.IsInf(f, 0) || math.IsNaN(f) {
+								return nil, fmt.Errorf("expected a valid float, got %s", text)
+							}
+							return f, nil
+						case kind == "bool":
+							b, err := strconv.ParseBool(text)
+							if err != nil {
+								return nil, fmt.Errorf("expected a valid bool, got %s", text)
+							}
+							return b, nil
+						case kind == "any":
+							switch text {
+							case "true":
+								return true, nil
+							case "false":
+								return false, nil
+							case "null":
+								return nil, nil
+							}
+							var f float64
+							if err := json.Unmarshal([]byte(text), &f); err == nil {
+								return f, nil
+							}
+							return text, nil
+						default:
+							return text, nil
+						}
+					}
+					if v_, err_ := convert_(tree_, "object:Request"); err_ != nil {
+						err = err_
+					} else if b_, err_ := json.Marshal(v_); err_ != nil {
+						err = err_
+					} else {
+						err = json.Unmarshal(b_, &body)
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't bind formdata: %w", err))
+			return
+		}
 	}
 	request.Body = &body
 
