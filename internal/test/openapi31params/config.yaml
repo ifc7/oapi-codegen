@@ -3,5 +3,5 @@ package: openapi31params
 output: openapi31params.gen.go
 generate:
   models: true
-  std-http-server: true
+  server: true
   client: true

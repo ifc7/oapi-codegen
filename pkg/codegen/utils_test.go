@@ -922,8 +922,8 @@ paths:
 	_, err = Generate(swagger, Configuration{
 		PackageName: "api",
 		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
+			Server: true,
+			Models: true,
 		},
 	})
 	require.Error(t, err)
@@ -966,8 +966,8 @@ paths:
 	_, err = Generate(swagger, Configuration{
 		PackageName: "api",
 		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
+			Server: true,
+			Models: true,
 		},
 		OutputOptions: OutputOptions{
 			ExcludeTags: []string{"excluded"},

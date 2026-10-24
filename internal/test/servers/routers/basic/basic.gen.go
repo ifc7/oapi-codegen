@@ -6,9 +6,12 @@
 package serversroutersbasic
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/mail"
 	"strconv"
@@ -757,4 +760,596 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/resource3/{fallthrough}", wrapper.UpdateResource3)
 
 	return m
+}
+
+type ResponseWithReferenceJSONResponse SomeObject
+
+type SimpleResponseJSONResponse struct {
+	Name string `json:"name"`
+}
+
+type GetEveryTypeOptionalRequestObject struct {
+}
+
+type GetEveryTypeOptionalResponseObject interface {
+	VisitGetEveryTypeOptionalResponse(w http.ResponseWriter) error
+}
+
+type GetEveryTypeOptional200JSONResponse EveryTypeOptional
+
+func (response GetEveryTypeOptional200JSONResponse) VisitGetEveryTypeOptionalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSimpleRequestObject struct {
+}
+
+type GetSimpleResponseObject interface {
+	VisitGetSimpleResponse(w http.ResponseWriter) error
+}
+
+type GetSimple200JSONResponse SomeObject
+
+func (response GetSimple200JSONResponse) VisitGetSimpleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWithArgsRequestObject struct {
+	Params GetWithArgsParams
+}
+
+type GetWithArgsResponseObject interface {
+	VisitGetWithArgsResponse(w http.ResponseWriter) error
+}
+
+type GetWithArgs200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response GetWithArgs200JSONResponse) VisitGetWithArgsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWithReferencesRequestObject struct {
+	GlobalArgument int64    `json:"global_argument"`
+	Argument       Argument `json:"argument"`
+}
+
+type GetWithReferencesResponseObject interface {
+	VisitGetWithReferencesResponse(w http.ResponseWriter) error
+}
+
+type GetWithReferences200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response GetWithReferences200JSONResponse) VisitGetWithReferencesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWithContentTypeRequestObject struct {
+	ContentType GetWithContentTypeParamsContentType `json:"content_type"`
+}
+
+type GetWithContentTypeResponseObject interface {
+	VisitGetWithContentTypeResponse(w http.ResponseWriter) error
+}
+
+type GetWithContentType200JSONResponse SomeObject
+
+func (response GetWithContentType200JSONResponse) VisitGetWithContentTypeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWithContentType200TextResponse string
+
+func (response GetWithContentType200TextResponse) VisitGetWithContentTypeResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetReservedKeywordRequestObject struct {
+}
+
+type GetReservedKeywordResponseObject interface {
+	VisitGetReservedKeywordResponse(w http.ResponseWriter) error
+}
+
+type GetReservedKeyword200JSONResponse ReservedKeyword
+
+func (response GetReservedKeyword200JSONResponse) VisitGetReservedKeywordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateResourceRequestObject struct {
+	Argument Argument `json:"argument"`
+	Body     *CreateResourceJSONRequestBody
+}
+
+type CreateResourceResponseObject interface {
+	VisitCreateResourceResponse(w http.ResponseWriter) error
+}
+
+type CreateResource200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response CreateResource200JSONResponse) VisitCreateResourceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateResource2RequestObject struct {
+	InlineArgument int `json:"inline_argument"`
+	Params         CreateResource2Params
+	Body           *CreateResource2JSONRequestBody
+}
+
+type CreateResource2ResponseObject interface {
+	VisitCreateResource2Response(w http.ResponseWriter) error
+}
+
+type CreateResource2200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response CreateResource2200JSONResponse) VisitCreateResource2Response(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateResource3RequestObject struct {
+	Fallthrough int `json:"fallthrough"`
+	Body        *UpdateResource3JSONRequestBody
+}
+
+type UpdateResource3ResponseObject interface {
+	VisitUpdateResource3Response(w http.ResponseWriter) error
+}
+
+type UpdateResource3200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response UpdateResource3200JSONResponse) VisitUpdateResource3Response(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetResponseWithReferenceRequestObject struct {
+}
+
+type GetResponseWithReferenceResponseObject interface {
+	VisitGetResponseWithReferenceResponse(w http.ResponseWriter) error
+}
+
+type GetResponseWithReference200JSONResponse struct {
+	ResponseWithReferenceJSONResponse
+}
+
+func (response GetResponseWithReference200JSONResponse) VisitGetResponseWithReferenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.ResponseWithReferenceJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+	// GetEveryTypeOptional get every type optional
+	// (GET /every-type-optional)
+	GetEveryTypeOptional(ctx context.Context, request GetEveryTypeOptionalRequestObject) (GetEveryTypeOptionalResponseObject, error)
+	// GetSimple Get resource via simple path
+	// (GET /get-simple)
+	GetSimple(ctx context.Context, request GetSimpleRequestObject) (GetSimpleResponseObject, error)
+	// GetWithArgs Getter with referenced parameter and referenced response
+	// (GET /get-with-args)
+	GetWithArgs(ctx context.Context, request GetWithArgsRequestObject) (GetWithArgsResponseObject, error)
+	// GetWithReferences Getter with referenced parameter and referenced response
+	// (GET /get-with-references/{global_argument}/{argument})
+	GetWithReferences(ctx context.Context, request GetWithReferencesRequestObject) (GetWithReferencesResponseObject, error)
+	// GetWithContentType Get an object by ID
+	// (GET /get-with-type/{content_type})
+	GetWithContentType(ctx context.Context, request GetWithContentTypeRequestObject) (GetWithContentTypeResponseObject, error)
+	// GetReservedKeyword get with reserved keyword
+	// (GET /reserved-keyword)
+	GetReservedKeyword(ctx context.Context, request GetReservedKeywordRequestObject) (GetReservedKeywordResponseObject, error)
+	// CreateResource Create a resource
+	// (POST /resource/{argument})
+	CreateResource(ctx context.Context, request CreateResourceRequestObject) (CreateResourceResponseObject, error)
+	// CreateResource2 Create a resource with inline parameter
+	// (POST /resource2/{inline_argument})
+	CreateResource2(ctx context.Context, request CreateResource2RequestObject) (CreateResource2ResponseObject, error)
+	// UpdateResource3 Update a resource with inline body. The parameter name is a reserved
+	// keyword, so make sure that gets prefixed to avoid syntax errors
+	// (PUT /resource3/{fallthrough})
+	UpdateResource3(ctx context.Context, request UpdateResource3RequestObject) (UpdateResource3ResponseObject, error)
+	// GetResponseWithReference get response with reference
+	// (GET /response-with-reference)
+	GetResponseWithReference(ctx context.Context, request GetResponseWithReferenceRequestObject) (GetResponseWithReferenceResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// GetEveryTypeOptional operation middleware
+func (sh *strictHandler) GetEveryTypeOptional(w http.ResponseWriter, r *http.Request) {
+	var request GetEveryTypeOptionalRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetEveryTypeOptional(ctx, request.(GetEveryTypeOptionalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEveryTypeOptional")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEveryTypeOptionalResponseObject); ok {
+		if err := validResponse.VisitGetEveryTypeOptionalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSimple operation middleware
+func (sh *strictHandler) GetSimple(w http.ResponseWriter, r *http.Request) {
+	var request GetSimpleRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetSimple(ctx, request.(GetSimpleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSimple")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleResponseObject); ok {
+		if err := validResponse.VisitGetSimpleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWithArgs operation middleware
+func (sh *strictHandler) GetWithArgs(w http.ResponseWriter, r *http.Request, params GetWithArgsParams) {
+	var request GetWithArgsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetWithArgs(ctx, request.(GetWithArgsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWithArgs")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWithArgsResponseObject); ok {
+		if err := validResponse.VisitGetWithArgsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWithReferences operation middleware
+func (sh *strictHandler) GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument) {
+	var request GetWithReferencesRequestObject
+
+	request.GlobalArgument = globalArgument
+	request.Argument = argument
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetWithReferences(ctx, request.(GetWithReferencesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWithReferences")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWithReferencesResponseObject); ok {
+		if err := validResponse.VisitGetWithReferencesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWithContentType operation middleware
+func (sh *strictHandler) GetWithContentType(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType) {
+	var request GetWithContentTypeRequestObject
+
+	request.ContentType = contentType
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetWithContentType(ctx, request.(GetWithContentTypeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWithContentType")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWithContentTypeResponseObject); ok {
+		if err := validResponse.VisitGetWithContentTypeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetReservedKeyword operation middleware
+func (sh *strictHandler) GetReservedKeyword(w http.ResponseWriter, r *http.Request) {
+	var request GetReservedKeywordRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetReservedKeyword(ctx, request.(GetReservedKeywordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetReservedKeyword")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetReservedKeywordResponseObject); ok {
+		if err := validResponse.VisitGetReservedKeywordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateResource operation middleware
+func (sh *strictHandler) CreateResource(w http.ResponseWriter, r *http.Request, argument Argument) {
+	var request CreateResourceRequestObject
+
+	request.Argument = argument
+
+	var body CreateResourceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.CreateResource(ctx, request.(CreateResourceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateResource")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateResourceResponseObject); ok {
+		if err := validResponse.VisitCreateResourceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateResource2 operation middleware
+func (sh *strictHandler) CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) {
+	var request CreateResource2RequestObject
+
+	request.InlineArgument = inlineArgument
+	request.Params = params
+
+	var body CreateResource2JSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.CreateResource2(ctx, request.(CreateResource2RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateResource2")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateResource2ResponseObject); ok {
+		if err := validResponse.VisitCreateResource2Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateResource3 operation middleware
+func (sh *strictHandler) UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough int) {
+	var request UpdateResource3RequestObject
+
+	request.Fallthrough = pFallthrough
+
+	var body UpdateResource3JSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.UpdateResource3(ctx, request.(UpdateResource3RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateResource3")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateResource3ResponseObject); ok {
+		if err := validResponse.VisitUpdateResource3Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetResponseWithReference operation middleware
+func (sh *strictHandler) GetResponseWithReference(w http.ResponseWriter, r *http.Request) {
+	var request GetResponseWithReferenceRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetResponseWithReference(ctx, request.(GetResponseWithReferenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetResponseWithReference")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetResponseWithReferenceResponseObject); ok {
+		if err := validResponse.VisitGetResponseWithReferenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }

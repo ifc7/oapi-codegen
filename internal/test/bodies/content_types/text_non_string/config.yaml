@@ -3,8 +3,7 @@
 package: textnonstring
 output: text_non_string.gen.go
 generate:
-  std-http-server: true
-  strict-server: true
+  server: true
   models: true
 output-options:
   skip-prune: true

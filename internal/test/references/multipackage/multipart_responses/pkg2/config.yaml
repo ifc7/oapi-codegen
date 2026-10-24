@@ -4,8 +4,7 @@ generate:
   client: true
   models: true
   embedded-spec: true
-  std-http-server: true
-  strict-server: true
+  server: true
 output: pkg2.gen.go
 output-options:
   skip-prune: true

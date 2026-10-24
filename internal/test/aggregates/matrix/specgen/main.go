@@ -419,8 +419,7 @@ func buildConfig(s shape) ([]byte, error) {
 		"generate", mapping(
 			"models", true,
 			"client", true,
-			"std-http-server", true,
-			"strict-server", true,
+			"server", true,
 		),
 	)
 	if s.Config.Kind == yaml.MappingNode {

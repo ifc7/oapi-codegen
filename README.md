@@ -444,7 +444,7 @@ We can see that this provides the best means to focus on the implementation of t
 
 `oapi-codegen` shines by making it fairly straightforward (note that this is a purposeful choice of wording here - we want to avoid words like "easy") to generate the server-side boilerplate for a backend API.
 
-The generated server is built on the standard library's [`net/http`](https://pkg.go.dev/net/http): set `std-http-server: true`, and see the [`net/http` documentation](docs/stdhttp-server.md) for how to implement and run it. The generated `Handler` is an ordinary `http.Handler`, so it works with any router or middleware that accepts one. The generated server needs Go 1.22+, for the `net/http` routing patterns.
+The generated server is built on the standard library's [`net/http`](https://pkg.go.dev/net/http): set `server: true`, and see the [`net/http` documentation](docs/stdhttp-server.md) for how to implement and run it. The generated `Handler` is an ordinary `http.Handler`, so it works with any router or middleware that accepts one. The generated server needs Go 1.22+, for the `net/http` routing patterns.
 
 To provide you a fully Test Driven Development style test harness to confirm you are following the specification, you could use a tool such as [openapi.tanna.dev/go/validator](https://openapi.tanna.dev/go/validator/), or craft your own.
 
@@ -471,15 +471,13 @@ The strict server has support for:
 
 You can see a little more detail of the generated code in the ["What does it look like"](#what-does-it-look-like-strict) section.
 
-> [!NOTE]
-> The strict server wraps the `net/http` server, so enable both:
+To generate it, enable the server:
 
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/v2.8.0/configuration-schema.json
 package: api
 generate:
-  std-http-server: true
-  strict-server: true
+  server: true
 output: server.gen.go
 ```
 
@@ -487,7 +485,7 @@ output: server.gen.go
 > This doesn't include [validation of incoming requests](#requestresponse-validation-middleware).
 
 > [!IMPORTANT]
-> When a strict-server spec uses `$ref` to point at a `components/responses/...` (or `components/requestBodies/...`) defined in another spec via `import-mapping`, the destination spec **must also be generated with `strict-server: true`**. The strict envelope embeds the `<Name>JSONResponse` type from the destination package; that type only exists when the destination generates a strict server. Without it the generated code will fail to compile with an "undefined" error. See [issue #2010](https://github.com/oapi-codegen/oapi-codegen/issues/2010).
+> When a spec uses `$ref` to point at a `components/responses/...` (or `components/requestBodies/...`) defined in another spec via `import-mapping`, the destination spec **must also be generated with `server: true`**. The strict envelope embeds the `<Name>JSONResponse` type from the destination package; that type only exists when the destination generates a server. Without it the generated code will fail to compile with an "undefined" error. See [issue #2010](https://github.com/oapi-codegen/oapi-codegen/issues/2010).
 
 ## Generating API clients
 
@@ -1082,8 +1080,7 @@ package: samepackage
 output: server.gen.go
 generate:
   models: true
-  std-http-server: true
-  strict-server: true
+  server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1130,7 +1127,7 @@ package: admin
 output: server.gen.go
 generate:
   models: true
-  std-http-server: true
+  server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1151,7 +1148,7 @@ package: admin
 output: server.gen.go
 generate:
   models: true
-  std-http-server: true
+  server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1263,7 +1260,7 @@ package: api
 output: ping.gen.go
 generate:
   models: true
-  std-http-server: true
+  server: true
   embedded-spec: true
 output-options:
   overlay:

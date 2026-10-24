@@ -949,9 +949,7 @@ func TestGenerateStrictServerInterface(t *testing.T) {
 	require.NoError(t, LoadTemplates(templates, base))
 	ops := []OperationDefinition{{OperationId: "Ping"}}
 
-	out, err := GenerateStrictServer(base, ops, Configuration{
-		Generate: GenerateOptions{StdHTTPServer: true},
-	})
+	out, err := GenerateStrictServer(base, ops)
 	require.NoError(t, err)
 	assert.Equal(t, 1, strings.Count(out, "type StrictServerInterface interface"))
 }
@@ -1066,7 +1064,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	}
 
 	for _, server := range servers {
@@ -1075,7 +1073,6 @@ components:
 			require.NoError(t, err)
 
 			server.generate.Models = true
-			server.generate.Strict = true
 			code, err := Generate(swagger, Configuration{
 				PackageName: "api",
 				Generate:    server.generate,
@@ -1166,7 +1163,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	}
 
 	for _, server := range servers {
@@ -1180,7 +1177,6 @@ components:
 			require.NoError(t, err)
 
 			server.generate.Models = true
-			server.generate.Strict = true
 			code, err := Generate(swagger, Configuration{
 				PackageName: "api",
 				Generate:    server.generate,
@@ -1284,7 +1280,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	}
 
 	for _, server := range servers {
@@ -1292,7 +1288,6 @@ components:
 			code := generateSpec(t, spec, func(c *Configuration) {
 				c.Generate = server.generate
 				c.Generate.Models = true
-				c.Generate.Strict = true
 			})
 			assert.Contains(t, code, "type UntypedJSONResponse any\n")
 			assert.Contains(t, code, "type MultiJSONResponse any\n")
@@ -1397,8 +1392,7 @@ components:
 
 	wrapped := []string{"AllOfOp", "AllOfSiblingOp", "WrappedOp", "NullableOp", "NullableAnyOfOp", "NamedOp"}
 	code := generateSpec(t, spec, func(c *Configuration) {
-		c.Generate.StdHTTPServer = true
-		c.Generate.Strict = true
+		c.Generate.Server = true
 	})
 	for _, op := range wrapped {
 		assert.Contains(t, code, "type "+op+"200JSONResponse struct {\n\tBody ", op)
@@ -1507,7 +1501,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	}
 
 	for _, server := range servers {
@@ -1515,7 +1509,6 @@ components:
 			code := generateSpec(t, spec, func(c *Configuration) {
 				c.Generate = server.generate
 				c.Generate.Models = true
-				c.Generate.Strict = true
 			})
 			assert.Contains(t, code, "type TextUntypedOp200TextResponse struct {\n\tBody any\n}")
 			assert.Contains(t, code, "type TextNoSchemaOp200TextResponse struct {\n\tBody any\n}")

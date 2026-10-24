@@ -6,6 +6,7 @@
 package prunedeps
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -547,4 +548,216 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/my/path", wrapper.GetThings)
 
 	return m
+}
+
+type N304ResponseHeaders struct {
+	CacheControl *string
+	ETag         *string
+}
+type N304Response struct {
+	Headers N304ResponseHeaders
+}
+
+type N404JSONResponse externalRef0.Error
+
+type ThingResponseJSONResponse ThingList
+
+type GetThingsRequestObject struct {
+}
+
+type GetThingsResponseObject interface {
+	VisitGetThingsResponse(w http.ResponseWriter) error
+}
+
+type GetThings200JSONResponse struct{ ThingResponseJSONResponse }
+
+func (response GetThings200JSONResponse) VisitGetThingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.ThingResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetThings304Response = N304Response
+
+func (response GetThings304Response) VisitGetThingsResponse(w http.ResponseWriter) error {
+	if response.Headers.CacheControl != nil {
+		{
+			var v string
+			var err error
+			v = (*response.Headers.CacheControl)
+			if err != nil {
+				return fmt.Errorf("error styling response header Cache-Control: %w", err)
+			}
+			w.Header().Set("Cache-Control", v)
+		}
+	}
+	if response.Headers.ETag != nil {
+		{
+			var v string
+			var err error
+			v = (*response.Headers.ETag)
+			if err != nil {
+				return fmt.Errorf("error styling response header ETag: %w", err)
+			}
+			w.Header().Set("ETag", v)
+		}
+	}
+	w.WriteHeader(304)
+	return nil
+}
+
+type GetThings401JSONResponse struct{ externalRef0.N401JSONResponse }
+
+func (response GetThings401JSONResponse) VisitGetThingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.N401JSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetThings401TextResponse externalRef0.N401TextResponse
+
+func (response GetThings401TextResponse) VisitGetThingsResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(401)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetThings403JSONResponse struct{ externalRef0.N403JSONResponse }
+
+func (response GetThings403JSONResponse) VisitGetThingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.N403JSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetThings403TextResponse externalRef0.N403TextResponse
+
+func (response GetThings403TextResponse) VisitGetThingsResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(403)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetThings404JSONResponse struct{ N404JSONResponse }
+
+func (response GetThings404JSONResponse) VisitGetThingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.N404JSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetThings500JSONResponse struct {
+	externalRef0.DefaultErrorJSONResponse
+}
+
+func (response GetThings500JSONResponse) VisitGetThingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.DefaultErrorJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+	// GetThings list things
+	// (GET /api/my/path)
+	GetThings(ctx context.Context, request GetThingsRequestObject) (GetThingsResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// GetThings operation middleware
+func (sh *strictHandler) GetThings(w http.ResponseWriter, r *http.Request) {
+	var request GetThingsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetThings(ctx, request.(GetThingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetThings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetThingsResponseObject); ok {
+		if err := validResponse.VisitGetThingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }

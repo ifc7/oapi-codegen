@@ -13,13 +13,9 @@
       "additionalProperties": false,
       "description": "Generate specifies which supported output formats to generate",
       "properties": {
-        "std-http-server": {
+        "server": {
           "type": "boolean",
-          "description": "StdHTTPServer specifies whether to generate stdlib http server boilerplate"
-        },
-        "strict-server": {
-          "type": "boolean",
-          "description": "Strict specifies whether to generate strict server wrapper"
+          "description": "Server specifies whether to generate the net/http server"
         },
         "client": {
           "type": "boolean",

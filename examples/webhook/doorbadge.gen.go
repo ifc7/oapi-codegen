@@ -1039,3 +1039,184 @@ func ExitEventWebhookHandler(si WebhookReceiverInterface, errHandler func(w http
 	}
 	return h
 }
+
+type DeregisterWebhookRequestObject struct {
+	ID uuid.UUID `json:"id"`
+}
+
+type DeregisterWebhookResponseObject interface {
+	VisitDeregisterWebhookResponse(w http.ResponseWriter) error
+}
+
+type DeregisterWebhook204Response struct {
+}
+
+func (response DeregisterWebhook204Response) VisitDeregisterWebhookResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeregisterWebhookdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response DeregisterWebhookdefaultJSONResponse) VisitDeregisterWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterWebhookRequestObject struct {
+	Kind RegisterWebhookParamsKind `json:"kind"`
+	Body *RegisterWebhookJSONRequestBody
+}
+
+type RegisterWebhookResponseObject interface {
+	VisitRegisterWebhookResponse(w http.ResponseWriter) error
+}
+
+type RegisterWebhook201JSONResponse WebhookRegistrationResponse
+
+func (response RegisterWebhook201JSONResponse) VisitRegisterWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterWebhookdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response RegisterWebhookdefaultJSONResponse) VisitRegisterWebhookResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+	// DeregisterWebhook Deregister a webhook
+	// (DELETE /api/webhook/{id})
+	DeregisterWebhook(ctx context.Context, request DeregisterWebhookRequestObject) (DeregisterWebhookResponseObject, error)
+	// RegisterWebhook Register a webhook
+	// (POST /api/webhook/{kind})
+	RegisterWebhook(ctx context.Context, request RegisterWebhookRequestObject) (RegisterWebhookResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// DeregisterWebhook operation middleware
+func (sh *strictHandler) DeregisterWebhook(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+	var request DeregisterWebhookRequestObject
+
+	request.ID = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.DeregisterWebhook(ctx, request.(DeregisterWebhookRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeregisterWebhook")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeregisterWebhookResponseObject); ok {
+		if err := validResponse.VisitDeregisterWebhookResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RegisterWebhook operation middleware
+func (sh *strictHandler) RegisterWebhook(w http.ResponseWriter, r *http.Request, kind RegisterWebhookParamsKind) {
+	var request RegisterWebhookRequestObject
+
+	request.Kind = kind
+
+	var body RegisterWebhookJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.RegisterWebhook(ctx, request.(RegisterWebhookRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RegisterWebhook")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RegisterWebhookResponseObject); ok {
+		if err := validResponse.VisitRegisterWebhookResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}

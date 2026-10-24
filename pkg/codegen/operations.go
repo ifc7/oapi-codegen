@@ -2457,10 +2457,7 @@ func GenerateStdHTTPServer(t *template.Template, operations []OperationDefinitio
 
 // GenerateStrictServer generates the strict server interface and the glue
 // that adapts it to the net/http server.
-func GenerateStrictServer(t *template.Template, operations []OperationDefinition, opts Configuration) (string, error) {
-	if !opts.Generate.StdHTTPServer {
-		return "", nil
-	}
+func GenerateStrictServer(t *template.Template, operations []OperationDefinition) (string, error) {
 	return GenerateTemplates([]string{"strict/strict-interface.tmpl", "strict/strict-http.tmpl"}, t, operations)
 }
 

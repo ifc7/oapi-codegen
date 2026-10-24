@@ -1099,7 +1099,7 @@ components:
 	require.NoError(t, err)
 	out, err := Generate(swagger, Configuration{
 		PackageName: "api",
-		Generate:    GenerateOptions{Models: true, StdHTTPServer: true, Strict: true},
+		Generate:    GenerateOptions{Models: true, Server: true},
 	})
 	require.NoError(t, err)
 
@@ -1191,7 +1191,7 @@ components:
 	require.NoError(t, err)
 	out, err := Generate(swagger, Configuration{
 		PackageName: "api",
-		Generate:    GenerateOptions{Models: true, StdHTTPServer: true, Strict: true},
+		Generate:    GenerateOptions{Models: true, Server: true},
 	})
 	require.NoError(t, err)
 
@@ -1281,7 +1281,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	} {
 		t.Run(server.name, func(t *testing.T) {
 			loader := openapi3.NewLoader()
@@ -1293,7 +1293,6 @@ components:
 			require.NoError(t, err)
 
 			server.generate.Models = true
-			server.generate.Strict = true
 			code, err := Generate(swagger, Configuration{
 				PackageName:   "api",
 				Generate:      server.generate,

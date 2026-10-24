@@ -3,11 +3,11 @@ package: optionsnamenormalizertocamelcase
 output: name_normalizer.gen.go
 # name-normalizer: ToCamelCase — standard camelCase without initialism expansion;
 # same output as unset for this spec (Uuid, GetHttpPet, OneOf2things).
-# std-http-server + client so the tests can assert the operation-derived names
+# server + client so the tests can assert the operation-derived names
 # on both ServerInterfaceWrapper and Client.
 # skip-prune: retain the Error schema which is not referenced from any path.
 generate:
-  std-http-server: true
+  server: true
   client: true
   models: true
 output-options:

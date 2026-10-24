@@ -2,8 +2,7 @@
 # yaml-language-server: $schema=../../../../../configuration-schema.json
 package: spec_other
 generate:
-  std-http-server: true
-  strict-server: true
+  server: true
   models: true
 import-mapping:
   ./spec-base.yaml: "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/response_cast/gen/spec_base"

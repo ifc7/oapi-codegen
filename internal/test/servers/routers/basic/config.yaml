@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../../../../configuration-schema.json
 package: serversroutersbasic
 generate:
-  std-http-server: true
+  server: true
   models: true
 output: basic.gen.go

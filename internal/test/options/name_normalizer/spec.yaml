@@ -9,7 +9,7 @@
 #   - outputoptions/name-normalizer/to-camel-case-with-additional-initialisms
 #   - outputoptions/name-normalizer/to-camel-case-with-digits
 #
-# All five sub-packages generate std-http-server+client+models from THIS spec;
+# All five sub-packages generate server+client+models from THIS spec;
 # only the name-normalizer / additional-initialisms flags differ, so the casing
 # differences in generated type/field/operation names are purely a function of
 # the normalizer. They live in separate Go packages because each emits the same

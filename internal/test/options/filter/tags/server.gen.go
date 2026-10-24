@@ -6,6 +6,7 @@
 package optionsfiltertags
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 )
@@ -183,4 +184,131 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/included2", wrapper.IncludedOperation2)
 
 	return m
+}
+
+type IncludedOperation1RequestObject struct {
+}
+
+type IncludedOperation1ResponseObject interface {
+	VisitIncludedOperation1Response(w http.ResponseWriter) error
+}
+
+type IncludedOperation1200Response struct {
+}
+
+func (response IncludedOperation1200Response) VisitIncludedOperation1Response(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type IncludedOperation2RequestObject struct {
+}
+
+type IncludedOperation2ResponseObject interface {
+	VisitIncludedOperation2Response(w http.ResponseWriter) error
+}
+
+type IncludedOperation2200Response struct {
+}
+
+func (response IncludedOperation2200Response) VisitIncludedOperation2Response(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+
+	// (GET /included1)
+	IncludedOperation1(ctx context.Context, request IncludedOperation1RequestObject) (IncludedOperation1ResponseObject, error)
+
+	// (GET /included2)
+	IncludedOperation2(ctx context.Context, request IncludedOperation2RequestObject) (IncludedOperation2ResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// IncludedOperation1 operation middleware
+func (sh *strictHandler) IncludedOperation1(w http.ResponseWriter, r *http.Request) {
+	var request IncludedOperation1RequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.IncludedOperation1(ctx, request.(IncludedOperation1RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "IncludedOperation1")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(IncludedOperation1ResponseObject); ok {
+		if err := validResponse.VisitIncludedOperation1Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// IncludedOperation2 operation middleware
+func (sh *strictHandler) IncludedOperation2(w http.ResponseWriter, r *http.Request) {
+	var request IncludedOperation2RequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.IncludedOperation2(ctx, request.(IncludedOperation2RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "IncludedOperation2")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(IncludedOperation2ResponseObject); ok {
+		if err := validResponse.VisitIncludedOperation2Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }

@@ -6,7 +6,7 @@ To use purely `net/http` (for Go 1.22+), you will want a configuration file such
 # yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/v2.8.0/configuration-schema.json
 package: api
 generate:
-  std-http-server: true
+  server: true
   models: true
 output: gen.go
 ```

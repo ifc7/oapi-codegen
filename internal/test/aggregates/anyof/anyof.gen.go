@@ -1799,3 +1799,261 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	return m
 }
+
+type GetInlinePetsRequestObject struct {
+}
+
+type GetInlinePetsResponseObject interface {
+	VisitGetInlinePetsResponse(w http.ResponseWriter) error
+}
+
+type GetInlinePets200JSONResponse struct {
+	Data *[]GetInlinePets200JSONResponseBody_Data_Item `json:"data,omitempty"`
+}
+
+func (response GetInlinePets200JSONResponse) VisitGetInlinePetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInlinePets401Response struct {
+}
+
+func (response GetInlinePets401Response) VisitGetInlinePetsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetInlinePets500Response struct {
+}
+
+func (response GetInlinePets500Response) VisitGetInlinePetsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type GetIssue1189TestRequestObject struct {
+}
+
+type GetIssue1189TestResponseObject interface {
+	VisitGetIssue1189TestResponse(w http.ResponseWriter) error
+}
+
+type GetIssue1189Test200JSONResponse Issue1189Test
+
+func (response GetIssue1189Test200JSONResponse) VisitGetIssue1189TestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetParamTestRequestObject struct {
+	Params GetParamTestParams
+}
+
+type GetParamTestResponseObject interface {
+	VisitGetParamTestResponse(w http.ResponseWriter) error
+}
+
+type GetRefPetsRequestObject struct {
+}
+
+type GetRefPetsResponseObject interface {
+	VisitGetRefPetsResponse(w http.ResponseWriter) error
+}
+
+type GetRefPets200JSONResponse GetRefPetsDto
+
+func (response GetRefPets200JSONResponse) VisitGetRefPetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetRefPets401Response struct {
+}
+
+func (response GetRefPets401Response) VisitGetRefPetsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetRefPets500Response struct {
+}
+
+func (response GetRefPets500Response) VisitGetRefPetsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+	// GetInlinePets Get a list of pets (inline anyOf)
+	// (GET /inline/pets)
+	GetInlinePets(ctx context.Context, request GetInlinePetsRequestObject) (GetInlinePetsResponseObject, error)
+
+	// (GET /issue1189/test)
+	GetIssue1189Test(ctx context.Context, request GetIssue1189TestRequestObject) (GetIssue1189TestResponseObject, error)
+
+	// (GET /param/test)
+	GetParamTest(ctx context.Context, request GetParamTestRequestObject) (GetParamTestResponseObject, error)
+	// GetRefPets Get a list of pets ($ref anyOf)
+	// (GET /ref/pets)
+	GetRefPets(ctx context.Context, request GetRefPetsRequestObject) (GetRefPetsResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// GetInlinePets operation middleware
+func (sh *strictHandler) GetInlinePets(w http.ResponseWriter, r *http.Request) {
+	var request GetInlinePetsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetInlinePets(ctx, request.(GetInlinePetsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetInlinePets")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInlinePetsResponseObject); ok {
+		if err := validResponse.VisitGetInlinePetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetIssue1189Test operation middleware
+func (sh *strictHandler) GetIssue1189Test(w http.ResponseWriter, r *http.Request) {
+	var request GetIssue1189TestRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetIssue1189Test(ctx, request.(GetIssue1189TestRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetIssue1189Test")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetIssue1189TestResponseObject); ok {
+		if err := validResponse.VisitGetIssue1189TestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetParamTest operation middleware
+func (sh *strictHandler) GetParamTest(w http.ResponseWriter, r *http.Request, params GetParamTestParams) {
+	var request GetParamTestRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetParamTest(ctx, request.(GetParamTestRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetParamTest")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetParamTestResponseObject); ok {
+		if err := validResponse.VisitGetParamTestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRefPets operation middleware
+func (sh *strictHandler) GetRefPets(w http.ResponseWriter, r *http.Request) {
+	var request GetRefPetsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetRefPets(ctx, request.(GetRefPetsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRefPets")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRefPetsResponseObject); ok {
+		if err := validResponse.VisitGetRefPetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}

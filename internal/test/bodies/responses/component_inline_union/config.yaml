@@ -5,5 +5,4 @@ output: component_inline_union.gen.go
 generate:
   models: true
   client: true
-  std-http-server: true
-  strict-server: true
+  server: true

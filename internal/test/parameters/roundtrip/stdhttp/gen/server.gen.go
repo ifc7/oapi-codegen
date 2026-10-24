@@ -8,6 +8,7 @@ package stdhttpparamsgen
 import (
 	"bytes"
 	"compress/flate"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -2451,6 +2452,1401 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/enums", wrapper.EnumParams)
 
 	return m
+}
+
+type SimpleResponseTextResponse string
+
+type GetContentObjectRequestObject struct {
+	Param ComplexObject `json:"param"`
+}
+
+type GetContentObjectResponseObject interface {
+	VisitGetContentObjectResponse(w http.ResponseWriter) error
+}
+
+type GetContentObject200TextResponse SimpleResponseTextResponse
+
+func (response GetContentObject200TextResponse) VisitGetContentObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetCookieRequestObject struct {
+	Params GetCookieParams
+}
+
+type GetCookieResponseObject interface {
+	VisitGetCookieResponse(w http.ResponseWriter) error
+}
+
+type GetCookiedefaultTextResponse struct {
+	Body       string
+	StatusCode int
+}
+
+func (response GetCookiedefaultTextResponse) VisitGetCookieResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(response.StatusCode)
+
+	_, err := w.Write([]byte(fmt.Sprint(response.Body)))
+	return err
+}
+
+type EnumParamsRequestObject struct {
+	Params EnumParamsParams
+}
+
+type EnumParamsResponseObject interface {
+	VisitEnumParamsResponse(w http.ResponseWriter) error
+}
+
+type EnumParams204Response struct {
+}
+
+func (response EnumParams204Response) VisitEnumParamsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type GetHeaderRequestObject struct {
+	Params GetHeaderParams
+}
+
+type GetHeaderResponseObject interface {
+	VisitGetHeaderResponse(w http.ResponseWriter) error
+}
+
+type GetHeaderdefaultTextResponse struct {
+	Body       string
+	StatusCode int
+}
+
+func (response GetHeaderdefaultTextResponse) VisitGetHeaderResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(response.StatusCode)
+
+	_, err := w.Write([]byte(fmt.Sprint(response.Body)))
+	return err
+}
+
+type GetLabelExplodeArrayRequestObject struct {
+	Param []int32 `json:"param"`
+}
+
+type GetLabelExplodeArrayResponseObject interface {
+	VisitGetLabelExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetLabelExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelExplodeArray200TextResponse) VisitGetLabelExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelExplodeObjectRequestObject struct {
+	Param Object `json:"param"`
+}
+
+type GetLabelExplodeObjectResponseObject interface {
+	VisitGetLabelExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetLabelExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelExplodeObject200TextResponse) VisitGetLabelExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelExplodePrimitiveRequestObject struct {
+	Param int32 `json:"param"`
+}
+
+type GetLabelExplodePrimitiveResponseObject interface {
+	VisitGetLabelExplodePrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetLabelExplodePrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelExplodePrimitive200TextResponse) VisitGetLabelExplodePrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelNoExplodeArrayRequestObject struct {
+	Param []int32 `json:"param"`
+}
+
+type GetLabelNoExplodeArrayResponseObject interface {
+	VisitGetLabelNoExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetLabelNoExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelNoExplodeArray200TextResponse) VisitGetLabelNoExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelNoExplodeObjectRequestObject struct {
+	Param Object `json:"param"`
+}
+
+type GetLabelNoExplodeObjectResponseObject interface {
+	VisitGetLabelNoExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetLabelNoExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelNoExplodeObject200TextResponse) VisitGetLabelNoExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelPrimitiveRequestObject struct {
+	Param int32 `json:"param"`
+}
+
+type GetLabelPrimitiveResponseObject interface {
+	VisitGetLabelPrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetLabelPrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelPrimitive200TextResponse) VisitGetLabelPrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixExplodeArrayRequestObject struct {
+	Id []int32 `json:"id"`
+}
+
+type GetMatrixExplodeArrayResponseObject interface {
+	VisitGetMatrixExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixExplodeArray200TextResponse) VisitGetMatrixExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixExplodeObjectRequestObject struct {
+	Id Object `json:"id"`
+}
+
+type GetMatrixExplodeObjectResponseObject interface {
+	VisitGetMatrixExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixExplodeObject200TextResponse) VisitGetMatrixExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixExplodePrimitiveRequestObject struct {
+	Id int32 `json:"id"`
+}
+
+type GetMatrixExplodePrimitiveResponseObject interface {
+	VisitGetMatrixExplodePrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixExplodePrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixExplodePrimitive200TextResponse) VisitGetMatrixExplodePrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixNoExplodeArrayRequestObject struct {
+	Id []int32 `json:"id"`
+}
+
+type GetMatrixNoExplodeArrayResponseObject interface {
+	VisitGetMatrixNoExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixNoExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixNoExplodeArray200TextResponse) VisitGetMatrixNoExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixNoExplodeObjectRequestObject struct {
+	Id Object `json:"id"`
+}
+
+type GetMatrixNoExplodeObjectResponseObject interface {
+	VisitGetMatrixNoExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixNoExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixNoExplodeObject200TextResponse) VisitGetMatrixNoExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixPrimitiveRequestObject struct {
+	Id int32 `json:"id"`
+}
+
+type GetMatrixPrimitiveResponseObject interface {
+	VisitGetMatrixPrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixPrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixPrimitive200TextResponse) VisitGetMatrixPrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetPassThroughRequestObject struct {
+	Param string `json:"param"`
+}
+
+type GetPassThroughResponseObject interface {
+	VisitGetPassThroughResponse(w http.ResponseWriter) error
+}
+
+type GetPassThrough200TextResponse SimpleResponseTextResponse
+
+func (response GetPassThrough200TextResponse) VisitGetPassThroughResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetDeepObjectRequestObject struct {
+	Params GetDeepObjectParams
+}
+
+type GetDeepObjectResponseObject interface {
+	VisitGetDeepObjectResponse(w http.ResponseWriter) error
+}
+
+type GetDeepObjectdefaultTextResponse struct {
+	Body       string
+	StatusCode int
+}
+
+func (response GetDeepObjectdefaultTextResponse) VisitGetDeepObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(response.StatusCode)
+
+	_, err := w.Write([]byte(fmt.Sprint(response.Body)))
+	return err
+}
+
+type GetQueryDelimitedRequestObject struct {
+	Params GetQueryDelimitedParams
+}
+
+type GetQueryDelimitedResponseObject interface {
+	VisitGetQueryDelimitedResponse(w http.ResponseWriter) error
+}
+
+type GetQueryDelimited200TextResponse SimpleResponseTextResponse
+
+func (response GetQueryDelimited200TextResponse) VisitGetQueryDelimitedResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetQueryFormRequestObject struct {
+	Params GetQueryFormParams
+}
+
+type GetQueryFormResponseObject interface {
+	VisitGetQueryFormResponse(w http.ResponseWriter) error
+}
+
+type GetQueryForm200TextResponse SimpleResponseTextResponse
+
+func (response GetQueryForm200TextResponse) VisitGetQueryFormResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleExplodeArrayRequestObject struct {
+	Param []int32 `json:"param"`
+}
+
+type GetSimpleExplodeArrayResponseObject interface {
+	VisitGetSimpleExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleExplodeArray200TextResponse) VisitGetSimpleExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleExplodeObjectRequestObject struct {
+	Param Object `json:"param"`
+}
+
+type GetSimpleExplodeObjectResponseObject interface {
+	VisitGetSimpleExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleExplodeObject200TextResponse) VisitGetSimpleExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleExplodePrimitiveRequestObject struct {
+	Param int32 `json:"param"`
+}
+
+type GetSimpleExplodePrimitiveResponseObject interface {
+	VisitGetSimpleExplodePrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleExplodePrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleExplodePrimitive200TextResponse) VisitGetSimpleExplodePrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleNoExplodeArrayRequestObject struct {
+	Param []int32 `json:"param"`
+}
+
+type GetSimpleNoExplodeArrayResponseObject interface {
+	VisitGetSimpleNoExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleNoExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleNoExplodeArray200TextResponse) VisitGetSimpleNoExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleNoExplodeObjectRequestObject struct {
+	Param Object `json:"param"`
+}
+
+type GetSimpleNoExplodeObjectResponseObject interface {
+	VisitGetSimpleNoExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleNoExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleNoExplodeObject200TextResponse) VisitGetSimpleNoExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimplePrimitiveRequestObject struct {
+	Param int32 `json:"param"`
+}
+
+type GetSimplePrimitiveResponseObject interface {
+	VisitGetSimplePrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetSimplePrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetSimplePrimitive200TextResponse) VisitGetSimplePrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleStringRequestObject struct {
+	Param string `json:"param"`
+}
+
+type GetSimpleStringResponseObject interface {
+	VisitGetSimpleStringResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleString200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleString200TextResponse) VisitGetSimpleStringResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetStartingWithNumberRequestObject struct {
+	N1param string `json:"1param"`
+}
+
+type GetStartingWithNumberResponseObject interface {
+	VisitGetStartingWithNumberResponse(w http.ResponseWriter) error
+}
+
+type GetStartingWithNumber200TextResponse SimpleResponseTextResponse
+
+func (response GetStartingWithNumber200TextResponse) VisitGetStartingWithNumberResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+
+	// (GET /contentObject/{param})
+	GetContentObject(ctx context.Context, request GetContentObjectRequestObject) (GetContentObjectResponseObject, error)
+
+	// (GET /cookie)
+	GetCookie(ctx context.Context, request GetCookieRequestObject) (GetCookieResponseObject, error)
+
+	// (GET /enums)
+	EnumParams(ctx context.Context, request EnumParamsRequestObject) (EnumParamsResponseObject, error)
+
+	// (GET /header)
+	GetHeader(ctx context.Context, request GetHeaderRequestObject) (GetHeaderResponseObject, error)
+
+	// (GET /labelExplodeArray/{.param*})
+	GetLabelExplodeArray(ctx context.Context, request GetLabelExplodeArrayRequestObject) (GetLabelExplodeArrayResponseObject, error)
+
+	// (GET /labelExplodeObject/{.param*})
+	GetLabelExplodeObject(ctx context.Context, request GetLabelExplodeObjectRequestObject) (GetLabelExplodeObjectResponseObject, error)
+
+	// (GET /labelExplodePrimitive/{.param*})
+	GetLabelExplodePrimitive(ctx context.Context, request GetLabelExplodePrimitiveRequestObject) (GetLabelExplodePrimitiveResponseObject, error)
+
+	// (GET /labelNoExplodeArray/{.param})
+	GetLabelNoExplodeArray(ctx context.Context, request GetLabelNoExplodeArrayRequestObject) (GetLabelNoExplodeArrayResponseObject, error)
+
+	// (GET /labelNoExplodeObject/{.param})
+	GetLabelNoExplodeObject(ctx context.Context, request GetLabelNoExplodeObjectRequestObject) (GetLabelNoExplodeObjectResponseObject, error)
+
+	// (GET /labelPrimitive/{.param})
+	GetLabelPrimitive(ctx context.Context, request GetLabelPrimitiveRequestObject) (GetLabelPrimitiveResponseObject, error)
+
+	// (GET /matrixExplodeArray/{.id*})
+	GetMatrixExplodeArray(ctx context.Context, request GetMatrixExplodeArrayRequestObject) (GetMatrixExplodeArrayResponseObject, error)
+
+	// (GET /matrixExplodeObject/{.id*})
+	GetMatrixExplodeObject(ctx context.Context, request GetMatrixExplodeObjectRequestObject) (GetMatrixExplodeObjectResponseObject, error)
+
+	// (GET /matrixExplodePrimitive/{;id*})
+	GetMatrixExplodePrimitive(ctx context.Context, request GetMatrixExplodePrimitiveRequestObject) (GetMatrixExplodePrimitiveResponseObject, error)
+
+	// (GET /matrixNoExplodeArray/{.id})
+	GetMatrixNoExplodeArray(ctx context.Context, request GetMatrixNoExplodeArrayRequestObject) (GetMatrixNoExplodeArrayResponseObject, error)
+
+	// (GET /matrixNoExplodeObject/{.id})
+	GetMatrixNoExplodeObject(ctx context.Context, request GetMatrixNoExplodeObjectRequestObject) (GetMatrixNoExplodeObjectResponseObject, error)
+
+	// (GET /matrixPrimitive/{;id})
+	GetMatrixPrimitive(ctx context.Context, request GetMatrixPrimitiveRequestObject) (GetMatrixPrimitiveResponseObject, error)
+
+	// (GET /passThrough/{param})
+	GetPassThrough(ctx context.Context, request GetPassThroughRequestObject) (GetPassThroughResponseObject, error)
+
+	// (GET /queryDeepObject)
+	GetDeepObject(ctx context.Context, request GetDeepObjectRequestObject) (GetDeepObjectResponseObject, error)
+
+	// (GET /queryDelimited)
+	GetQueryDelimited(ctx context.Context, request GetQueryDelimitedRequestObject) (GetQueryDelimitedResponseObject, error)
+
+	// (GET /queryForm)
+	GetQueryForm(ctx context.Context, request GetQueryFormRequestObject) (GetQueryFormResponseObject, error)
+
+	// (GET /simpleExplodeArray/{param*})
+	GetSimpleExplodeArray(ctx context.Context, request GetSimpleExplodeArrayRequestObject) (GetSimpleExplodeArrayResponseObject, error)
+
+	// (GET /simpleExplodeObject/{param*})
+	GetSimpleExplodeObject(ctx context.Context, request GetSimpleExplodeObjectRequestObject) (GetSimpleExplodeObjectResponseObject, error)
+
+	// (GET /simpleExplodePrimitive/{param})
+	GetSimpleExplodePrimitive(ctx context.Context, request GetSimpleExplodePrimitiveRequestObject) (GetSimpleExplodePrimitiveResponseObject, error)
+
+	// (GET /simpleNoExplodeArray/{param})
+	GetSimpleNoExplodeArray(ctx context.Context, request GetSimpleNoExplodeArrayRequestObject) (GetSimpleNoExplodeArrayResponseObject, error)
+
+	// (GET /simpleNoExplodeObject/{param})
+	GetSimpleNoExplodeObject(ctx context.Context, request GetSimpleNoExplodeObjectRequestObject) (GetSimpleNoExplodeObjectResponseObject, error)
+
+	// (GET /simplePrimitive/{param})
+	GetSimplePrimitive(ctx context.Context, request GetSimplePrimitiveRequestObject) (GetSimplePrimitiveResponseObject, error)
+
+	// (GET /simpleString/{param})
+	GetSimpleString(ctx context.Context, request GetSimpleStringRequestObject) (GetSimpleStringResponseObject, error)
+
+	// (GET /startingWithNumber/{1param})
+	GetStartingWithNumber(ctx context.Context, request GetStartingWithNumberRequestObject) (GetStartingWithNumberResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// GetContentObject operation middleware
+func (sh *strictHandler) GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) {
+	var request GetContentObjectRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetContentObject(ctx, request.(GetContentObjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetContentObject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetContentObjectResponseObject); ok {
+		if err := validResponse.VisitGetContentObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCookie operation middleware
+func (sh *strictHandler) GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) {
+	var request GetCookieRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetCookie(ctx, request.(GetCookieRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCookie")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCookieResponseObject); ok {
+		if err := validResponse.VisitGetCookieResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EnumParams operation middleware
+func (sh *strictHandler) EnumParams(w http.ResponseWriter, r *http.Request, params EnumParamsParams) {
+	var request EnumParamsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.EnumParams(ctx, request.(EnumParamsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EnumParams")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnumParamsResponseObject); ok {
+		if err := validResponse.VisitEnumParamsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetHeader operation middleware
+func (sh *strictHandler) GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) {
+	var request GetHeaderRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetHeader(ctx, request.(GetHeaderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetHeader")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHeaderResponseObject); ok {
+		if err := validResponse.VisitGetHeaderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLabelExplodeArray operation middleware
+func (sh *strictHandler) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
+	var request GetLabelExplodeArrayRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetLabelExplodeArray(ctx, request.(GetLabelExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLabelExplodeArray")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetLabelExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLabelExplodeObject operation middleware
+func (sh *strictHandler) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
+	var request GetLabelExplodeObjectRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetLabelExplodeObject(ctx, request.(GetLabelExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLabelExplodeObject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetLabelExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLabelExplodePrimitive operation middleware
+func (sh *strictHandler) GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
+	var request GetLabelExplodePrimitiveRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetLabelExplodePrimitive(ctx, request.(GetLabelExplodePrimitiveRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLabelExplodePrimitive")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelExplodePrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetLabelExplodePrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLabelNoExplodeArray operation middleware
+func (sh *strictHandler) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
+	var request GetLabelNoExplodeArrayRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetLabelNoExplodeArray(ctx, request.(GetLabelNoExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLabelNoExplodeArray")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelNoExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetLabelNoExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLabelNoExplodeObject operation middleware
+func (sh *strictHandler) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
+	var request GetLabelNoExplodeObjectRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetLabelNoExplodeObject(ctx, request.(GetLabelNoExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLabelNoExplodeObject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelNoExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetLabelNoExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLabelPrimitive operation middleware
+func (sh *strictHandler) GetLabelPrimitive(w http.ResponseWriter, r *http.Request, param int32) {
+	var request GetLabelPrimitiveRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetLabelPrimitive(ctx, request.(GetLabelPrimitiveRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLabelPrimitive")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelPrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetLabelPrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMatrixExplodeArray operation middleware
+func (sh *strictHandler) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) {
+	var request GetMatrixExplodeArrayRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetMatrixExplodeArray(ctx, request.(GetMatrixExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMatrixExplodeArray")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetMatrixExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMatrixExplodeObject operation middleware
+func (sh *strictHandler) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, id Object) {
+	var request GetMatrixExplodeObjectRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetMatrixExplodeObject(ctx, request.(GetMatrixExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMatrixExplodeObject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetMatrixExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMatrixExplodePrimitive operation middleware
+func (sh *strictHandler) GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request, id int32) {
+	var request GetMatrixExplodePrimitiveRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetMatrixExplodePrimitive(ctx, request.(GetMatrixExplodePrimitiveRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMatrixExplodePrimitive")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixExplodePrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetMatrixExplodePrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMatrixNoExplodeArray operation middleware
+func (sh *strictHandler) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) {
+	var request GetMatrixNoExplodeArrayRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetMatrixNoExplodeArray(ctx, request.(GetMatrixNoExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMatrixNoExplodeArray")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixNoExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetMatrixNoExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMatrixNoExplodeObject operation middleware
+func (sh *strictHandler) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, id Object) {
+	var request GetMatrixNoExplodeObjectRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetMatrixNoExplodeObject(ctx, request.(GetMatrixNoExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMatrixNoExplodeObject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixNoExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetMatrixNoExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMatrixPrimitive operation middleware
+func (sh *strictHandler) GetMatrixPrimitive(w http.ResponseWriter, r *http.Request, id int32) {
+	var request GetMatrixPrimitiveRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetMatrixPrimitive(ctx, request.(GetMatrixPrimitiveRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMatrixPrimitive")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixPrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetMatrixPrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPassThrough operation middleware
+func (sh *strictHandler) GetPassThrough(w http.ResponseWriter, r *http.Request, param string) {
+	var request GetPassThroughRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetPassThrough(ctx, request.(GetPassThroughRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPassThrough")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPassThroughResponseObject); ok {
+		if err := validResponse.VisitGetPassThroughResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDeepObject operation middleware
+func (sh *strictHandler) GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) {
+	var request GetDeepObjectRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetDeepObject(ctx, request.(GetDeepObjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDeepObject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDeepObjectResponseObject); ok {
+		if err := validResponse.VisitGetDeepObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetQueryDelimited operation middleware
+func (sh *strictHandler) GetQueryDelimited(w http.ResponseWriter, r *http.Request, params GetQueryDelimitedParams) {
+	var request GetQueryDelimitedRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetQueryDelimited(ctx, request.(GetQueryDelimitedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetQueryDelimited")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetQueryDelimitedResponseObject); ok {
+		if err := validResponse.VisitGetQueryDelimitedResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetQueryForm operation middleware
+func (sh *strictHandler) GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) {
+	var request GetQueryFormRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetQueryForm(ctx, request.(GetQueryFormRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetQueryForm")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetQueryFormResponseObject); ok {
+		if err := validResponse.VisitGetQueryFormResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSimpleExplodeArray operation middleware
+func (sh *strictHandler) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
+	var request GetSimpleExplodeArrayRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetSimpleExplodeArray(ctx, request.(GetSimpleExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSimpleExplodeArray")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetSimpleExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSimpleExplodeObject operation middleware
+func (sh *strictHandler) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
+	var request GetSimpleExplodeObjectRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetSimpleExplodeObject(ctx, request.(GetSimpleExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSimpleExplodeObject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetSimpleExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSimpleExplodePrimitive operation middleware
+func (sh *strictHandler) GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
+	var request GetSimpleExplodePrimitiveRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetSimpleExplodePrimitive(ctx, request.(GetSimpleExplodePrimitiveRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSimpleExplodePrimitive")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleExplodePrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetSimpleExplodePrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSimpleNoExplodeArray operation middleware
+func (sh *strictHandler) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
+	var request GetSimpleNoExplodeArrayRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetSimpleNoExplodeArray(ctx, request.(GetSimpleNoExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSimpleNoExplodeArray")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleNoExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetSimpleNoExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSimpleNoExplodeObject operation middleware
+func (sh *strictHandler) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
+	var request GetSimpleNoExplodeObjectRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetSimpleNoExplodeObject(ctx, request.(GetSimpleNoExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSimpleNoExplodeObject")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleNoExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetSimpleNoExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSimplePrimitive operation middleware
+func (sh *strictHandler) GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
+	var request GetSimplePrimitiveRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetSimplePrimitive(ctx, request.(GetSimplePrimitiveRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSimplePrimitive")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimplePrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetSimplePrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSimpleString operation middleware
+func (sh *strictHandler) GetSimpleString(w http.ResponseWriter, r *http.Request, param string) {
+	var request GetSimpleStringRequestObject
+
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetSimpleString(ctx, request.(GetSimpleStringRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSimpleString")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleStringResponseObject); ok {
+		if err := validResponse.VisitGetSimpleStringResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetStartingWithNumber operation middleware
+func (sh *strictHandler) GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) {
+	var request GetStartingWithNumberRequestObject
+
+	request.N1param = n1param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.GetStartingWithNumber(ctx, request.(GetStartingWithNumberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetStartingWithNumber")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetStartingWithNumberResponseObject); ok {
+		if err := validResponse.VisitGetStartingWithNumberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.

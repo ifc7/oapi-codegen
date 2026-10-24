@@ -205,7 +205,7 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 	if err := ValidateSpec(spec); err != nil {
 		return "", err
 	}
-	if opts.Generate.StdHTTPServer {
+	if opts.Generate.Server {
 		if err := ValidateStdHTTPPaths(spec); err != nil {
 			return "", err
 		}
@@ -404,16 +404,13 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		serverURLsDefinitions = serverURLEnumTypeDecls + serverURLEnumConstants + serverURLsBody
 	}
 
-	var stdHTTPServerOut string
-	if opts.Generate.StdHTTPServer {
+	var stdHTTPServerOut, strictServerOut string
+	if opts.Generate.Server {
 		stdHTTPServerOut, err = GenerateStdHTTPServer(t, ops)
 		if err != nil {
 			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
 		}
-	}
 
-	var strictServerOut string
-	if opts.Generate.Strict {
 		var responses []ResponseDefinition
 		if spec.Components != nil {
 			responses, err = GenerateResponseDefinitions("", spec.Components.Responses, "")
@@ -425,7 +422,7 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("error generation response definitions for schema: %w", err)
 		}
-		strictServerOut, err = GenerateStrictServer(t, ops, opts)
+		strictServerOut, err = GenerateStrictServer(t, ops)
 		if err != nil {
 			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
 		}
@@ -458,12 +455,12 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		}
 	}
 
-	// Webhook receiver (stdhttp) pairs with the path StdHTTPServer.
-	// Emitted only when Generate.StdHTTPServer is on AND the spec has
+	// Webhook receiver (stdhttp) pairs with the path server.
+	// Emitted only when Generate.Server is on AND the spec has
 	// webhooks (3.1+). Uses the unified stdhttp receiver template,
 	// parameterized with prefix "Webhook".
 	var stdHTTPWebhookReceiverOut string
-	if opts.Generate.StdHTTPServer && len(webhookOps) > 0 {
+	if opts.Generate.Server && len(webhookOps) > 0 {
 		stdHTTPWebhookReceiverOut, err = GenerateStdHTTPReceiver(t, "Webhook", webhookOps)
 		if err != nil {
 			return "", fmt.Errorf("error generating stdhttp webhook receiver: %w", err)
@@ -481,11 +478,11 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		}
 	}
 
-	// Callback receiver (stdhttp) pairs with the path StdHTTPServer.
+	// Callback receiver (stdhttp) pairs with the path server.
 	// Same reasoning as the initiator: not version-gated. Uses the
 	// unified stdhttp receiver template with prefix "Callback".
 	var stdHTTPCallbackReceiverOut string
-	if opts.Generate.StdHTTPServer && len(callbackOps) > 0 {
+	if opts.Generate.Server && len(callbackOps) > 0 {
 		stdHTTPCallbackReceiverOut, err = GenerateStdHTTPReceiver(t, "Callback", callbackOps)
 		if err != nil {
 			return "", fmt.Errorf("error generating stdhttp callback receiver: %w", err)
@@ -567,7 +564,7 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		}
 	}
 
-	if opts.Generate.StdHTTPServer {
+	if opts.Generate.Server {
 		_, err = w.WriteString(stdHTTPServerOut)
 		if err != nil {
 			return "", fmt.Errorf("error writing server path handlers: %w", err)
@@ -584,9 +581,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 				return "", fmt.Errorf("error writing stdhttp callback receiver: %w", err)
 			}
 		}
-	}
-
-	if opts.Generate.Strict {
 		_, err = w.WriteString(strictServerOut)
 		if err != nil {
 			return "", fmt.Errorf("error writing server path handlers: %w", err)

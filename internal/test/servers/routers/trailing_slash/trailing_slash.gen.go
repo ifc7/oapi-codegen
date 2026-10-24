@@ -6,6 +6,7 @@
 package serversrouterstrailingslash
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -200,4 +201,134 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/test/test3/{$}", wrapper.Test2)
 
 	return m
+}
+
+type Test2RequestObject struct {
+}
+
+type Test2ResponseObject interface {
+	VisitTest2Response(w http.ResponseWriter) error
+}
+
+type Test2200Response struct {
+}
+
+func (response Test2200Response) VisitTest2Response(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type Test1RequestObject struct {
+	Id string `json:"id"`
+}
+
+type Test1ResponseObject interface {
+	VisitTest1Response(w http.ResponseWriter) error
+}
+
+type Test1200Response struct {
+}
+
+func (response Test1200Response) VisitTest1Response(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+
+	// (GET /api/test/test3/)
+	Test2(ctx context.Context, request Test2RequestObject) (Test2ResponseObject, error)
+
+	// (GET /api/test/{id}/test2/)
+	Test1(ctx context.Context, request Test1RequestObject) (Test1ResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// Test2 operation middleware
+func (sh *strictHandler) Test2(w http.ResponseWriter, r *http.Request) {
+	var request Test2RequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.Test2(ctx, request.(Test2RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Test2")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(Test2ResponseObject); ok {
+		if err := validResponse.VisitTest2Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// Test1 operation middleware
+func (sh *strictHandler) Test1(w http.ResponseWriter, r *http.Request, id string) {
+	var request Test1RequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.ssi.Test1(ctx, request.(Test1RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Test1")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(Test1ResponseObject); ok {
+		if err := validResponse.VisitTest1Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }

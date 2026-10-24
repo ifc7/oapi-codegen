@@ -12,9 +12,9 @@ import (
 
 const maximumDepthToSearchForGoMod = 5
 
-// minimumGoVersionForGenerateStdHTTPServer indicates the Go 1.x minor version that the module the std-http-server is being generated into needs.
+// minimumGoVersionForGenerateServer indicates the Go 1.x minor version that the module the server is being generated into needs.
 // If the version is lower, a warning should be logged.
-const minimumGoVersionForGenerateStdHTTPServer = 22
+const minimumGoVersionForGenerateServer = 22
 
 func findAndParseGoModuleForDepth(dir string, maxDepth int) (string, *modfile.File, error) {
 	absDir, err := filepath.Abs(dir)

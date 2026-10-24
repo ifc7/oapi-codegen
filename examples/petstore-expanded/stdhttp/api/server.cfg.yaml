@@ -2,6 +2,6 @@
 package: api
 generate:
   models: true
-  std-http-server: true
+  server: true
   embedded-spec: true
 output: petstore-server.gen.go

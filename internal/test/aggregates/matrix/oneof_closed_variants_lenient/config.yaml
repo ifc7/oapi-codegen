@@ -5,7 +5,6 @@ output: oneof_closed_variants_lenient.gen.go
 generate:
   models: true
   client: true
-  std-http-server: true
-  strict-server: true
+  server: true
 output-options:
   lenient-union-accessors: true
