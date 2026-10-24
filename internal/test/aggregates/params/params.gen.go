@@ -1564,27 +1564,149 @@ func ParseGetThingResponse(rsp *http.Response) (*GetThingResponse, error) {
 	return response, nil
 }
 
+type GetItemRequestObject struct {
+	Id     IdParam `json:"id"`
+	Params GetItemParams
+}
+
+type GetItemResponseObject interface {
+	VisitGetItemResponse(w http.ResponseWriter) error
+}
+
+type GetItem200JSONResponse Bound
+
+func (response GetItem200JSONResponse) VisitGetItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetItem404JSONResponse Id
+
+func (response GetItem404JSONResponse) VisitGetItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetThingRequestObject struct {
+	Accept GetThingParamsAccept `json:"accept"`
+	Params GetThingParams
+}
+
+type GetThingResponseObject interface {
+	VisitGetThingResponse(w http.ResponseWriter) error
+}
+
+type GetThing200JSONResponse Bound
+
+func (response GetThing200JSONResponse) VisitGetThingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
 	// (GET /items/{id})
-	GetItem(w http.ResponseWriter, r *http.Request, id IdParam, params GetItemParams)
+	GetItem(ctx context.Context, request GetItemRequestObject) (GetItemResponseObject, error)
 
 	// (GET /things/{accept})
-	GetThing(w http.ResponseWriter, r *http.Request, accept GetThingParamsAccept, params GetThingParams)
+	GetThing(ctx context.Context, request GetThingRequestObject) (GetThingResponseObject, error)
 }
 
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
 }
 
-type MiddlewareFunc func(http.Handler) http.Handler
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
 
-// GetItem operation middleware
-func (siw *ServerInterfaceWrapper) GetItem(w http.ResponseWriter, r *http.Request) {
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
+
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
+}
+
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/things/{accept}", sh.GetThing)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/items/{id}", sh.GetItem)
+
+	return m
+}
+
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
+}
+
+// GetItem serves the GetItem operation.
+func (sh *serverHandler) GetItem(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1598,11 +1720,11 @@ func (siw *ServerInterfaceWrapper) GetItem(w http.ResponseWriter, r *http.Reques
 		err = id.UnmarshalText([]byte(r.PathValue("id")))
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params GetItemParams
 
 	// ------------- Optional query parameter "filter" -------------
@@ -1611,7 +1733,7 @@ func (siw *ServerInterfaceWrapper) GetItem(w http.ResponseWriter, r *http.Reques
 		var value_ Filter
 		err = value_.Bind(values_[0])
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter", Err: err})
 			return
 		}
 		params.Filter = &value_
@@ -1624,7 +1746,7 @@ func (siw *ServerInterfaceWrapper) GetItem(w http.ResponseWriter, r *http.Reques
 			var value GetItemParamsSession
 			err = value.UnmarshalText([]byte(cookie.Value))
 			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "session", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "session", Err: err})
 				return
 			}
 			params.Session = &value
@@ -1632,20 +1754,33 @@ func (siw *ServerInterfaceWrapper) GetItem(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetItem(w, r, id, params)
-	}))
+	var request GetItemRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetItem(ctx, request.(GetItemRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetItem")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetItemResponseObject); ok {
+		if err := validResponse.VisitGetItemResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetThing operation middleware
-func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Request) {
+// GetThing serves the GetThing operation.
+func (sh *serverHandler) GetThing(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1659,11 +1794,11 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 		err = accept.UnmarshalText([]byte(r.PathValue("accept")))
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accept", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accept", Err: err})
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params GetThingParams
 
 	// ------------- Optional query parameter "q" -------------
@@ -1672,7 +1807,7 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 		var value_ GetThingParamsQ
 		err = value_.Bind(values_[0])
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
 			return
 		}
 		params.Q = &value_
@@ -1684,7 +1819,7 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 		var value_ IntOrString
 		err = value_.Bind(values_[0])
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "r", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "r", Err: err})
 			return
 		}
 		params.R = &value_
@@ -1696,7 +1831,7 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 		var value_ GetThingParamsN
 		err = value_.Bind(values_[0])
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "n", Err: err})
 			return
 		}
 		params.N = &value_
@@ -1709,13 +1844,13 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 		var XAmount GetThingParamsXAmount
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Amount", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Amount", Count: n})
 			return
 		}
 
 		err = XAmount.UnmarshalText([]byte(valueList[0]))
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Amount", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Amount", Err: err})
 			return
 		}
 
@@ -1723,16 +1858,29 @@ func (siw *ServerInterfaceWrapper) GetThing(w http.ResponseWriter, r *http.Reque
 
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetThing(w, r, accept, params)
-	}))
+	var request GetThingRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Accept = accept
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetThing(ctx, request.(GetThingRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetThing")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetThingResponseObject); ok {
+		if err := validResponse.VisitGetThingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 type UnescapedCookieParamError struct {
@@ -1802,224 +1950,4 @@ type TooManyValuesForParamError struct {
 
 func (e *TooManyValuesForParamError) Error() string {
 	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
-}
-
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
-
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/things/{accept}", wrapper.GetThing)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/items/{id}", wrapper.GetItem)
-
-	return m
-}
-
-type GetItemRequestObject struct {
-	Id     IdParam `json:"id"`
-	Params GetItemParams
-}
-
-type GetItemResponseObject interface {
-	VisitGetItemResponse(w http.ResponseWriter) error
-}
-
-type GetItem200JSONResponse Bound
-
-func (response GetItem200JSONResponse) VisitGetItemResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetItem404JSONResponse Id
-
-func (response GetItem404JSONResponse) VisitGetItemResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetThingRequestObject struct {
-	Accept GetThingParamsAccept `json:"accept"`
-	Params GetThingParams
-}
-
-type GetThingResponseObject interface {
-	VisitGetThingResponse(w http.ResponseWriter) error
-}
-
-type GetThing200JSONResponse Bound
-
-func (response GetThing200JSONResponse) VisitGetThingResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
-
-	// (GET /items/{id})
-	GetItem(ctx context.Context, request GetItemRequestObject) (GetItemResponseObject, error)
-
-	// (GET /things/{accept})
-	GetThing(ctx context.Context, request GetThingRequestObject) (GetThingResponseObject, error)
-}
-
-type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
-type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
-
-type StrictHTTPServerOptions struct {
-	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
-	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
-		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		},
-	}}
-}
-
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
-	if options.RequestErrorHandlerFunc == nil {
-		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-	if options.ResponseErrorHandlerFunc == nil {
-		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
-}
-
-type strictHandler struct {
-	ssi         StrictServerInterface
-	middlewares []StrictMiddlewareFunc
-	options     StrictHTTPServerOptions
-}
-
-// GetItem operation middleware
-func (sh *strictHandler) GetItem(w http.ResponseWriter, r *http.Request, id IdParam, params GetItemParams) {
-	var request GetItemRequestObject
-
-	request.Id = id
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetItem(ctx, request.(GetItemRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetItem")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetItemResponseObject); ok {
-		if err := validResponse.VisitGetItemResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetThing operation middleware
-func (sh *strictHandler) GetThing(w http.ResponseWriter, r *http.Request, accept GetThingParamsAccept, params GetThingParams) {
-	var request GetThingRequestObject
-
-	request.Accept = accept
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetThing(ctx, request.(GetThingRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetThing")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetThingResponseObject); ok {
-		if err := validResponse.VisitGetThingResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
 }

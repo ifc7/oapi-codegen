@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// stubServer satisfies StrictServerInterface and lets the test prove the generated
+// stubServer satisfies ServerInterface and lets the test prove the generated
 // package compiles end-to-end. The bug in issue 2367 emitted a constant
 // referencing a context-key type that was never declared (because the spec's
 // `security:` named a scheme not present under components/securitySchemes),
@@ -21,8 +21,8 @@ func (stubServer) GetHello(ctx context.Context, request GetHelloRequestObject) (
 
 // issue #2367: code generated from a spec whose global security block names
 // a scheme absent from components/securitySchemes must compile and the
-// StrictServerInterface must be satisfiable.
+// ServerInterface must be satisfiable.
 func TestGeneratedServerCompilesWithUndefinedSecurityScheme(t *testing.T) {
-	var iface StrictServerInterface = stubServer{}
+	var iface ServerInterface = stubServer{}
 	assert.NotNil(t, iface)
 }

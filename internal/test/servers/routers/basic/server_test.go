@@ -14,7 +14,7 @@ import (
 // fakeServer implements only the operation the tests reach; the embedded
 // interface stands in for the rest.
 type fakeServer struct {
-	StrictServerInterface
+	ServerInterface
 	t      *testing.T
 	called bool
 }
@@ -33,7 +33,7 @@ func TestParameters(t *testing.T) {
 		t: t,
 	}
 
-	h := Handler(NewStrictHandler(&m, nil))
+	h := Handler(&m)
 
 	req := httptest.NewRequest("POST", "http://openapitest.deepmap.ai/resource2/1?inline_query_argument=99", nil)
 	rr := httptest.NewRecorder()
@@ -45,8 +45,8 @@ func TestParameters(t *testing.T) {
 func TestErrorHandlerFunc(t *testing.T) {
 	m := fakeServer{}
 
-	h := HandlerWithOptions(NewStrictHandler(&m, nil), StdHTTPServerOptions{
-		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+	h := HandlerWithOptions(&m, ServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			w.Header().Set("Content-Type", "application/json")
 			var requiredParamError *RequiredParamError
 			assert.True(t, errors.As(err, &requiredParamError))
@@ -64,7 +64,7 @@ func TestErrorHandlerFunc(t *testing.T) {
 func TestErrorHandlerFuncBackwardsCompatible(t *testing.T) {
 	m := fakeServer{}
 
-	h := HandlerWithOptions(NewStrictHandler(&m, nil), StdHTTPServerOptions{})
+	h := HandlerWithOptions(&m, ServerOptions{})
 
 	s := httptest.NewServer(h)
 	defer s.Close()

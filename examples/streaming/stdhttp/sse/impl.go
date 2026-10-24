@@ -17,8 +17,7 @@ type Server struct {
 
 func NewServer(port string) *Server {
 	s := &Server{}
-	strictHandler := NewStrictHandler(s, nil)
-	handler := Handler(strictHandler)
+	handler := Handler(s)
 	s.httpServer = &http.Server{
 		Handler: handler,
 		Addr:    ":" + port,

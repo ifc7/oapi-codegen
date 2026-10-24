@@ -14,7 +14,7 @@ petstore-expanded/
 │   └── petstore-server.gen.go      # Generated server and model types
 ├── server/
 │   ├── store.go                    # In-memory CRUD store
-│   ├── server.go                   # Hand-written StrictServerInterface implementation
+│   ├── server.go                   # Hand-written ServerInterface implementation
 │   └── setup.go                    # Builds the configured *http.Server
 └── common/
     └── client/                     # Test client

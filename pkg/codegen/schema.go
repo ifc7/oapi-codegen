@@ -201,7 +201,7 @@ func (s Schema) goTypeNameWrapper() (Schema, bool) {
 }
 
 // HasCustomMarshalJSON reports whether a named type declared over this schema
-// position (the strict-server response envelope, or a request-body wrapper)
+// position (the server response envelope, or a request-body wrapper)
 // needs a delegating MarshalJSON/UnmarshalJSON pair.
 //
 // The templates declare such a type either as an alias (`type X = Y`) or as a

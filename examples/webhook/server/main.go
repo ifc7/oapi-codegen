@@ -26,7 +26,7 @@ type webhookEntry struct {
 	kind doorbadge.RegisterWebhookParamsKind
 }
 
-// BadgeReader implements doorbadge.StrictServerInterface.
+// BadgeReader implements doorbadge.ServerInterface.
 type BadgeReader struct {
 	initiator *doorbadge.WebhookInitiator
 
@@ -34,7 +34,7 @@ type BadgeReader struct {
 	webhooks map[uuid.UUID]webhookEntry
 }
 
-var _ doorbadge.StrictServerInterface = (*BadgeReader)(nil)
+var _ doorbadge.ServerInterface = (*BadgeReader)(nil)
 
 func NewBadgeReader() *BadgeReader {
 	initiator, err := doorbadge.NewWebhookInitiator()
@@ -177,7 +177,7 @@ func main() {
 	go reader.generateEvents(ctx)
 
 	mux := http.NewServeMux()
-	doorbadge.HandlerFromMux(doorbadge.NewStrictHandler(reader, nil), mux)
+	doorbadge.HandlerWithOptions(reader, doorbadge.ServerOptions{BaseRouter: mux})
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)

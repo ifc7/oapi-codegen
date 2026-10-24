@@ -68,7 +68,7 @@ func TestClient_WhenPathHasIdContainingReservedCharacter_RequestHasCorrectPath(t
 
 func TestClient_ServerUnescapesEscapedArg(t *testing.T) {
 	m := &petServer{}
-	svr := httptest.NewServer(Handler(NewStrictHandler(m, nil)))
+	svr := httptest.NewServer(Handler(m))
 	defer svr.Close()
 
 	client, err := NewClientWithResponses(svr.URL)
@@ -104,7 +104,7 @@ func (m *HTTPRequestDoerMock) Do(req *http.Request) (*http.Response, error) {
 // petServer records the petId the server unescaped from the path. It
 // implements only GetPet; the embedded interface stands in for the rest.
 type petServer struct {
-	StrictServerInterface
+	ServerInterface
 	receivedPetID string
 }
 

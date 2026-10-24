@@ -43,7 +43,7 @@ func CreateMiddleware(v JWSValidator) (func(next http.Handler) http.Handler, err
 }
 
 // Ensure that we implement the server interface
-var _ api.StrictServerInterface = (*server)(nil)
+var _ api.ServerInterface = (*server)(nil)
 
 func (s *server) ListThings(ctx context.Context, request api.ListThingsRequestObject) (api.ListThingsResponseObject, error) {
 	// This handler will only be called when a valid JWT is presented for

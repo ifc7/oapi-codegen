@@ -938,7 +938,7 @@ func TestNewInitiatorTemplateDataRejectsPathParams(t *testing.T) {
 	assert.Equal(t, "callback", data.PrefixLower)
 }
 
-func TestGenerateStrictServerInterface(t *testing.T) {
+func TestGenerateServerInterface(t *testing.T) {
 	funcs := make(template.FuncMap, len(TemplateFunctions)+1)
 	for k, v := range TemplateFunctions {
 		funcs[k] = v
@@ -949,9 +949,9 @@ func TestGenerateStrictServerInterface(t *testing.T) {
 	require.NoError(t, LoadTemplates(templates, base))
 	ops := []OperationDefinition{{OperationId: "Ping"}}
 
-	out, err := GenerateStrictServer(base, ops)
+	out, err := GenerateServer(base, ops)
 	require.NoError(t, err)
-	assert.Equal(t, 1, strings.Count(out, "type StrictServerInterface interface"))
+	assert.Equal(t, 1, strings.Count(out, "type ServerInterface interface"))
 }
 
 func TestStrictServerResponseReceiverCompatibility(t *testing.T) {

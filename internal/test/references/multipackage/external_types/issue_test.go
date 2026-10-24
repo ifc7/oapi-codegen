@@ -52,7 +52,7 @@ func (strictServer) ListThings(context.Context, api.ListThingsRequestObject) (ap
 // TestExternalTypesRoundTrip sends each response through the generated strict
 // server and decodes it with the generated client.
 func TestExternalTypesRoundTrip(t *testing.T) {
-	srv := httptest.NewServer(api.Handler(api.NewStrictHandler(strictServer{}, nil)))
+	srv := httptest.NewServer(api.Handler(strictServer{}))
 	defer srv.Close()
 
 	client, err := api.NewClientWithResponses(srv.URL)

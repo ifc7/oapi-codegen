@@ -1436,375 +1436,6 @@ func ParseGetLegacyResponse(rsp *http.Response) (*GetLegacyResponse, error) {
 	return response, nil
 }
 
-// ServerInterface represents all server handlers.
-type ServerInterface interface {
-
-	// (POST /clients)
-	PostClients(w http.ResponseWriter, r *http.Request)
-
-	// (GET /deprecated_endpoint)
-	//
-	// Deprecated: Use another endpoint instead.
-	GetDeprecatedEndpoint(w http.ResponseWriter, r *http.Request)
-
-	// (POST /deprecated_endpoint_with_non_deprecated_body)
-	//
-	// Deprecated: Use /clients instead.
-	PostDeprecatedEndpointWithNonDeprecatedBody(w http.ResponseWriter, r *http.Request)
-
-	// (GET /deprecated_field)
-	GetDeprecatedField(w http.ResponseWriter, r *http.Request, params GetDeprecatedFieldParams)
-
-	// (GET /deprecated_params/{old_id})
-	GetDeprecatedParamsOldId(w http.ResponseWriter, r *http.Request, oldId string, params GetDeprecatedParamsOldIdParams)
-
-	// (POST /deprecated_request_body)
-	//
-	// Deprecated: Use /clients instead.
-	PostDeprecatedRequestBody(w http.ResponseWriter, r *http.Request)
-
-	// (GET /legacy)
-	GetLegacy(w http.ResponseWriter, r *http.Request)
-}
-
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-type MiddlewareFunc func(http.Handler) http.Handler
-
-// PostClients operation middleware
-func (siw *ServerInterfaceWrapper) PostClients(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostClients(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetDeprecatedEndpoint operation middleware
-func (siw *ServerInterfaceWrapper) GetDeprecatedEndpoint(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeprecatedEndpoint(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// PostDeprecatedEndpointWithNonDeprecatedBody operation middleware
-func (siw *ServerInterfaceWrapper) PostDeprecatedEndpointWithNonDeprecatedBody(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostDeprecatedEndpointWithNonDeprecatedBody(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetDeprecatedField operation middleware
-func (siw *ServerInterfaceWrapper) GetDeprecatedField(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetDeprecatedFieldParams
-
-	// ------------- Optional query parameter "old_filter" -------------
-
-	if values_, found_ := r.URL.Query()["old_filter"]; found_ {
-		var value_ string
-		if len(values_) != 1 {
-			err = errors.New("multiple values for single value parameter 'old_filter'")
-		} else {
-			value_ = values_[0]
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_filter", Err: err})
-			return
-		}
-		params.OldFilter = &value_
-	}
-
-	// ------------- Optional query parameter "new_filter" -------------
-
-	if values_, found_ := r.URL.Query()["new_filter"]; found_ {
-		var value_ string
-		if len(values_) != 1 {
-			err = errors.New("multiple values for single value parameter 'new_filter'")
-		} else {
-			value_ = values_[0]
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "new_filter", Err: err})
-			return
-		}
-		params.NewFilter = &value_
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeprecatedField(w, r, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetDeprecatedParamsOldId operation middleware
-func (siw *ServerInterfaceWrapper) GetDeprecatedParamsOldId(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "old_id" -------------
-	var oldId string
-
-	if r.PathValue("old_id") == "" {
-		err = errors.New("parameter 'old_id' is empty, can't bind its value")
-	} else {
-		oldId = r.PathValue("old_id")
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_id", Err: err})
-		return
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetDeprecatedParamsOldIdParams
-
-	headers := r.Header
-
-	// ------------- Optional header parameter "old_header" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("old_header")]; found {
-		var OldHeader string
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "old_header", Count: n})
-			return
-		}
-
-		OldHeader = valueList[0]
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_header", Err: err})
-			return
-		}
-
-		params.OldHeader = &OldHeader
-
-	}
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("old_cookie"); err == nil {
-			var value string
-			value = cookie.Value
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_cookie", Err: err})
-				return
-			}
-			params.OldCookie = &value
-
-		}
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeprecatedParamsOldId(w, r, oldId, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// PostDeprecatedRequestBody operation middleware
-func (siw *ServerInterfaceWrapper) PostDeprecatedRequestBody(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostDeprecatedRequestBody(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetLegacy operation middleware
-func (siw *ServerInterfaceWrapper) GetLegacy(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLegacy(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-type UnescapedCookieParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnescapedCookieParamError) Error() string {
-	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
-}
-
-func (e *UnescapedCookieParamError) Unwrap() error {
-	return e.Err
-}
-
-type UnmarshalingParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnmarshalingParamError) Error() string {
-	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *UnmarshalingParamError) Unwrap() error {
-	return e.Err
-}
-
-type RequiredParamError struct {
-	ParamName string
-}
-
-func (e *RequiredParamError) Error() string {
-	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
-}
-
-type RequiredHeaderError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *RequiredHeaderError) Error() string {
-	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
-}
-
-func (e *RequiredHeaderError) Unwrap() error {
-	return e.Err
-}
-
-type InvalidParamFormatError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *InvalidParamFormatError) Error() string {
-	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *InvalidParamFormatError) Unwrap() error {
-	return e.Err
-}
-
-type TooManyValuesForParamError struct {
-	ParamName string
-	Count     int
-}
-
-func (e *TooManyValuesForParamError) Error() string {
-	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
-}
-
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
-
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/deprecated_endpoint", wrapper.GetDeprecatedEndpoint)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/deprecated_field", wrapper.GetDeprecatedField)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/deprecated_params/{old_id}", wrapper.GetDeprecatedParamsOldId)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/deprecated_request_body", wrapper.PostDeprecatedRequestBody)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/clients", wrapper.PostClients)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/deprecated_endpoint_with_non_deprecated_body", wrapper.PostDeprecatedEndpointWithNonDeprecatedBody)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/legacy", wrapper.GetLegacy)
-
-	return m
-}
-
 type LegacyResponseResponseHeaders struct {
 	XCorrelationId *string
 	// Deprecated: Use X-Trace-Id instead.
@@ -2021,8 +1652,8 @@ func (response GetLegacy200JSONResponse) VisitGetLegacyResponse(w http.ResponseW
 	return err
 }
 
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
+// ServerInterface represents all server handlers.
+type ServerInterface interface {
 
 	// (POST /clients)
 	PostClients(ctx context.Context, request PostClientsRequestObject) (PostClientsResponseObject, error)
@@ -2052,26 +1683,50 @@ type StrictServerInterface interface {
 	GetLegacy(ctx context.Context, request GetLegacyRequestObject) (GetLegacyResponseObject, error)
 }
 
-type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
-type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
+}
 
-type StrictHTTPServerOptions struct {
-	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
+
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
 	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
-		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		},
-	}}
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
 }
 
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
 	if options.RequestErrorHandlerFunc == nil {
 		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -2082,17 +1737,31 @@ func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []Strict
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/deprecated_endpoint", sh.GetDeprecatedEndpoint)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/deprecated_field", sh.GetDeprecatedField)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/deprecated_params/{old_id}", sh.GetDeprecatedParamsOldId)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/deprecated_request_body", sh.PostDeprecatedRequestBody)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/clients", sh.PostClients)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/deprecated_endpoint_with_non_deprecated_body", sh.PostDeprecatedEndpointWithNonDeprecatedBody)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/legacy", sh.GetLegacy)
+
+	return m
 }
 
-type strictHandler struct {
-	ssi         StrictServerInterface
-	middlewares []StrictMiddlewareFunc
-	options     StrictHTTPServerOptions
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
 }
 
-// PostClients operation middleware
-func (sh *strictHandler) PostClients(w http.ResponseWriter, r *http.Request) {
+// PostClients serves the PostClients operation.
+func (sh *serverHandler) PostClients(w http.ResponseWriter, r *http.Request) {
+
 	var request PostClientsRequestObject
 
 	var body PostClientsJSONRequestBody
@@ -2103,9 +1772,9 @@ func (sh *strictHandler) PostClients(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.PostClients(ctx, request.(PostClientsRequestObject))
+		return sh.si.PostClients(ctx, request.(PostClientsRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "PostClients")
 	}
 
@@ -2122,14 +1791,15 @@ func (sh *strictHandler) PostClients(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetDeprecatedEndpoint operation middleware
-func (sh *strictHandler) GetDeprecatedEndpoint(w http.ResponseWriter, r *http.Request) {
+// GetDeprecatedEndpoint serves the GetDeprecatedEndpoint operation.
+func (sh *serverHandler) GetDeprecatedEndpoint(w http.ResponseWriter, r *http.Request) {
+
 	var request GetDeprecatedEndpointRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetDeprecatedEndpoint(ctx, request.(GetDeprecatedEndpointRequestObject))
+		return sh.si.GetDeprecatedEndpoint(ctx, request.(GetDeprecatedEndpointRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetDeprecatedEndpoint")
 	}
 
@@ -2146,8 +1816,9 @@ func (sh *strictHandler) GetDeprecatedEndpoint(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// PostDeprecatedEndpointWithNonDeprecatedBody operation middleware
-func (sh *strictHandler) PostDeprecatedEndpointWithNonDeprecatedBody(w http.ResponseWriter, r *http.Request) {
+// PostDeprecatedEndpointWithNonDeprecatedBody serves the PostDeprecatedEndpointWithNonDeprecatedBody operation.
+func (sh *serverHandler) PostDeprecatedEndpointWithNonDeprecatedBody(w http.ResponseWriter, r *http.Request) {
+
 	var request PostDeprecatedEndpointWithNonDeprecatedBodyRequestObject
 
 	var body PostDeprecatedEndpointWithNonDeprecatedBodyJSONRequestBody
@@ -2158,9 +1829,9 @@ func (sh *strictHandler) PostDeprecatedEndpointWithNonDeprecatedBody(w http.Resp
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.PostDeprecatedEndpointWithNonDeprecatedBody(ctx, request.(PostDeprecatedEndpointWithNonDeprecatedBodyRequestObject))
+		return sh.si.PostDeprecatedEndpointWithNonDeprecatedBody(ctx, request.(PostDeprecatedEndpointWithNonDeprecatedBodyRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "PostDeprecatedEndpointWithNonDeprecatedBody")
 	}
 
@@ -2177,16 +1848,55 @@ func (sh *strictHandler) PostDeprecatedEndpointWithNonDeprecatedBody(w http.Resp
 	}
 }
 
-// GetDeprecatedField operation middleware
-func (sh *strictHandler) GetDeprecatedField(w http.ResponseWriter, r *http.Request, params GetDeprecatedFieldParams) {
+// GetDeprecatedField serves the GetDeprecatedField operation.
+func (sh *serverHandler) GetDeprecatedField(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the request
+	var params GetDeprecatedFieldParams
+
+	// ------------- Optional query parameter "old_filter" -------------
+
+	if values_, found_ := r.URL.Query()["old_filter"]; found_ {
+		var value_ string
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'old_filter'")
+		} else {
+			value_ = values_[0]
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_filter", Err: err})
+			return
+		}
+		params.OldFilter = &value_
+	}
+
+	// ------------- Optional query parameter "new_filter" -------------
+
+	if values_, found_ := r.URL.Query()["new_filter"]; found_ {
+		var value_ string
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'new_filter'")
+		} else {
+			value_ = values_[0]
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "new_filter", Err: err})
+			return
+		}
+		params.NewFilter = &value_
+	}
+
 	var request GetDeprecatedFieldRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetDeprecatedField(ctx, request.(GetDeprecatedFieldRequestObject))
+		return sh.si.GetDeprecatedField(ctx, request.(GetDeprecatedFieldRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetDeprecatedField")
 	}
 
@@ -2203,17 +1913,73 @@ func (sh *strictHandler) GetDeprecatedField(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// GetDeprecatedParamsOldId operation middleware
-func (sh *strictHandler) GetDeprecatedParamsOldId(w http.ResponseWriter, r *http.Request, oldId string, params GetDeprecatedParamsOldIdParams) {
+// GetDeprecatedParamsOldId serves the GetDeprecatedParamsOldId operation.
+func (sh *serverHandler) GetDeprecatedParamsOldId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "old_id" -------------
+	var oldId string
+
+	if r.PathValue("old_id") == "" {
+		err = errors.New("parameter 'old_id' is empty, can't bind its value")
+	} else {
+		oldId = r.PathValue("old_id")
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the request
+	var params GetDeprecatedParamsOldIdParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "old_header" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("old_header")]; found {
+		var OldHeader string
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "old_header", Count: n})
+			return
+		}
+
+		OldHeader = valueList[0]
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_header", Err: err})
+			return
+		}
+
+		params.OldHeader = &OldHeader
+
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("old_cookie"); err == nil {
+			var value string
+			value = cookie.Value
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "old_cookie", Err: err})
+				return
+			}
+			params.OldCookie = &value
+
+		}
+	}
+
 	var request GetDeprecatedParamsOldIdRequestObject
 
 	request.OldId = oldId
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetDeprecatedParamsOldId(ctx, request.(GetDeprecatedParamsOldIdRequestObject))
+		return sh.si.GetDeprecatedParamsOldId(ctx, request.(GetDeprecatedParamsOldIdRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetDeprecatedParamsOldId")
 	}
 
@@ -2230,8 +1996,9 @@ func (sh *strictHandler) GetDeprecatedParamsOldId(w http.ResponseWriter, r *http
 	}
 }
 
-// PostDeprecatedRequestBody operation middleware
-func (sh *strictHandler) PostDeprecatedRequestBody(w http.ResponseWriter, r *http.Request) {
+// PostDeprecatedRequestBody serves the PostDeprecatedRequestBody operation.
+func (sh *serverHandler) PostDeprecatedRequestBody(w http.ResponseWriter, r *http.Request) {
+
 	var request PostDeprecatedRequestBodyRequestObject
 
 	var body PostDeprecatedRequestBodyJSONRequestBody
@@ -2242,9 +2009,9 @@ func (sh *strictHandler) PostDeprecatedRequestBody(w http.ResponseWriter, r *htt
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.PostDeprecatedRequestBody(ctx, request.(PostDeprecatedRequestBodyRequestObject))
+		return sh.si.PostDeprecatedRequestBody(ctx, request.(PostDeprecatedRequestBodyRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "PostDeprecatedRequestBody")
 	}
 
@@ -2261,14 +2028,15 @@ func (sh *strictHandler) PostDeprecatedRequestBody(w http.ResponseWriter, r *htt
 	}
 }
 
-// GetLegacy operation middleware
-func (sh *strictHandler) GetLegacy(w http.ResponseWriter, r *http.Request) {
+// GetLegacy serves the GetLegacy operation.
+func (sh *serverHandler) GetLegacy(w http.ResponseWriter, r *http.Request) {
+
 	var request GetLegacyRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetLegacy(ctx, request.(GetLegacyRequestObject))
+		return sh.si.GetLegacy(ctx, request.(GetLegacyRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetLegacy")
 	}
 
@@ -2283,4 +2051,73 @@ func (sh *strictHandler) GetLegacy(w http.ResponseWriter, r *http.Request) {
 	} else if response != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
 	}
+}
+
+type UnescapedCookieParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
+}
+
+func (e *UnescapedCookieParamError) Unwrap() error {
+	return e.Err
+}
+
+type UnmarshalingParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *UnmarshalingParamError) Unwrap() error {
+	return e.Err
+}
+
+type RequiredParamError struct {
+	ParamName string
+}
+
+func (e *RequiredParamError) Error() string {
+	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
+}
+
+type RequiredHeaderError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *RequiredHeaderError) Error() string {
+	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
+}
+
+func (e *RequiredHeaderError) Unwrap() error {
+	return e.Err
+}
+
+type InvalidParamFormatError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *InvalidParamFormatError) Unwrap() error {
+	return e.Err
+}
+
+type TooManyValuesForParamError struct {
+	ParamName string
+	Count     int
+}
+
+func (e *TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
 }

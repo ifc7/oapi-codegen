@@ -35,7 +35,7 @@ func (s *captureServer) UpdateThing(ctx context.Context, request UpdateThingRequ
 // binds: path, query, and header.
 func TestUnionParamMemberSelection(t *testing.T) {
 	capture := &captureServer{}
-	srv := httptest.NewServer(Handler(NewStrictHandler(capture, nil)))
+	srv := httptest.NewServer(Handler(capture))
 	defer srv.Close()
 
 	post := func(t *testing.T, path string, header map[string]string) {
@@ -80,7 +80,7 @@ func TestUnionParamMemberSelection(t *testing.T) {
 // wire back into the same dynamic types on the server.
 func TestUnionParamClientRoundTrip(t *testing.T) {
 	capture := &captureServer{}
-	srv := httptest.NewServer(Handler(NewStrictHandler(capture, nil)))
+	srv := httptest.NewServer(Handler(capture))
 	defer srv.Close()
 
 	client, err := NewClient(srv.URL)

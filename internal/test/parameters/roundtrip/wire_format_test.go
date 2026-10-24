@@ -13,7 +13,7 @@ import (
 	. "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp/gen"
 )
 
-var _ StrictServerInterface = (*testServer)(nil)
+var _ ServerInterface = (*testServer)(nil)
 
 type testServer struct {
 	array                []int32
@@ -292,7 +292,7 @@ func (t *testServer) EnumParams(ctx context.Context, request EnumParamsRequestOb
 
 func TestParameterBinding(t *testing.T) {
 	var ts testServer
-	e := Handler(NewStrictHandler(&ts, nil))
+	e := Handler(&ts)
 
 	expectedObject := Object{
 		FirstName: "Alex",

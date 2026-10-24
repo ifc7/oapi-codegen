@@ -8,11 +8,11 @@ import (
 )
 
 func main() {
-	// create a type that satisfies the `api.StrictServerInterface`, which contains an implementation of every operation from the generated code
+	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
 	server := api.NewServer()
 
 	// get an `http.Handler` that we can use
-	h := api.Handler(api.NewStrictHandler(server, nil))
+	h := api.Handler(server)
 
 	s := &http.Server{
 		Handler: h,

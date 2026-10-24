@@ -116,12 +116,14 @@ func TestBinaryEndpoint_Success(t *testing.T) {
 // ResponseErrorHandlerFunc can still set the HTTP status code because nothing
 // has been written to the ResponseWriter yet.
 //
-// We use a custom StrictServerInterface implementation that returns a response
+// We use a custom ServerInterface implementation that returns a response
 // object whose Visit method will fail during JSON encoding.
 func TestJsonEndpoint_EncodingError_ErrorHandlerCanSetStatus(t *testing.T) {
 	server := &errorServer{}
 	var errHandlerCalled bool
-	handler := NewStrictHandlerWithOptions(server, nil, StrictHTTPServerOptions{
+	mux := http.NewServeMux()
+	HandlerWithOptions(server, ServerOptions{
+		BaseRouter: mux,
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		},
@@ -130,8 +132,6 @@ func TestJsonEndpoint_EncodingError_ErrorHandlerCanSetStatus(t *testing.T) {
 			w.WriteHeader(http.StatusInternalServerError)
 		},
 	})
-	mux := http.NewServeMux()
-	HandlerFromMux(handler, mux)
 
 	body := `{"value": "test"}`
 	req := httptest.NewRequest(http.MethodPost, "/json", strings.NewReader(body))
@@ -147,7 +147,7 @@ func TestJsonEndpoint_EncodingError_ErrorHandlerCanSetStatus(t *testing.T) {
 		"Content-Type should not be set when encoding fails before headers are written")
 }
 
-// errorServer implements StrictServerInterface and returns a response whose
+// errorServer implements ServerInterface and returns a response whose
 // JSON encoding will fail.
 type errorServer struct{}
 
@@ -177,7 +177,9 @@ func (s *errorServer) BinaryEndpoint(_ context.Context, _ BinaryEndpointRequestO
 func TestFormdataEndpoint_MarshalError_ErrorHandlerCanSetStatus(t *testing.T) {
 	server := &errorServer{}
 	var errHandlerCalled bool
-	handler := NewStrictHandlerWithOptions(server, nil, StrictHTTPServerOptions{
+	mux := http.NewServeMux()
+	HandlerWithOptions(server, ServerOptions{
+		BaseRouter: mux,
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		},
@@ -186,8 +188,6 @@ func TestFormdataEndpoint_MarshalError_ErrorHandlerCanSetStatus(t *testing.T) {
 			w.WriteHeader(http.StatusInternalServerError)
 		},
 	})
-	mux := http.NewServeMux()
-	HandlerFromMux(handler, mux)
 
 	body := "value=test"
 	req := httptest.NewRequest(http.MethodPost, "/formdata", strings.NewReader(body))

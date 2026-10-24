@@ -22,7 +22,7 @@ func TestToCamelCaseNormalizer(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, client.GetHttpPet)
 
-	assert.NotNil(t, StrictServerInterface.GetHttpPet)
+	assert.NotNil(t, ServerInterface.GetHttpPet)
 
 	oneOf := OneOf2things{}
 	assert.Zero(t, oneOf)

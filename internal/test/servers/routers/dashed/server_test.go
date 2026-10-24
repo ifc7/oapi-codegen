@@ -22,7 +22,7 @@ func (s *testServer) GetResource(ctx context.Context, request GetResourceRequest
 
 func TestDashedPathParam(t *testing.T) {
 	server := &testServer{}
-	handler := Handler(NewStrictHandler(server, nil))
+	handler := Handler(server)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/my-value", nil)
 	rec := httptest.NewRecorder()

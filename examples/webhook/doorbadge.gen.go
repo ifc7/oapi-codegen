@@ -775,271 +775,6 @@ func NewExitEventWebhookRequestWithBody(targetURL string, contentType string, bo
 	return req, nil
 }
 
-// ServerInterface represents all server handlers.
-type ServerInterface interface {
-	// DeregisterWebhook Deregister a webhook
-	// (DELETE /api/webhook/{id})
-	DeregisterWebhook(w http.ResponseWriter, r *http.Request, id uuid.UUID)
-	// RegisterWebhook Register a webhook
-	// (POST /api/webhook/{kind})
-	RegisterWebhook(w http.ResponseWriter, r *http.Request, kind RegisterWebhookParamsKind)
-}
-
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-type MiddlewareFunc func(http.Handler) http.Handler
-
-// DeregisterWebhook operation middleware
-func (siw *ServerInterfaceWrapper) DeregisterWebhook(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id uuid.UUID
-
-	if r.PathValue("id") == "" {
-		err = errors.New("parameter 'id' is empty, can't bind its value")
-	} else {
-		err = id.UnmarshalText([]byte(r.PathValue("id")))
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeregisterWebhook(w, r, id)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RegisterWebhook operation middleware
-func (siw *ServerInterfaceWrapper) RegisterWebhook(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "kind" -------------
-	var kind RegisterWebhookParamsKind
-
-	if r.PathValue("kind") == "" {
-		err = errors.New("parameter 'kind' is empty, can't bind its value")
-	} else {
-		kind = RegisterWebhookParamsKind(r.PathValue("kind"))
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RegisterWebhook(w, r, kind)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-type UnescapedCookieParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnescapedCookieParamError) Error() string {
-	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
-}
-
-func (e *UnescapedCookieParamError) Unwrap() error {
-	return e.Err
-}
-
-type UnmarshalingParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnmarshalingParamError) Error() string {
-	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *UnmarshalingParamError) Unwrap() error {
-	return e.Err
-}
-
-type RequiredParamError struct {
-	ParamName string
-}
-
-func (e *RequiredParamError) Error() string {
-	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
-}
-
-type RequiredHeaderError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *RequiredHeaderError) Error() string {
-	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
-}
-
-func (e *RequiredHeaderError) Unwrap() error {
-	return e.Err
-}
-
-type InvalidParamFormatError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *InvalidParamFormatError) Error() string {
-	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *InvalidParamFormatError) Unwrap() error {
-	return e.Err
-}
-
-type TooManyValuesForParamError struct {
-	ParamName string
-	Count     int
-}
-
-func (e *TooManyValuesForParamError) Error() string {
-	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
-}
-
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
-
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/webhook/{kind}", wrapper.RegisterWebhook)
-	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/webhook/{id}", wrapper.DeregisterWebhook)
-
-	return m
-}
-
-// WebhookReceiverInterface represents handlers for receiving inbound
-// webhook requests. Each webhook becomes a Handle*Webhook
-// method that the implementation fills in. The caller mounts the per-
-// webhook http.Handler returned by {Op}WebhookHandler at
-// whatever URL path they advertise to senders.
-type WebhookReceiverInterface interface {
-	// Person entered the building
-	// HandleEnterEventWebhook handles the POST webhook for enterEvent.
-	HandleEnterEventWebhook(w http.ResponseWriter, r *http.Request)
-	// Person exited the building
-	// HandleExitEventWebhook handles the POST webhook for exitEvent.
-	HandleExitEventWebhook(w http.ResponseWriter, r *http.Request)
-}
-
-// WebhookReceiverMiddlewareFunc wraps an http.Handler with cross-
-// cutting behavior (signature verification, logging, rate limiting, ...).
-type WebhookReceiverMiddlewareFunc func(http.Handler) http.Handler
-
-// EnterEventWebhookHandler returns the http.Handler for the enterEvent webhook.
-// Mount this at the URL path advertised to webhook senders. errHandler
-// may be nil; if so, parameter-binding errors return 400 with the error
-// message. Middlewares are applied in the order provided -- the last
-// argument becomes the outermost wrapper.
-func EnterEventWebhookHandler(si WebhookReceiverInterface, errHandler func(w http.ResponseWriter, r *http.Request, err error), middlewares ...WebhookReceiverMiddlewareFunc) http.Handler {
-	if errHandler == nil {
-		errHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		si.HandleEnterEventWebhook(w, r)
-	})
-	for _, mw := range middlewares {
-		h = mw(h)
-	}
-	return h
-}
-
-// ExitEventWebhookHandler returns the http.Handler for the exitEvent webhook.
-// Mount this at the URL path advertised to webhook senders. errHandler
-// may be nil; if so, parameter-binding errors return 400 with the error
-// message. Middlewares are applied in the order provided -- the last
-// argument becomes the outermost wrapper.
-func ExitEventWebhookHandler(si WebhookReceiverInterface, errHandler func(w http.ResponseWriter, r *http.Request, err error), middlewares ...WebhookReceiverMiddlewareFunc) http.Handler {
-	if errHandler == nil {
-		errHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		si.HandleExitEventWebhook(w, r)
-	})
-	for _, mw := range middlewares {
-		h = mw(h)
-	}
-	return h
-}
-
 type DeregisterWebhookRequestObject struct {
 	ID uuid.UUID `json:"id"`
 }
@@ -1113,8 +848,8 @@ func (response RegisterWebhookdefaultJSONResponse) VisitRegisterWebhookResponse(
 	return err
 }
 
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
+// ServerInterface represents all server handlers.
+type ServerInterface interface {
 	// DeregisterWebhook Deregister a webhook
 	// (DELETE /api/webhook/{id})
 	DeregisterWebhook(ctx context.Context, request DeregisterWebhookRequestObject) (DeregisterWebhookResponseObject, error)
@@ -1123,26 +858,50 @@ type StrictServerInterface interface {
 	RegisterWebhook(ctx context.Context, request RegisterWebhookRequestObject) (RegisterWebhookResponseObject, error)
 }
 
-type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
-type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
+}
 
-type StrictHTTPServerOptions struct {
-	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
+
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
 	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
-		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		},
-	}}
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
 }
 
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
 	if options.RequestErrorHandlerFunc == nil {
 		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1153,25 +912,50 @@ func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []Strict
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/webhook/{kind}", sh.RegisterWebhook)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/webhook/{id}", sh.DeregisterWebhook)
+
+	return m
 }
 
-type strictHandler struct {
-	ssi         StrictServerInterface
-	middlewares []StrictMiddlewareFunc
-	options     StrictHTTPServerOptions
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
 }
 
-// DeregisterWebhook operation middleware
-func (sh *strictHandler) DeregisterWebhook(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+// DeregisterWebhook serves the DeregisterWebhook operation.
+func (sh *serverHandler) DeregisterWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id uuid.UUID
+
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		err = id.UnmarshalText([]byte(r.PathValue("id")))
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
 	var request DeregisterWebhookRequestObject
 
 	request.ID = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.DeregisterWebhook(ctx, request.(DeregisterWebhookRequestObject))
+		return sh.si.DeregisterWebhook(ctx, request.(DeregisterWebhookRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "DeregisterWebhook")
 	}
 
@@ -1188,8 +972,25 @@ func (sh *strictHandler) DeregisterWebhook(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// RegisterWebhook operation middleware
-func (sh *strictHandler) RegisterWebhook(w http.ResponseWriter, r *http.Request, kind RegisterWebhookParamsKind) {
+// RegisterWebhook serves the RegisterWebhook operation.
+func (sh *serverHandler) RegisterWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "kind" -------------
+	var kind RegisterWebhookParamsKind
+
+	if r.PathValue("kind") == "" {
+		err = errors.New("parameter 'kind' is empty, can't bind its value")
+	} else {
+		kind = RegisterWebhookParamsKind(r.PathValue("kind"))
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		return
+	}
+
 	var request RegisterWebhookRequestObject
 
 	request.Kind = kind
@@ -1202,9 +1003,9 @@ func (sh *strictHandler) RegisterWebhook(w http.ResponseWriter, r *http.Request,
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.RegisterWebhook(ctx, request.(RegisterWebhookRequestObject))
+		return sh.si.RegisterWebhook(ctx, request.(RegisterWebhookRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "RegisterWebhook")
 	}
 
@@ -1219,4 +1020,131 @@ func (sh *strictHandler) RegisterWebhook(w http.ResponseWriter, r *http.Request,
 	} else if response != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
 	}
+}
+
+type UnescapedCookieParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
+}
+
+func (e *UnescapedCookieParamError) Unwrap() error {
+	return e.Err
+}
+
+type UnmarshalingParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *UnmarshalingParamError) Unwrap() error {
+	return e.Err
+}
+
+type RequiredParamError struct {
+	ParamName string
+}
+
+func (e *RequiredParamError) Error() string {
+	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
+}
+
+type RequiredHeaderError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *RequiredHeaderError) Error() string {
+	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
+}
+
+func (e *RequiredHeaderError) Unwrap() error {
+	return e.Err
+}
+
+type InvalidParamFormatError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *InvalidParamFormatError) Unwrap() error {
+	return e.Err
+}
+
+type TooManyValuesForParamError struct {
+	ParamName string
+	Count     int
+}
+
+func (e *TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
+}
+
+// WebhookReceiverInterface represents handlers for receiving inbound
+// webhook requests. Each webhook becomes a Handle*Webhook
+// method that the implementation fills in. The caller mounts the per-
+// webhook http.Handler returned by {Op}WebhookHandler at
+// whatever URL path they advertise to senders.
+type WebhookReceiverInterface interface {
+	// Person entered the building
+	// HandleEnterEventWebhook handles the POST webhook for enterEvent.
+	HandleEnterEventWebhook(w http.ResponseWriter, r *http.Request)
+	// Person exited the building
+	// HandleExitEventWebhook handles the POST webhook for exitEvent.
+	HandleExitEventWebhook(w http.ResponseWriter, r *http.Request)
+}
+
+// WebhookReceiverMiddlewareFunc wraps an http.Handler with cross-
+// cutting behavior (signature verification, logging, rate limiting, ...).
+type WebhookReceiverMiddlewareFunc func(http.Handler) http.Handler
+
+// EnterEventWebhookHandler returns the http.Handler for the enterEvent webhook.
+// Mount this at the URL path advertised to webhook senders. errHandler
+// may be nil; if so, parameter-binding errors return 400 with the error
+// message. Middlewares are applied in the order provided -- the last
+// argument becomes the outermost wrapper.
+func EnterEventWebhookHandler(si WebhookReceiverInterface, errHandler func(w http.ResponseWriter, r *http.Request, err error), middlewares ...WebhookReceiverMiddlewareFunc) http.Handler {
+	if errHandler == nil {
+		errHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		si.HandleEnterEventWebhook(w, r)
+	})
+	for _, mw := range middlewares {
+		h = mw(h)
+	}
+	return h
+}
+
+// ExitEventWebhookHandler returns the http.Handler for the exitEvent webhook.
+// Mount this at the URL path advertised to webhook senders. errHandler
+// may be nil; if so, parameter-binding errors return 400 with the error
+// message. Middlewares are applied in the order provided -- the last
+// argument becomes the outermost wrapper.
+func ExitEventWebhookHandler(si WebhookReceiverInterface, errHandler func(w http.ResponseWriter, r *http.Request, err error), middlewares ...WebhookReceiverMiddlewareFunc) http.Handler {
+	if errHandler == nil {
+		errHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		si.HandleExitEventWebhook(w, r)
+	})
+	for _, mw := range middlewares {
+		h = mw(h)
+	}
+	return h
 }

@@ -404,13 +404,8 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		serverURLsDefinitions = serverURLEnumTypeDecls + serverURLEnumConstants + serverURLsBody
 	}
 
-	var stdHTTPServerOut, strictServerOut string
+	var serverOut string
 	if opts.Generate.Server {
-		stdHTTPServerOut, err = GenerateStdHTTPServer(t, ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-
 		var responses []ResponseDefinition
 		if spec.Components != nil {
 			responses, err = GenerateResponseDefinitions("", spec.Components.Responses, "")
@@ -418,15 +413,15 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 				return "", fmt.Errorf("error generation response definitions for schema: %w", err)
 			}
 		}
-		strictServerResponses, err := GenerateStrictResponses(t, responses)
+		serverResponses, err := GenerateServerResponses(t, responses)
 		if err != nil {
 			return "", fmt.Errorf("error generation response definitions for schema: %w", err)
 		}
-		strictServerOut, err = GenerateStrictServer(t, ops)
+		serverOut, err = GenerateServer(t, ops)
 		if err != nil {
 			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
 		}
-		strictServerOut = strictServerResponses + strictServerOut
+		serverOut = serverResponses + serverOut
 	}
 
 	var clientOut string
@@ -565,7 +560,7 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 	}
 
 	if opts.Generate.Server {
-		_, err = w.WriteString(stdHTTPServerOut)
+		_, err = w.WriteString(serverOut)
 		if err != nil {
 			return "", fmt.Errorf("error writing server path handlers: %w", err)
 		}
@@ -580,10 +575,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("error writing stdhttp callback receiver: %w", err)
 			}
-		}
-		_, err = w.WriteString(strictServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
 		}
 	}
 
@@ -820,7 +811,7 @@ func GenerateTypesForParameters(t *template.Template, params map[string]*openapi
 // handling, and the per-media-type suffix used when a response declares more
 // than one JSON media type.
 //
-// GenerateResponseDefinitions uses the same name when it renders the strict
+// GenerateResponseDefinitions uses the same name when it renders the
 // server's <Name>JSONResponse envelope for a component response, so that an
 // inline response-root schema which needs hoisting (a oneOf/anyOf union, an
 // object with additionalProperties, or any object under

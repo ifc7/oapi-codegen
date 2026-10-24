@@ -35,7 +35,7 @@ func TestTrailingSlashRoutes(t *testing.T) {
 	// Registration itself was the panic in the issue.
 	var h http.Handler
 	require.NotPanics(t, func() {
-		h = Handler(NewStrictHandler(s, nil))
+		h = Handler(s)
 	})
 
 	do := func(path string) (*server, *httptest.ResponseRecorder) {

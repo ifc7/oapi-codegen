@@ -33,7 +33,7 @@ func (server) GetThing(ctx context.Context, request GetThingRequestObject) (GetT
 func newServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
-	HandlerFromMux(NewStrictHandler(server{}, nil), mux)
+	HandlerWithOptions(server{}, ServerOptions{BaseRouter: mux})
 	s := httptest.NewServer(mux)
 	t.Cleanup(s.Close)
 	return s

@@ -509,53 +509,185 @@ func ParseAddThingResponse(rsp *http.Response) (*AddThingResponse, error) {
 	return response, nil
 }
 
+type ListThingsRequestObject struct {
+}
+
+type ListThingsResponseObject interface {
+	VisitListThingsResponse(w http.ResponseWriter) error
+}
+
+type ListThings200JSONResponse []ThingWithID
+
+func (response ListThings200JSONResponse) VisitListThingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddThingRequestObject struct {
+	Body *AddThingJSONRequestBody
+}
+
+type AddThingResponseObject interface {
+	VisitAddThingResponse(w http.ResponseWriter) error
+}
+
+type AddThing201JSONResponse []ThingWithID
+
+func (response AddThing201JSONResponse) VisitAddThingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
 	// (GET /things)
-	ListThings(w http.ResponseWriter, r *http.Request)
+	ListThings(ctx context.Context, request ListThingsRequestObject) (ListThingsResponseObject, error)
 
 	// (POST /things)
-	AddThing(w http.ResponseWriter, r *http.Request)
+	AddThing(ctx context.Context, request AddThingRequestObject) (AddThingResponseObject, error)
 }
 
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
 }
 
-type MiddlewareFunc func(http.Handler) http.Handler
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
 
-// ListThings operation middleware
-func (siw *ServerInterfaceWrapper) ListThings(w http.ResponseWriter, r *http.Request) {
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListThings(w, r)
-	}))
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
+}
+
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
-	handler.ServeHTTP(w, r)
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/things", sh.ListThings)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/things", sh.AddThing)
+
+	return m
 }
 
-// AddThing operation middleware
-func (siw *ServerInterfaceWrapper) AddThing(w http.ResponseWriter, r *http.Request) {
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
+}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddThing(w, r)
-	}))
+// ListThings serves the ListThings operation.
+func (sh *serverHandler) ListThings(w http.ResponseWriter, r *http.Request) {
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	var request ListThingsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.ListThings(ctx, request.(ListThingsRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "ListThings")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListThingsResponseObject); ok {
+		if err := validResponse.VisitListThingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddThing serves the AddThing operation.
+func (sh *serverHandler) AddThing(w http.ResponseWriter, r *http.Request) {
+
+	var request AddThingRequestObject
+
+	var body AddThingJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.AddThing(ctx, request.(AddThingRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "AddThing")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddThingResponseObject); ok {
+		if err := validResponse.VisitAddThingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 type UnescapedCookieParamError struct {
@@ -625,210 +757,6 @@ type TooManyValuesForParamError struct {
 
 func (e *TooManyValuesForParamError) Error() string {
 	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
-}
-
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
-
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/things", wrapper.ListThings)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/things", wrapper.AddThing)
-
-	return m
-}
-
-type ListThingsRequestObject struct {
-}
-
-type ListThingsResponseObject interface {
-	VisitListThingsResponse(w http.ResponseWriter) error
-}
-
-type ListThings200JSONResponse []ThingWithID
-
-func (response ListThings200JSONResponse) VisitListThingsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type AddThingRequestObject struct {
-	Body *AddThingJSONRequestBody
-}
-
-type AddThingResponseObject interface {
-	VisitAddThingResponse(w http.ResponseWriter) error
-}
-
-type AddThing201JSONResponse []ThingWithID
-
-func (response AddThing201JSONResponse) VisitAddThingResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
-
-	// (GET /things)
-	ListThings(ctx context.Context, request ListThingsRequestObject) (ListThingsResponseObject, error)
-
-	// (POST /things)
-	AddThing(ctx context.Context, request AddThingRequestObject) (AddThingResponseObject, error)
-}
-
-type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
-type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
-
-type StrictHTTPServerOptions struct {
-	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
-	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
-		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		},
-	}}
-}
-
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
-	if options.RequestErrorHandlerFunc == nil {
-		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-	if options.ResponseErrorHandlerFunc == nil {
-		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
-}
-
-type strictHandler struct {
-	ssi         StrictServerInterface
-	middlewares []StrictMiddlewareFunc
-	options     StrictHTTPServerOptions
-}
-
-// ListThings operation middleware
-func (sh *strictHandler) ListThings(w http.ResponseWriter, r *http.Request) {
-	var request ListThingsRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.ListThings(ctx, request.(ListThingsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListThings")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListThingsResponseObject); ok {
-		if err := validResponse.VisitListThingsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// AddThing operation middleware
-func (sh *strictHandler) AddThing(w http.ResponseWriter, r *http.Request) {
-	var request AddThingRequestObject
-
-	var body AddThingJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.AddThing(ctx, request.(AddThingRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "AddThing")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(AddThingResponseObject); ok {
-		if err := validResponse.VisitAddThingResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
 }
 
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.

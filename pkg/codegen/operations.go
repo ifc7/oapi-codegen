@@ -86,7 +86,7 @@ func (pd ParameterDefinition) ZeroValueIsNil() bool {
 }
 
 // JsonTag generates the struct tag annotation for a parameter field on a
-// strict RequestObject struct. If Parameter Foo is marshaled to json as "foo",
+// server RequestObject struct. If Parameter Foo is marshaled to json as "foo",
 // this will create the annotation 'json:"foo"'. Tags configured via
 // output-options.struct-tags are rendered too.
 // It also includes any additional struct tags from x-oapi-codegen-extra-tags
@@ -613,23 +613,12 @@ type OperationDefinition struct {
 	CallbackName string
 }
 
-// HandlerName returns the OperationId to use when referencing the server-side
-// wrapper function. For alias operations this is the canonical operation's ID,
-// since the alias doesn't generate its own wrapper.
+// HandlerName returns the OperationId of the server-side handler method that
+// serves the operation. For alias operations this is the canonical operation's
+// ID, since the alias doesn't generate its own handler.
 func (o *OperationDefinition) HandlerName() string {
 	if o.IsAlias {
 		return o.AliasTarget
-	}
-	return o.OperationId
-}
-
-// MiddlewareKey returns the identifier to use as the key in per-operation
-// middleware maps. The raw spec OperationId is preferred so map keys mirror
-// the OpenAPI spec verbatim; falls back to the normalized OperationId when
-// the spec didn't supply one.
-func (o *OperationDefinition) MiddlewareKey() string {
-	if o.SpecOperationId != "" {
-		return o.SpecOperationId
 	}
 	return o.OperationId
 }
@@ -721,7 +710,7 @@ func (o *OperationDefinition) AllParams() []ParameterDefinition {
 // If we have parameters other than path parameters, they're bundled into an
 // object. Returns true if we have any of those. This is used from the template
 // engine.
-func (o *OperationDefinition) RequiresParamObject() bool {
+func (o OperationDefinition) RequiresParamObject() bool {
 	return len(o.Params()) > 0
 }
 
@@ -943,7 +932,7 @@ func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefini
 
 					// Use the same body-type name as the server-side
 					// GenerateResponseDefinitions ("Body" suffixed so it
-					// doesn't collide with the strict envelope's struct
+					// doesn't collide with the response envelope's struct
 					// wrapper) as the schema-path root. The canonical
 					// declaration happens server-side; here we just point
 					// RefType at the same name so the JSON<status> field
@@ -1254,13 +1243,13 @@ type ResponseContentDefinition struct {
 	// which case we will produce "Response200JSONContent".
 	NameTag string
 
-	// NeedsBodyWrapper is true when a schema-backed strict response cannot use
+	// NeedsBodyWrapper is true when a schema-backed server response cannot use
 	// its generated Go type directly: as a method receiver, or, for a reusable
 	// response envelope, as an embedded field.
 	NeedsBodyWrapper bool
 }
 
-// responseSchemaNeedsBodyWrapper reports whether the strict response for a
+// responseSchemaNeedsBodyWrapper reports whether the server response for a
 // schema must carry its body in a Body field. embedded is true when the
 // generated type is a reusable response envelope that operations embed in a
 // struct, rather than a type that operations use as a method receiver.
@@ -1318,7 +1307,7 @@ func responseSchemaNeedsBodyWrapperSeen(sref *openapi3.SchemaRef, schema Schema,
 	return false, nil
 }
 
-// goTypeNeedsBodyWrapper reports whether typeDecl cannot carry a strict
+// goTypeNeedsBodyWrapper reports whether typeDecl cannot carry a server
 // response directly. A method receiver cannot be a pointer or an interface
 // type. An embedded field can be an interface, but not a pointer.
 func goTypeNeedsBodyWrapper(typeDecl string, embedded bool) bool {
@@ -1354,13 +1343,13 @@ func (r ResponseContentDefinition) IsSupported() bool {
 	return r.IsJSON() || r.IsFormdata() || r.IsMultipart() || r.IsText()
 }
 
-// usesSchemaReceiver reports whether a strict response derives its receiver
+// usesSchemaReceiver reports whether a server response derives its receiver
 // from the response schema rather than a fixed callback or reader type.
 func (r ResponseContentDefinition) usesSchemaReceiver() bool {
 	return r.IsJSON() || r.IsText() || r.IsFormdata()
 }
 
-// CanUseDirectResponseType reports whether the strict response can use its
+// CanUseDirectResponseType reports whether the server response can use its
 // wire type directly instead of exposing a Body field.
 func (r ResponseContentDefinition) CanUseDirectResponseType() bool {
 	return r.IsSupported() && !r.NeedsBodyWrapper
@@ -2107,10 +2096,10 @@ func GenerateResponseDefinitions(operationID string, responses map[string]*opena
 			}
 
 			responseTypeName := operationID + statusCode + tag + "Response"
-			// The strict-server envelope keeps the bare ...Response name
+			// The server response envelope keeps the bare ...Response name
 			// (e.g. "GetPing200JSONResponse"); the hoisted body type is
 			// suffixed so the envelope can reference it without colliding
-			// (the strict envelope is sometimes a struct that wraps the
+			// (the response envelope is sometimes a struct that wraps the
 			// body in a Body field, which would self-reference if the
 			// names matched).
 			responseBodyTypeName := responseTypeName + "Body"
@@ -2125,7 +2114,7 @@ func GenerateResponseDefinitions(operationID string, responses map[string]*opena
 			// via op.TypeDefinitions (collected in
 			// GenerateTypeDefsForOperation) and gets declared once via
 			// typedef.tmpl with full union/additionalProperties methods.
-			// The strict-server template references it as the body type
+			// The server template references it as the body type
 			// from the envelope.
 			//
 			// When the operation came from an externally-ref'd path item,
@@ -2441,28 +2430,30 @@ func sortOperationsBySpecOrder(ops []OperationDefinition) []OperationDefinition 
 	return out
 }
 
-// GenerateStdHTTPServer generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateStdHTTPServer(t *template.Template, operations []OperationDefinition) (string, error) {
+// GenerateServer generates the server: each operation's request and response
+// objects, the ServerInterface, and the net/http handler that routes requests
+// to it.
+func GenerateServer(t *template.Template, operations []OperationDefinition) (string, error) {
 	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "server-middleware.tmpl"}, t, operations); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-interface.tmpl"}, t, operations); err != nil {
 		return "", err
 	}
+	buf.WriteString("\n")
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-routes.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
+		return "", err
+	}
+	buf.WriteString("\n")
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-handler.tmpl"}, t, operations); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
 }
 
-// GenerateStrictServer generates the strict server interface and the glue
-// that adapts it to the net/http server.
-func GenerateStrictServer(t *template.Template, operations []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"strict/strict-interface.tmpl", "strict/strict-http.tmpl"}, t, operations)
-}
-
-func GenerateStrictResponses(t *template.Template, responses []ResponseDefinition) (string, error) {
-	return GenerateTemplates([]string{"strict/strict-responses.tmpl"}, t, responses)
+// GenerateServerResponses generates the server's response types for the
+// spec's reusable responses.
+func GenerateServerResponses(t *template.Template, responses []ResponseDefinition) (string, error) {
+	return GenerateTemplates([]string{"server/server-responses.tmpl"}, t, responses)
 }
 
 // GenerateClient generates the client for the operations.

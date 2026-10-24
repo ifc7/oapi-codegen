@@ -4,8 +4,8 @@ import (
 	"context"
 )
 
-// ensure that we've conformed to the `StrictServerInterface` with a compile-time check
-var _ StrictServerInterface = (*Server)(nil)
+// ensure that we've conformed to the `ServerInterface` with a compile-time check
+var _ ServerInterface = (*Server)(nil)
 
 type Server struct{}
 

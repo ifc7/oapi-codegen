@@ -14,12 +14,12 @@ import (
 	treefarm "github.com/oapi-codegen/oapi-codegen/v2/examples/callback"
 )
 
-// TreeFarm implements treefarm.StrictServerInterface.
+// TreeFarm implements treefarm.ServerInterface.
 type TreeFarm struct {
 	initiator *treefarm.CallbackInitiator
 }
 
-var _ treefarm.StrictServerInterface = (*TreeFarm)(nil)
+var _ treefarm.ServerInterface = (*TreeFarm)(nil)
 
 func NewTreeFarm() *TreeFarm {
 	initiator, err := treefarm.NewCallbackInitiator()
@@ -96,7 +96,7 @@ func main() {
 	farm := NewTreeFarm()
 
 	mux := http.NewServeMux()
-	treefarm.HandlerFromMux(treefarm.NewStrictHandler(farm, nil), mux)
+	treefarm.HandlerWithOptions(farm, treefarm.ServerOptions{BaseRouter: mux})
 
 	// Wrap with request logging.
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -21,10 +21,7 @@ import (
 
 func TestStdHTTPServer(t *testing.T) {
 	server := stdhttpAPI.StrictServer{}
-	strictHandler := stdhttpAPI.NewStrictHandler(server, nil)
-	m := http.NewServeMux()
-	stdhttpAPI.HandlerFromMux(strictHandler, m)
-	testImpl(t, m)
+	testImpl(t, stdhttpAPI.Handler(server))
 }
 
 func testImpl(t *testing.T, handler http.Handler) {

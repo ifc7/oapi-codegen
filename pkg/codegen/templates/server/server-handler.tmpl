@@ -1,47 +1,18 @@
-type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
-type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
-
-type StrictHTTPServerOptions struct {
-    RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
-    ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
-    return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions {
-        RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-            http.Error(w, err.Error(), http.StatusBadRequest)
-        },
-        ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-        },
-    }}
-}
-
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
-    if options.RequestErrorHandlerFunc == nil {
-        options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-            http.Error(w, err.Error(), http.StatusBadRequest)
-        }
-    }
-    if options.ResponseErrorHandlerFunc == nil {
-        options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-        }
-    }
-    return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
-}
-
-type strictHandler struct {
-    ssi StrictServerInterface
-    middlewares []StrictMiddlewareFunc
-    options StrictHTTPServerOptions
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+    si ServerInterface
+    options ServerOptions
 }
 
 {{range .}}
     {{$opid := .OperationId}}
     {{if not .IsAlias}}
-    // {{$opid}} operation middleware
-    func (sh *strictHandler) {{.OperationId}}(w http.ResponseWriter, r *http.Request{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}}) {
+    // {{$opid}} serves the {{$opid}} operation.
+    func (sh *serverHandler) {{$opid}}(w http.ResponseWriter, r *http.Request) {
+        {{template "param.bindRequest" (dict "Op" . "Handler" "sh.options.RequestErrorHandlerFunc")}}
+
         var request {{$opid | ucFirst}}RequestObject
 
         {{range .PathParams -}}
@@ -129,9 +100,9 @@ type strictHandler struct {
         {{end}}{{/* range .Bodies */}}
 
         handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-            return sh.ssi.{{.OperationId}}(ctx, request.({{$opid | ucFirst}}RequestObject))
+            return sh.si.{{.OperationId}}(ctx, request.({{$opid | ucFirst}}RequestObject))
         }
-        for _, middleware := range sh.middlewares {
+        for _, middleware := range sh.options.Middlewares {
             handler = middleware(handler, "{{.OperationId}}")
         }
 
@@ -149,3 +120,72 @@ type strictHandler struct {
     }
     {{end}}
 {{end}}
+
+type UnescapedCookieParamError struct {
+    ParamName string
+    Err error
+}
+
+func (e *UnescapedCookieParamError) Error() string {
+    return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
+}
+
+func (e *UnescapedCookieParamError) Unwrap() error {
+    return e.Err
+}
+
+type UnmarshalingParamError struct {
+    ParamName string
+    Err error
+}
+
+func (e *UnmarshalingParamError) Error() string {
+    return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *UnmarshalingParamError) Unwrap() error {
+    return e.Err
+}
+
+type RequiredParamError struct {
+    ParamName string
+}
+
+func (e *RequiredParamError) Error() string {
+    return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
+}
+
+type RequiredHeaderError struct {
+    ParamName string
+    Err error
+}
+
+func (e *RequiredHeaderError) Error() string {
+    return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
+}
+
+func (e *RequiredHeaderError) Unwrap() error {
+    return e.Err
+}
+
+type InvalidParamFormatError struct {
+    ParamName string
+    Err error
+}
+
+func (e *InvalidParamFormatError) Error() string {
+    return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *InvalidParamFormatError) Unwrap() error {
+    return e.Err
+}
+
+type TooManyValuesForParamError struct {
+    ParamName string
+    Count int
+}
+
+func (e *TooManyValuesForParamError) Error() string {
+    return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
+}

@@ -42,7 +42,7 @@ func finishAllOf(ctx genContext, frame *mergeFrame, schema *openapi3.Schema, mer
 	// The composition generated as an alias of another type, such as the
 	// $ref of `allOf: [$ref X]`: remember that type's schema, which
 	// OAPISchema no longer points to, so generatesMarshalJSON can tell that X
-	// has a generated MarshalJSON, which a strict-server envelope has to
+	// has a generated MarshalJSON, which a server response envelope has to
 	// delegate to.
 	if merged.DefineViaAlias && merged.OAPISchema != nil && merged.OAPISchema != schema {
 		merged.aliasOf = merged.OAPISchema

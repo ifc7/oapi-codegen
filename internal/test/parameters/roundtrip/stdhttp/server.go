@@ -1,3 +1,6 @@
+//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=server.cfg.yaml ../parameters.yaml
+//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=types.cfg.yaml ../parameters.yaml
+
 package stdhttpparams
 
 import (
@@ -12,7 +15,7 @@ import (
 // can compare what the server parsed against what the client sent.
 type Server struct{}
 
-var _ gen.StrictServerInterface = (*Server)(nil)
+var _ gen.ServerInterface = (*Server)(nil)
 
 func echo(v any) (string, error) {
 	b, err := json.Marshal(v)

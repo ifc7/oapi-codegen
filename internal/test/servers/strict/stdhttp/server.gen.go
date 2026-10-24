@@ -26,556 +26,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-// ServerInterface represents all server handlers.
-type ServerInterface interface {
-
-	// (POST /json)
-	JSONExample(w http.ResponseWriter, r *http.Request)
-
-	// (POST /multipart)
-	MultipartExample(w http.ResponseWriter, r *http.Request)
-
-	// (POST /multipart-related)
-	MultipartRelatedExample(w http.ResponseWriter, r *http.Request)
-
-	// (POST /multiple)
-	MultipleRequestAndResponseTypes(w http.ResponseWriter, r *http.Request)
-
-	// (POST /no-content-headers)
-	NoContentHeaders(w http.ResponseWriter, r *http.Request)
-
-	// (POST /required-json-body)
-	RequiredJSONBody(w http.ResponseWriter, r *http.Request)
-
-	// (POST /required-text-body)
-	RequiredTextBody(w http.ResponseWriter, r *http.Request)
-
-	// (GET /reserved-go-keyword-parameters/{type})
-	ReservedGoKeywordParameters(w http.ResponseWriter, r *http.Request, pType string)
-
-	// (POST /reusable-responses)
-	ReusableResponses(w http.ResponseWriter, r *http.Request)
-
-	// (POST /reusable-urlencoded-response)
-	ReusableURLEncodedResponse(w http.ResponseWriter, r *http.Request)
-
-	// (POST /same-name-param-and-body-property/{name})
-	SameNameParamAndBodyProperty(w http.ResponseWriter, r *http.Request, name string)
-
-	// (POST /text)
-	TextExample(w http.ResponseWriter, r *http.Request)
-
-	// (POST /unknown)
-	UnknownExample(w http.ResponseWriter, r *http.Request)
-
-	// (POST /unspecified-content-type)
-	UnspecifiedContentType(w http.ResponseWriter, r *http.Request)
-
-	// (POST /urlencoded)
-	URLEncodedExample(w http.ResponseWriter, r *http.Request)
-
-	// (POST /with-headers)
-	HeadersExample(w http.ResponseWriter, r *http.Request, params HeadersExampleParams)
-
-	// (POST /with-union)
-	UnionExample(w http.ResponseWriter, r *http.Request)
-}
-
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-type MiddlewareFunc func(http.Handler) http.Handler
-
-// JSONExample operation middleware
-func (siw *ServerInterfaceWrapper) JSONExample(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.JSONExample(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// MultipartExample operation middleware
-func (siw *ServerInterfaceWrapper) MultipartExample(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MultipartExample(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// MultipartRelatedExample operation middleware
-func (siw *ServerInterfaceWrapper) MultipartRelatedExample(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MultipartRelatedExample(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// MultipleRequestAndResponseTypes operation middleware
-func (siw *ServerInterfaceWrapper) MultipleRequestAndResponseTypes(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MultipleRequestAndResponseTypes(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// NoContentHeaders operation middleware
-func (siw *ServerInterfaceWrapper) NoContentHeaders(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.NoContentHeaders(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RequiredJSONBody operation middleware
-func (siw *ServerInterfaceWrapper) RequiredJSONBody(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RequiredJSONBody(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RequiredTextBody operation middleware
-func (siw *ServerInterfaceWrapper) RequiredTextBody(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RequiredTextBody(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ReservedGoKeywordParameters operation middleware
-func (siw *ServerInterfaceWrapper) ReservedGoKeywordParameters(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "type" -------------
-	var pType string
-
-	if r.PathValue("type") == "" {
-		err = errors.New("parameter 'type' is empty, can't bind its value")
-	} else {
-		pType = r.PathValue("type")
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReservedGoKeywordParameters(w, r, pType)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ReusableResponses operation middleware
-func (siw *ServerInterfaceWrapper) ReusableResponses(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReusableResponses(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ReusableURLEncodedResponse operation middleware
-func (siw *ServerInterfaceWrapper) ReusableURLEncodedResponse(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReusableURLEncodedResponse(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// SameNameParamAndBodyProperty operation middleware
-func (siw *ServerInterfaceWrapper) SameNameParamAndBodyProperty(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "name" -------------
-	var name string
-
-	if r.PathValue("name") == "" {
-		err = errors.New("parameter 'name' is empty, can't bind its value")
-	} else {
-		name = r.PathValue("name")
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SameNameParamAndBodyProperty(w, r, name)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// TextExample operation middleware
-func (siw *ServerInterfaceWrapper) TextExample(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.TextExample(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnknownExample operation middleware
-func (siw *ServerInterfaceWrapper) UnknownExample(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnknownExample(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnspecifiedContentType operation middleware
-func (siw *ServerInterfaceWrapper) UnspecifiedContentType(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnspecifiedContentType(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// URLEncodedExample operation middleware
-func (siw *ServerInterfaceWrapper) URLEncodedExample(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.URLEncodedExample(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// HeadersExample operation middleware
-func (siw *ServerInterfaceWrapper) HeadersExample(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params HeadersExampleParams
-
-	headers := r.Header
-
-	// ------------- Required header parameter "header1" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("header1")]; found {
-		var Header1 string
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "header1", Count: n})
-			return
-		}
-
-		if valueList[0] == "" {
-			err = errors.New("parameter 'header1' is empty, can't bind its value")
-		} else {
-			Header1 = valueList[0]
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header1", Err: err})
-			return
-		}
-
-		params.Header1 = Header1
-
-	} else {
-		err := fmt.Errorf("Header parameter header1 is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "header1", Err: err})
-		return
-	}
-
-	// ------------- Optional header parameter "header2" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("header2")]; found {
-		var Header2 int
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "header2", Count: n})
-			return
-		}
-
-		if v_, err_ := strconv.ParseInt(valueList[0], 10, 0); err_ != nil {
-			err = err_
-		} else {
-			Header2 = int(v_)
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header2", Err: err})
-			return
-		}
-
-		params.Header2 = &Header2
-
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.HeadersExample(w, r, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnionExample operation middleware
-func (siw *ServerInterfaceWrapper) UnionExample(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnionExample(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-type UnescapedCookieParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnescapedCookieParamError) Error() string {
-	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
-}
-
-func (e *UnescapedCookieParamError) Unwrap() error {
-	return e.Err
-}
-
-type UnmarshalingParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnmarshalingParamError) Error() string {
-	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *UnmarshalingParamError) Unwrap() error {
-	return e.Err
-}
-
-type RequiredParamError struct {
-	ParamName string
-}
-
-func (e *RequiredParamError) Error() string {
-	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
-}
-
-type RequiredHeaderError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *RequiredHeaderError) Error() string {
-	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
-}
-
-func (e *RequiredHeaderError) Unwrap() error {
-	return e.Err
-}
-
-type InvalidParamFormatError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *InvalidParamFormatError) Error() string {
-	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *InvalidParamFormatError) Unwrap() error {
-	return e.Err
-}
-
-type TooManyValuesForParamError struct {
-	ParamName string
-	Count     int
-}
-
-func (e *TooManyValuesForParamError) Error() string {
-	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
-}
-
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
-
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/json", wrapper.JSONExample)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/urlencoded", wrapper.URLEncodedExample)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/multipart", wrapper.MultipartExample)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/multipart-related", wrapper.MultipartRelatedExample)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/text", wrapper.TextExample)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/unknown", wrapper.UnknownExample)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/multiple", wrapper.MultipleRequestAndResponseTypes)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/with-headers", wrapper.HeadersExample)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/no-content-headers", wrapper.NoContentHeaders)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/reusable-responses", wrapper.ReusableResponses)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/reusable-urlencoded-response", wrapper.ReusableURLEncodedResponse)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/unspecified-content-type", wrapper.UnspecifiedContentType)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/required-json-body", wrapper.RequiredJSONBody)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/required-text-body", wrapper.RequiredTextBody)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reserved-go-keyword-parameters/{type}", wrapper.ReservedGoKeywordParameters)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/same-name-param-and-body-property/{name}", wrapper.SameNameParamAndBodyProperty)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/with-union", wrapper.UnionExample)
-
-	return m
-}
-
 type BadrequestResponse struct {
 }
 
@@ -1529,8 +979,8 @@ func (response UnionExampledefaultResponse) VisitUnionExampleResponse(w http.Res
 	return nil
 }
 
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
+// ServerInterface represents all server handlers.
+type ServerInterface interface {
 
 	// (POST /json)
 	JSONExample(ctx context.Context, request JSONExampleRequestObject) (JSONExampleResponseObject, error)
@@ -1584,26 +1034,50 @@ type StrictServerInterface interface {
 	UnionExample(ctx context.Context, request UnionExampleRequestObject) (UnionExampleResponseObject, error)
 }
 
-type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
-type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
+}
 
-type StrictHTTPServerOptions struct {
-	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
+
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
 	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
-		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		},
-	}}
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
 }
 
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
 	if options.RequestErrorHandlerFunc == nil {
 		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1614,17 +1088,41 @@ func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []Strict
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/json", sh.JSONExample)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/urlencoded", sh.URLEncodedExample)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/multipart", sh.MultipartExample)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/multipart-related", sh.MultipartRelatedExample)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/text", sh.TextExample)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/unknown", sh.UnknownExample)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/multiple", sh.MultipleRequestAndResponseTypes)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/with-headers", sh.HeadersExample)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/no-content-headers", sh.NoContentHeaders)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/reusable-responses", sh.ReusableResponses)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/reusable-urlencoded-response", sh.ReusableURLEncodedResponse)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/unspecified-content-type", sh.UnspecifiedContentType)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/required-json-body", sh.RequiredJSONBody)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/required-text-body", sh.RequiredTextBody)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reserved-go-keyword-parameters/{type}", sh.ReservedGoKeywordParameters)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/same-name-param-and-body-property/{name}", sh.SameNameParamAndBodyProperty)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/with-union", sh.UnionExample)
+
+	return m
 }
 
-type strictHandler struct {
-	ssi         StrictServerInterface
-	middlewares []StrictMiddlewareFunc
-	options     StrictHTTPServerOptions
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
 }
 
-// JSONExample operation middleware
-func (sh *strictHandler) JSONExample(w http.ResponseWriter, r *http.Request) {
+// JSONExample serves the JSONExample operation.
+func (sh *serverHandler) JSONExample(w http.ResponseWriter, r *http.Request) {
+
 	var request JSONExampleRequestObject
 
 	var body JSONExampleJSONRequestBody
@@ -1638,9 +1136,9 @@ func (sh *strictHandler) JSONExample(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.JSONExample(ctx, request.(JSONExampleRequestObject))
+		return sh.si.JSONExample(ctx, request.(JSONExampleRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "JSONExample")
 	}
 
@@ -1657,8 +1155,9 @@ func (sh *strictHandler) JSONExample(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// MultipartExample operation middleware
-func (sh *strictHandler) MultipartExample(w http.ResponseWriter, r *http.Request) {
+// MultipartExample serves the MultipartExample operation.
+func (sh *serverHandler) MultipartExample(w http.ResponseWriter, r *http.Request) {
+
 	var request MultipartExampleRequestObject
 
 	if reader, err := r.MultipartReader(); err != nil {
@@ -1669,9 +1168,9 @@ func (sh *strictHandler) MultipartExample(w http.ResponseWriter, r *http.Request
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.MultipartExample(ctx, request.(MultipartExampleRequestObject))
+		return sh.si.MultipartExample(ctx, request.(MultipartExampleRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "MultipartExample")
 	}
 
@@ -1688,8 +1187,9 @@ func (sh *strictHandler) MultipartExample(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// MultipartRelatedExample operation middleware
-func (sh *strictHandler) MultipartRelatedExample(w http.ResponseWriter, r *http.Request) {
+// MultipartRelatedExample serves the MultipartRelatedExample operation.
+func (sh *serverHandler) MultipartRelatedExample(w http.ResponseWriter, r *http.Request) {
+
 	var request MultipartRelatedExampleRequestObject
 
 	if _, params, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil {
@@ -1703,9 +1203,9 @@ func (sh *strictHandler) MultipartRelatedExample(w http.ResponseWriter, r *http.
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.MultipartRelatedExample(ctx, request.(MultipartRelatedExampleRequestObject))
+		return sh.si.MultipartRelatedExample(ctx, request.(MultipartRelatedExampleRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "MultipartRelatedExample")
 	}
 
@@ -1722,8 +1222,9 @@ func (sh *strictHandler) MultipartRelatedExample(w http.ResponseWriter, r *http.
 	}
 }
 
-// MultipleRequestAndResponseTypes operation middleware
-func (sh *strictHandler) MultipleRequestAndResponseTypes(w http.ResponseWriter, r *http.Request) {
+// MultipleRequestAndResponseTypes serves the MultipleRequestAndResponseTypes operation.
+func (sh *serverHandler) MultipleRequestAndResponseTypes(w http.ResponseWriter, r *http.Request) {
+
 	var request MultipleRequestAndResponseTypesRequestObject
 
 	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
@@ -1995,9 +1496,9 @@ func (sh *strictHandler) MultipleRequestAndResponseTypes(w http.ResponseWriter, 
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.MultipleRequestAndResponseTypes(ctx, request.(MultipleRequestAndResponseTypesRequestObject))
+		return sh.si.MultipleRequestAndResponseTypes(ctx, request.(MultipleRequestAndResponseTypesRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "MultipleRequestAndResponseTypes")
 	}
 
@@ -2014,14 +1515,15 @@ func (sh *strictHandler) MultipleRequestAndResponseTypes(w http.ResponseWriter, 
 	}
 }
 
-// NoContentHeaders operation middleware
-func (sh *strictHandler) NoContentHeaders(w http.ResponseWriter, r *http.Request) {
+// NoContentHeaders serves the NoContentHeaders operation.
+func (sh *serverHandler) NoContentHeaders(w http.ResponseWriter, r *http.Request) {
+
 	var request NoContentHeadersRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.NoContentHeaders(ctx, request.(NoContentHeadersRequestObject))
+		return sh.si.NoContentHeaders(ctx, request.(NoContentHeadersRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "NoContentHeaders")
 	}
 
@@ -2038,8 +1540,9 @@ func (sh *strictHandler) NoContentHeaders(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// RequiredJSONBody operation middleware
-func (sh *strictHandler) RequiredJSONBody(w http.ResponseWriter, r *http.Request) {
+// RequiredJSONBody serves the RequiredJSONBody operation.
+func (sh *serverHandler) RequiredJSONBody(w http.ResponseWriter, r *http.Request) {
+
 	var request RequiredJSONBodyRequestObject
 
 	var body RequiredJSONBodyJSONRequestBody
@@ -2050,9 +1553,9 @@ func (sh *strictHandler) RequiredJSONBody(w http.ResponseWriter, r *http.Request
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.RequiredJSONBody(ctx, request.(RequiredJSONBodyRequestObject))
+		return sh.si.RequiredJSONBody(ctx, request.(RequiredJSONBodyRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "RequiredJSONBody")
 	}
 
@@ -2069,8 +1572,9 @@ func (sh *strictHandler) RequiredJSONBody(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// RequiredTextBody operation middleware
-func (sh *strictHandler) RequiredTextBody(w http.ResponseWriter, r *http.Request) {
+// RequiredTextBody serves the RequiredTextBody operation.
+func (sh *serverHandler) RequiredTextBody(w http.ResponseWriter, r *http.Request) {
+
 	var request RequiredTextBodyRequestObject
 
 	data, err := io.ReadAll(r.Body)
@@ -2082,9 +1586,9 @@ func (sh *strictHandler) RequiredTextBody(w http.ResponseWriter, r *http.Request
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.RequiredTextBody(ctx, request.(RequiredTextBodyRequestObject))
+		return sh.si.RequiredTextBody(ctx, request.(RequiredTextBodyRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "RequiredTextBody")
 	}
 
@@ -2101,16 +1605,33 @@ func (sh *strictHandler) RequiredTextBody(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// ReservedGoKeywordParameters operation middleware
-func (sh *strictHandler) ReservedGoKeywordParameters(w http.ResponseWriter, r *http.Request, pType string) {
+// ReservedGoKeywordParameters serves the ReservedGoKeywordParameters operation.
+func (sh *serverHandler) ReservedGoKeywordParameters(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "type" -------------
+	var pType string
+
+	if r.PathValue("type") == "" {
+		err = errors.New("parameter 'type' is empty, can't bind its value")
+	} else {
+		pType = r.PathValue("type")
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		return
+	}
+
 	var request ReservedGoKeywordParametersRequestObject
 
 	request.Type = pType
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.ReservedGoKeywordParameters(ctx, request.(ReservedGoKeywordParametersRequestObject))
+		return sh.si.ReservedGoKeywordParameters(ctx, request.(ReservedGoKeywordParametersRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "ReservedGoKeywordParameters")
 	}
 
@@ -2127,8 +1648,9 @@ func (sh *strictHandler) ReservedGoKeywordParameters(w http.ResponseWriter, r *h
 	}
 }
 
-// ReusableResponses operation middleware
-func (sh *strictHandler) ReusableResponses(w http.ResponseWriter, r *http.Request) {
+// ReusableResponses serves the ReusableResponses operation.
+func (sh *serverHandler) ReusableResponses(w http.ResponseWriter, r *http.Request) {
+
 	var request ReusableResponsesRequestObject
 
 	var body ReusableResponsesJSONRequestBody
@@ -2142,9 +1664,9 @@ func (sh *strictHandler) ReusableResponses(w http.ResponseWriter, r *http.Reques
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.ReusableResponses(ctx, request.(ReusableResponsesRequestObject))
+		return sh.si.ReusableResponses(ctx, request.(ReusableResponsesRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "ReusableResponses")
 	}
 
@@ -2161,8 +1683,9 @@ func (sh *strictHandler) ReusableResponses(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// ReusableURLEncodedResponse operation middleware
-func (sh *strictHandler) ReusableURLEncodedResponse(w http.ResponseWriter, r *http.Request) {
+// ReusableURLEncodedResponse serves the ReusableURLEncodedResponse operation.
+func (sh *serverHandler) ReusableURLEncodedResponse(w http.ResponseWriter, r *http.Request) {
+
 	var request ReusableURLEncodedResponseRequestObject
 
 	if err := r.ParseForm(); err != nil {
@@ -2398,9 +1921,9 @@ func (sh *strictHandler) ReusableURLEncodedResponse(w http.ResponseWriter, r *ht
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.ReusableURLEncodedResponse(ctx, request.(ReusableURLEncodedResponseRequestObject))
+		return sh.si.ReusableURLEncodedResponse(ctx, request.(ReusableURLEncodedResponseRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "ReusableURLEncodedResponse")
 	}
 
@@ -2417,8 +1940,25 @@ func (sh *strictHandler) ReusableURLEncodedResponse(w http.ResponseWriter, r *ht
 	}
 }
 
-// SameNameParamAndBodyProperty operation middleware
-func (sh *strictHandler) SameNameParamAndBodyProperty(w http.ResponseWriter, r *http.Request, name string) {
+// SameNameParamAndBodyProperty serves the SameNameParamAndBodyProperty operation.
+func (sh *serverHandler) SameNameParamAndBodyProperty(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	if r.PathValue("name") == "" {
+		err = errors.New("parameter 'name' is empty, can't bind its value")
+	} else {
+		name = r.PathValue("name")
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
 	var request SameNameParamAndBodyPropertyRequestObject
 
 	request.Name = name
@@ -2434,9 +1974,9 @@ func (sh *strictHandler) SameNameParamAndBodyProperty(w http.ResponseWriter, r *
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.SameNameParamAndBodyProperty(ctx, request.(SameNameParamAndBodyPropertyRequestObject))
+		return sh.si.SameNameParamAndBodyProperty(ctx, request.(SameNameParamAndBodyPropertyRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "SameNameParamAndBodyProperty")
 	}
 
@@ -2453,8 +1993,9 @@ func (sh *strictHandler) SameNameParamAndBodyProperty(w http.ResponseWriter, r *
 	}
 }
 
-// TextExample operation middleware
-func (sh *strictHandler) TextExample(w http.ResponseWriter, r *http.Request) {
+// TextExample serves the TextExample operation.
+func (sh *serverHandler) TextExample(w http.ResponseWriter, r *http.Request) {
+
 	var request TextExampleRequestObject
 
 	data, err := io.ReadAll(r.Body)
@@ -2468,9 +2009,9 @@ func (sh *strictHandler) TextExample(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.TextExample(ctx, request.(TextExampleRequestObject))
+		return sh.si.TextExample(ctx, request.(TextExampleRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "TextExample")
 	}
 
@@ -2487,16 +2028,17 @@ func (sh *strictHandler) TextExample(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// UnknownExample operation middleware
-func (sh *strictHandler) UnknownExample(w http.ResponseWriter, r *http.Request) {
+// UnknownExample serves the UnknownExample operation.
+func (sh *serverHandler) UnknownExample(w http.ResponseWriter, r *http.Request) {
+
 	var request UnknownExampleRequestObject
 
 	request.Body = r.Body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.UnknownExample(ctx, request.(UnknownExampleRequestObject))
+		return sh.si.UnknownExample(ctx, request.(UnknownExampleRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "UnknownExample")
 	}
 
@@ -2513,8 +2055,9 @@ func (sh *strictHandler) UnknownExample(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// UnspecifiedContentType operation middleware
-func (sh *strictHandler) UnspecifiedContentType(w http.ResponseWriter, r *http.Request) {
+// UnspecifiedContentType serves the UnspecifiedContentType operation.
+func (sh *serverHandler) UnspecifiedContentType(w http.ResponseWriter, r *http.Request) {
+
 	var request UnspecifiedContentTypeRequestObject
 
 	request.ContentType = r.Header.Get("Content-Type")
@@ -2522,9 +2065,9 @@ func (sh *strictHandler) UnspecifiedContentType(w http.ResponseWriter, r *http.R
 	request.Body = r.Body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.UnspecifiedContentType(ctx, request.(UnspecifiedContentTypeRequestObject))
+		return sh.si.UnspecifiedContentType(ctx, request.(UnspecifiedContentTypeRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "UnspecifiedContentType")
 	}
 
@@ -2541,8 +2084,9 @@ func (sh *strictHandler) UnspecifiedContentType(w http.ResponseWriter, r *http.R
 	}
 }
 
-// URLEncodedExample operation middleware
-func (sh *strictHandler) URLEncodedExample(w http.ResponseWriter, r *http.Request) {
+// URLEncodedExample serves the URLEncodedExample operation.
+func (sh *serverHandler) URLEncodedExample(w http.ResponseWriter, r *http.Request) {
+
 	var request URLEncodedExampleRequestObject
 
 	if err := r.ParseForm(); err != nil {
@@ -2778,9 +2322,9 @@ func (sh *strictHandler) URLEncodedExample(w http.ResponseWriter, r *http.Reques
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.URLEncodedExample(ctx, request.(URLEncodedExampleRequestObject))
+		return sh.si.URLEncodedExample(ctx, request.(URLEncodedExampleRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "URLEncodedExample")
 	}
 
@@ -2797,8 +2341,67 @@ func (sh *strictHandler) URLEncodedExample(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// HeadersExample operation middleware
-func (sh *strictHandler) HeadersExample(w http.ResponseWriter, r *http.Request, params HeadersExampleParams) {
+// HeadersExample serves the HeadersExample operation.
+func (sh *serverHandler) HeadersExample(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the request
+	var params HeadersExampleParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "header1" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("header1")]; found {
+		var Header1 string
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "header1", Count: n})
+			return
+		}
+
+		if valueList[0] == "" {
+			err = errors.New("parameter 'header1' is empty, can't bind its value")
+		} else {
+			Header1 = valueList[0]
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header1", Err: err})
+			return
+		}
+
+		params.Header1 = Header1
+
+	} else {
+		err := fmt.Errorf("Header parameter header1 is required, but not found")
+		sh.options.RequestErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "header1", Err: err})
+		return
+	}
+
+	// ------------- Optional header parameter "header2" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("header2")]; found {
+		var Header2 int
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "header2", Count: n})
+			return
+		}
+
+		if v_, err_ := strconv.ParseInt(valueList[0], 10, 0); err_ != nil {
+			err = err_
+		} else {
+			Header2 = int(v_)
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header2", Err: err})
+			return
+		}
+
+		params.Header2 = &Header2
+
+	}
+
 	var request HeadersExampleRequestObject
 
 	request.Params = params
@@ -2814,9 +2417,9 @@ func (sh *strictHandler) HeadersExample(w http.ResponseWriter, r *http.Request, 
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.HeadersExample(ctx, request.(HeadersExampleRequestObject))
+		return sh.si.HeadersExample(ctx, request.(HeadersExampleRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "HeadersExample")
 	}
 
@@ -2833,8 +2436,9 @@ func (sh *strictHandler) HeadersExample(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
-// UnionExample operation middleware
-func (sh *strictHandler) UnionExample(w http.ResponseWriter, r *http.Request) {
+// UnionExample serves the UnionExample operation.
+func (sh *serverHandler) UnionExample(w http.ResponseWriter, r *http.Request) {
+
 	var request UnionExampleRequestObject
 
 	var body UnionExampleJSONRequestBody
@@ -2848,9 +2452,9 @@ func (sh *strictHandler) UnionExample(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.UnionExample(ctx, request.(UnionExampleRequestObject))
+		return sh.si.UnionExample(ctx, request.(UnionExampleRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "UnionExample")
 	}
 
@@ -2865,6 +2469,75 @@ func (sh *strictHandler) UnionExample(w http.ResponseWriter, r *http.Request) {
 	} else if response != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
 	}
+}
+
+type UnescapedCookieParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
+}
+
+func (e *UnescapedCookieParamError) Unwrap() error {
+	return e.Err
+}
+
+type UnmarshalingParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *UnmarshalingParamError) Unwrap() error {
+	return e.Err
+}
+
+type RequiredParamError struct {
+	ParamName string
+}
+
+func (e *RequiredParamError) Error() string {
+	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
+}
+
+type RequiredHeaderError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *RequiredHeaderError) Error() string {
+	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
+}
+
+func (e *RequiredHeaderError) Unwrap() error {
+	return e.Err
+}
+
+type InvalidParamFormatError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *InvalidParamFormatError) Unwrap() error {
+	return e.Err
+}
+
+type TooManyValuesForParamError struct {
+	ParamName string
+	Count     int
+}
+
+func (e *TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
 }
 
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.

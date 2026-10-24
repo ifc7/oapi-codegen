@@ -78,7 +78,7 @@ func statusFromContext(ctx context.Context) string {
 
 func newTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	handler := Handler(NewStrictHandler(strictServer{}, nil))
+	handler := Handler(strictServer{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), statusKey{}, r.Header.Get("X-Status"))
 		handler.ServeHTTP(w, r.WithContext(ctx))

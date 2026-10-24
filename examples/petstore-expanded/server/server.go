@@ -13,7 +13,7 @@ type PetStore struct {
 	Store *Store
 }
 
-var _ api.StrictServerInterface = (*PetStore)(nil)
+var _ api.ServerInterface = (*PetStore)(nil)
 
 func NewPetStore() *PetStore {
 	return &PetStore{

@@ -2,7 +2,7 @@ package codegen
 
 // This file holds how the generator finds the schema a Go type was taken
 // from, when a schema's type is not its own but one it refers to: whether a
-// strict-server response body can be its own type (operations.go) needs it.
+// server response body can be its own type (operations.go) needs it.
 
 import "github.com/getkin/kin-openapi/openapi3"
 

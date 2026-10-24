@@ -23,2437 +23,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-// ServerInterface represents all server handlers.
-type ServerInterface interface {
-
-	// (GET /contentObject/{param})
-	GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject)
-
-	// (GET /cookie)
-	GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams)
-
-	// (GET /enums)
-	EnumParams(w http.ResponseWriter, r *http.Request, params EnumParamsParams)
-
-	// (GET /header)
-	GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams)
-
-	// (GET /labelExplodeArray/{.param*})
-	GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
-
-	// (GET /labelExplodeObject/{.param*})
-	GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
-
-	// (GET /labelExplodePrimitive/{.param*})
-	GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32)
-
-	// (GET /labelNoExplodeArray/{.param})
-	GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
-
-	// (GET /labelNoExplodeObject/{.param})
-	GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
-
-	// (GET /labelPrimitive/{.param})
-	GetLabelPrimitive(w http.ResponseWriter, r *http.Request, param int32)
-
-	// (GET /matrixExplodeArray/{.id*})
-	GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, id []int32)
-
-	// (GET /matrixExplodeObject/{.id*})
-	GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, id Object)
-
-	// (GET /matrixExplodePrimitive/{;id*})
-	GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request, id int32)
-
-	// (GET /matrixNoExplodeArray/{.id})
-	GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, id []int32)
-
-	// (GET /matrixNoExplodeObject/{.id})
-	GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, id Object)
-
-	// (GET /matrixPrimitive/{;id})
-	GetMatrixPrimitive(w http.ResponseWriter, r *http.Request, id int32)
-
-	// (GET /passThrough/{param})
-	GetPassThrough(w http.ResponseWriter, r *http.Request, param string)
-
-	// (GET /queryDeepObject)
-	GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams)
-
-	// (GET /queryDelimited)
-	GetQueryDelimited(w http.ResponseWriter, r *http.Request, params GetQueryDelimitedParams)
-
-	// (GET /queryForm)
-	GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams)
-
-	// (GET /simpleExplodeArray/{param*})
-	GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
-
-	// (GET /simpleExplodeObject/{param*})
-	GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
-
-	// (GET /simpleExplodePrimitive/{param})
-	GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32)
-
-	// (GET /simpleNoExplodeArray/{param})
-	GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
-
-	// (GET /simpleNoExplodeObject/{param})
-	GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
-
-	// (GET /simplePrimitive/{param})
-	GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32)
-
-	// (GET /simpleString/{param})
-	GetSimpleString(w http.ResponseWriter, r *http.Request, param string)
-
-	// (GET /startingWithNumber/{1param})
-	GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string)
-}
-
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-type MiddlewareFunc func(http.Handler) http.Handler
-
-// GetContentObject operation middleware
-func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param ComplexObject
-
-	err = json.Unmarshal([]byte(r.PathValue("param")), &param)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetContentObject(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetCookie operation middleware
-func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetCookieParams
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("p"); err == nil {
-			var value int32
-			if v_, err_ := strconv.ParseInt(cookie.Value, 10, 32); err_ != nil {
-				err = err_
-			} else {
-				value = int32(v_)
-			}
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
-				return
-			}
-			params.P = &value
-
-		}
-	}
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("ep"); err == nil {
-			var value int32
-			if v_, err_ := strconv.ParseInt(cookie.Value, 10, 32); err_ != nil {
-				err = err_
-			} else {
-				value = int32(v_)
-			}
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
-				return
-			}
-			params.Ep = &value
-
-		}
-	}
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("ea"); err == nil {
-			var value []int32
-			{
-				parts_ := strings.Split(cookie.Value, ",")
-				if err == nil {
-					{
-						parts_ := parts_
-						value = make([]int32, len(parts_))
-						for i_, part_ := range parts_ {
-							if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-								err = err_
-							} else {
-								value[i_] = int32(v_)
-							}
-							if err != nil {
-								break
-							}
-						}
-					}
-				}
-			}
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
-				return
-			}
-			params.Ea = &value
-
-		}
-	}
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("a"); err == nil {
-			var value []int32
-			{
-				parts_ := strings.Split(cookie.Value, ",")
-				if err == nil {
-					{
-						parts_ := parts_
-						value = make([]int32, len(parts_))
-						for i_, part_ := range parts_ {
-							if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-								err = err_
-							} else {
-								value[i_] = int32(v_)
-							}
-							if err != nil {
-								break
-							}
-						}
-					}
-				}
-			}
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
-				return
-			}
-			params.A = &value
-
-		}
-	}
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("eo"); err == nil {
-			var value Object
-			{
-				parts_ := strings.Split(cookie.Value, ",")
-				if err == nil {
-					pairs_ := make([][2]string, 0, len(parts_))
-					for _, part_ := range parts_ {
-						kv_ := strings.Split(part_, "=")
-						if len(kv_) != 2 {
-							err = errors.New("parameter 'eo' has invalid exploded format")
-							break
-						}
-						pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
-					}
-					if err == nil {
-						for _, kv_ := range pairs_ {
-							switch kv_[0] {
-							case "firstName":
-								value.FirstName = kv_[1]
-							case "role":
-								value.Role = kv_[1]
-							}
-							if err != nil {
-								break
-							}
-						}
-					}
-				}
-			}
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
-				return
-			}
-			params.Eo = &value
-
-		}
-	}
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("o"); err == nil {
-			var value Object
-			{
-				parts_ := strings.Split(cookie.Value, ",")
-				if err == nil {
-					pairs_ := make([][2]string, 0, len(parts_)/2)
-					if len(parts_)%2 != 0 {
-						err = errors.New("parameter 'o' has invalid format, property/values need to be pairs")
-					} else {
-						for i_ := 0; i_ < len(parts_); i_ += 2 {
-							pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
-						}
-					}
-					if err == nil {
-						for _, kv_ := range pairs_ {
-							switch kv_[0] {
-							case "firstName":
-								value.FirstName = kv_[1]
-							case "role":
-								value.Role = kv_[1]
-							}
-							if err != nil {
-								break
-							}
-						}
-					}
-				}
-			}
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
-				return
-			}
-			params.O = &value
-
-		}
-	}
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("co"); err == nil {
-			var value ComplexObject
-			var decoded string
-			decoded, err := url.QueryUnescape(cookie.Value)
-			if err != nil {
-				err = fmt.Errorf("Error unescaping cookie parameter 'co'")
-				siw.ErrorHandlerFunc(w, r, &UnescapedCookieParamError{ParamName: "co", Err: err})
-				return
-			}
-
-			err = json.Unmarshal([]byte(decoded), &value)
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "co", Err: err})
-				return
-			}
-
-			params.Co = &value
-
-		}
-	}
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("1s"); err == nil {
-			var value string
-			value = cookie.Value
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
-				return
-			}
-			params.N1s = &value
-
-		}
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCookie(w, r, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// EnumParams operation middleware
-func (siw *ServerInterfaceWrapper) EnumParams(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params EnumParamsParams
-
-	// ------------- Optional query parameter "enumPathParam" -------------
-
-	if values_, found_ := r.URL.Query()["enumPathParam"]; found_ {
-		var value_ EnumParamsParamsEnumPathParam
-		if len(values_) != 1 {
-			err = errors.New("multiple values for single value parameter 'enumPathParam'")
-		} else {
-			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
-				err = err_
-			} else {
-				value_ = EnumParamsParamsEnumPathParam(v_)
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "enumPathParam", Err: err})
-			return
-		}
-		params.EnumPathParam = &value_
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EnumParams(w, r, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetHeader operation middleware
-func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetHeaderParams
-
-	headers := r.Header
-
-	// ------------- Optional header parameter "X-Primitive" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Primitive")]; found {
-		var XPrimitive int32
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Primitive", Count: n})
-			return
-		}
-
-		if v_, err_ := strconv.ParseInt(valueList[0], 10, 32); err_ != nil {
-			err = err_
-		} else {
-			XPrimitive = int32(v_)
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive", Err: err})
-			return
-		}
-
-		params.XPrimitive = &XPrimitive
-
-	}
-
-	// ------------- Optional header parameter "X-Primitive-Exploded" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Primitive-Exploded")]; found {
-		var XPrimitiveExploded int32
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Primitive-Exploded", Count: n})
-			return
-		}
-
-		if v_, err_ := strconv.ParseInt(valueList[0], 10, 32); err_ != nil {
-			err = err_
-		} else {
-			XPrimitiveExploded = int32(v_)
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive-Exploded", Err: err})
-			return
-		}
-
-		params.XPrimitiveExploded = &XPrimitiveExploded
-
-	}
-
-	// ------------- Optional header parameter "X-Array-Exploded" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Array-Exploded")]; found {
-		var XArrayExploded []int32
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Array-Exploded", Count: n})
-			return
-		}
-
-		{
-			parts_ := strings.Split(valueList[0], ",")
-			if err == nil {
-				{
-					parts_ := parts_
-					XArrayExploded = make([]int32, len(parts_))
-					for i_, part_ := range parts_ {
-						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-							err = err_
-						} else {
-							XArrayExploded[i_] = int32(v_)
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array-Exploded", Err: err})
-			return
-		}
-
-		params.XArrayExploded = &XArrayExploded
-
-	}
-
-	// ------------- Optional header parameter "X-Array" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Array")]; found {
-		var XArray []int32
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Array", Count: n})
-			return
-		}
-
-		{
-			parts_ := strings.Split(valueList[0], ",")
-			if err == nil {
-				{
-					parts_ := parts_
-					XArray = make([]int32, len(parts_))
-					for i_, part_ := range parts_ {
-						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-							err = err_
-						} else {
-							XArray[i_] = int32(v_)
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array", Err: err})
-			return
-		}
-
-		params.XArray = &XArray
-
-	}
-
-	// ------------- Optional header parameter "X-Object-Exploded" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Object-Exploded")]; found {
-		var XObjectExploded Object
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Object-Exploded", Count: n})
-			return
-		}
-
-		{
-			parts_ := strings.Split(valueList[0], ",")
-			if err == nil {
-				pairs_ := make([][2]string, 0, len(parts_))
-				for _, part_ := range parts_ {
-					kv_ := strings.Split(part_, "=")
-					if len(kv_) != 2 {
-						err = errors.New("parameter 'X-Object-Exploded' has invalid exploded format")
-						break
-					}
-					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
-				}
-				if err == nil {
-					for _, kv_ := range pairs_ {
-						switch kv_[0] {
-						case "firstName":
-							XObjectExploded.FirstName = kv_[1]
-						case "role":
-							XObjectExploded.Role = kv_[1]
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object-Exploded", Err: err})
-			return
-		}
-
-		params.XObjectExploded = &XObjectExploded
-
-	}
-
-	// ------------- Optional header parameter "X-Object" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Object")]; found {
-		var XObject Object
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Object", Count: n})
-			return
-		}
-
-		{
-			parts_ := strings.Split(valueList[0], ",")
-			if err == nil {
-				pairs_ := make([][2]string, 0, len(parts_)/2)
-				if len(parts_)%2 != 0 {
-					err = errors.New("parameter 'X-Object' has invalid format, property/values need to be pairs")
-				} else {
-					for i_ := 0; i_ < len(parts_); i_ += 2 {
-						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
-					}
-				}
-				if err == nil {
-					for _, kv_ := range pairs_ {
-						switch kv_[0] {
-						case "firstName":
-							XObject.FirstName = kv_[1]
-						case "role":
-							XObject.Role = kv_[1]
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object", Err: err})
-			return
-		}
-
-		params.XObject = &XObject
-
-	}
-
-	// ------------- Optional header parameter "X-Complex-Object" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Complex-Object")]; found {
-		var XComplexObject ComplexObject
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Complex-Object", Count: n})
-			return
-		}
-
-		err = json.Unmarshal([]byte(valueList[0]), &XComplexObject)
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "X-Complex-Object", Err: err})
-			return
-		}
-
-		params.XComplexObject = &XComplexObject
-
-	}
-
-	// ------------- Optional header parameter "X-Pass-Through" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Pass-Through")]; found {
-		var XPassThrough string
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Pass-Through", Count: n})
-			return
-		}
-
-		XPassThrough = valueList[0]
-
-		params.XPassThrough = &XPassThrough
-
-	}
-
-	// ------------- Optional header parameter "1-Starting-With-Number" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("1-Starting-With-Number")]; found {
-		var N1StartingWithNumber string
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "1-Starting-With-Number", Count: n})
-			return
-		}
-
-		N1StartingWithNumber = valueList[0]
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1-Starting-With-Number", Err: err})
-			return
-		}
-
-		params.N1StartingWithNumber = &N1StartingWithNumber
-
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetHeader(w, r, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetLabelExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param []int32
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("param"), ".")
-			if parts_[0] != "" {
-				err = errors.New("invalid format for label parameter 'param', should start with '.'")
-			}
-			parts_ = parts_[1:]
-			if err == nil {
-				{
-					parts_ := parts_
-					param = make([]int32, len(parts_))
-					for i_, part_ := range parts_ {
-						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-							err = err_
-						} else {
-							param[i_] = int32(v_)
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelExplodeArray(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetLabelExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param Object
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("param"), ".")
-			if parts_[0] != "" {
-				err = errors.New("invalid format for label parameter 'param', should start with '.'")
-			}
-			parts_ = parts_[1:]
-			if err == nil {
-				pairs_ := make([][2]string, 0, len(parts_))
-				for _, part_ := range parts_ {
-					kv_ := strings.Split(part_, "=")
-					if len(kv_) != 2 {
-						err = errors.New("parameter 'param' has invalid exploded format")
-						break
-					}
-					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
-				}
-				if err == nil {
-					for _, kv_ := range pairs_ {
-						switch kv_[0] {
-						case "firstName":
-							param.FirstName = kv_[1]
-						case "role":
-							param.Role = kv_[1]
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelExplodeObject(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetLabelExplodePrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param int32
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("param"), ".")
-			if parts_[0] != "" {
-				err = errors.New("invalid format for label parameter 'param', should start with '.'")
-			}
-			parts_ = parts_[1:]
-			if err == nil {
-				if len(parts_) != 1 {
-					err = errors.New("parameter 'param': expected single value")
-				} else {
-					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
-						err = err_
-					} else {
-						param = int32(v_)
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelExplodePrimitive(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetLabelNoExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param []int32
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			var parts_ []string
-			if !strings.HasPrefix(r.PathValue("param"), ".") {
-				err = errors.New("invalid format for label parameter 'param', should start with '.'")
-			} else {
-				parts_ = strings.Split(r.PathValue("param")[1:], ",")
-			}
-			if err == nil {
-				{
-					parts_ := parts_
-					param = make([]int32, len(parts_))
-					for i_, part_ := range parts_ {
-						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-							err = err_
-						} else {
-							param[i_] = int32(v_)
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelNoExplodeArray(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetLabelNoExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param Object
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			var parts_ []string
-			if !strings.HasPrefix(r.PathValue("param"), ".") {
-				err = errors.New("invalid format for label parameter 'param', should start with '.'")
-			} else {
-				parts_ = strings.Split(r.PathValue("param")[1:], ",")
-			}
-			if err == nil {
-				pairs_ := make([][2]string, 0, len(parts_)/2)
-				if len(parts_)%2 != 0 {
-					err = errors.New("parameter 'param' has invalid format, property/values need to be pairs")
-				} else {
-					for i_ := 0; i_ < len(parts_); i_ += 2 {
-						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
-					}
-				}
-				if err == nil {
-					for _, kv_ := range pairs_ {
-						switch kv_[0] {
-						case "firstName":
-							param.FirstName = kv_[1]
-						case "role":
-							param.Role = kv_[1]
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelNoExplodeObject(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetLabelPrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelPrimitive(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param int32
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			var parts_ []string
-			if !strings.HasPrefix(r.PathValue("param"), ".") {
-				err = errors.New("invalid format for label parameter 'param', should start with '.'")
-			} else {
-				parts_ = strings.Split(r.PathValue("param")[1:], ",")
-			}
-			if err == nil {
-				if len(parts_) != 1 {
-					err = errors.New("parameter 'param': expected single value")
-				} else {
-					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
-						err = err_
-					} else {
-						param = int32(v_)
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelPrimitive(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetMatrixExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id []int32
-
-	if r.PathValue("id") == "" {
-		err = errors.New("parameter 'id' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("id"), ";")
-			if parts_[0] != "" {
-				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
-			}
-			parts_ = parts_[1:]
-			for i_ := range parts_ {
-				parts_[i_] = strings.TrimPrefix(parts_[i_], "id=")
-			}
-			if err == nil {
-				{
-					parts_ := parts_
-					id = make([]int32, len(parts_))
-					for i_, part_ := range parts_ {
-						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-							err = err_
-						} else {
-							id[i_] = int32(v_)
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodeArray(w, r, id)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetMatrixExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id Object
-
-	if r.PathValue("id") == "" {
-		err = errors.New("parameter 'id' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("id"), ";")
-			if parts_[0] != "" {
-				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
-			}
-			parts_ = parts_[1:]
-			if err == nil {
-				pairs_ := make([][2]string, 0, len(parts_))
-				for _, part_ := range parts_ {
-					kv_ := strings.Split(part_, "=")
-					if len(kv_) != 2 {
-						err = errors.New("parameter 'id' has invalid exploded format")
-						break
-					}
-					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
-				}
-				if err == nil {
-					for _, kv_ := range pairs_ {
-						switch kv_[0] {
-						case "firstName":
-							id.FirstName = kv_[1]
-						case "role":
-							id.Role = kv_[1]
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodeObject(w, r, id)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetMatrixExplodePrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id int32
-
-	if r.PathValue("id") == "" {
-		err = errors.New("parameter 'id' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("id"), ";")
-			if parts_[0] != "" {
-				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
-			}
-			parts_ = parts_[1:]
-			for i_ := range parts_ {
-				parts_[i_] = strings.TrimPrefix(parts_[i_], "id=")
-			}
-			if err == nil {
-				if len(parts_) != 1 {
-					err = errors.New("parameter 'id': expected single value")
-				} else {
-					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
-						err = err_
-					} else {
-						id = int32(v_)
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodePrimitive(w, r, id)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetMatrixNoExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id []int32
-
-	if r.PathValue("id") == "" {
-		err = errors.New("parameter 'id' is empty, can't bind its value")
-	} else {
-		{
-			var parts_ []string
-			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
-				err = errors.New("expected parameter 'id' to start with ;id=")
-			} else {
-				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
-			}
-			if err == nil {
-				{
-					parts_ := parts_
-					id = make([]int32, len(parts_))
-					for i_, part_ := range parts_ {
-						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-							err = err_
-						} else {
-							id[i_] = int32(v_)
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixNoExplodeArray(w, r, id)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetMatrixNoExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id Object
-
-	if r.PathValue("id") == "" {
-		err = errors.New("parameter 'id' is empty, can't bind its value")
-	} else {
-		{
-			var parts_ []string
-			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
-				err = errors.New("expected parameter 'id' to start with ;id=")
-			} else {
-				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
-			}
-			if err == nil {
-				pairs_ := make([][2]string, 0, len(parts_)/2)
-				if len(parts_)%2 != 0 {
-					err = errors.New("parameter 'id' has invalid format, property/values need to be pairs")
-				} else {
-					for i_ := 0; i_ < len(parts_); i_ += 2 {
-						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
-					}
-				}
-				if err == nil {
-					for _, kv_ := range pairs_ {
-						switch kv_[0] {
-						case "firstName":
-							id.FirstName = kv_[1]
-						case "role":
-							id.Role = kv_[1]
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixNoExplodeObject(w, r, id)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetMatrixPrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixPrimitive(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id int32
-
-	if r.PathValue("id") == "" {
-		err = errors.New("parameter 'id' is empty, can't bind its value")
-	} else {
-		{
-			var parts_ []string
-			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
-				err = errors.New("expected parameter 'id' to start with ;id=")
-			} else {
-				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
-			}
-			if err == nil {
-				if len(parts_) != 1 {
-					err = errors.New("parameter 'id': expected single value")
-				} else {
-					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
-						err = err_
-					} else {
-						id = int32(v_)
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixPrimitive(w, r, id)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetPassThrough operation middleware
-func (siw *ServerInterfaceWrapper) GetPassThrough(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param string
-
-	param = r.PathValue("param")
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPassThrough(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetDeepObject operation middleware
-func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetDeepObjectParams
-
-	// ------------- Required query parameter "deepObj" -------------
-
-	{
-		// The object's properties are query parameters of their own.
-		var value_ ComplexObject
-		found_ := false
-		query_ := r.URL.Query()
-		_ = query_
-		{
-			form_ := false
-			_ = form_
-			tree_ := map[string]any{}
-			insert_ := func(path []string, value string) {
-				node := tree_
-				for _, key := range path[:len(path)-1] {
-					next, ok := node[key].(map[string]any)
-					if !ok {
-						next = map[string]any{}
-						node[key] = next
-					}
-					node = next
-				}
-				node[path[len(path)-1]] = value
-			}
-			for key_, values_ := range query_ {
-				rest_, ok_ := strings.CutPrefix(key_, "deepObj[")
-				if !ok_ {
-					continue
-				}
-				found_ = true
-				path_ := strings.Split(strings.TrimRight(rest_, "]"), "][")
-				if len(values_) == 1 {
-					insert_(path_, values_[0])
-				} else {
-					for i_, value_ := range values_ {
-						insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
-					}
-				}
-			}
-			if found_ {
-				kinds_ := map[string]map[string]string{
-					"ComplexObject": {"Id": "int", "IsAdmin": "bool", "Object": "object:Object"},
-					"Object":        {"firstName": "string", "role": "string"},
-				}
-				// In a form, a value of the wrong shape is skipped, as the runtime
-				// library skipped it.
-				skip_ := &struct{}{}
-				var convert_ func(node any, kind string) (any, error)
-				convert_ = func(node any, kind string) (any, error) {
-					fields, isMap := node.(map[string]any)
-					if form_ {
-						compound := strings.HasPrefix(kind, "object:") || strings.HasPrefix(kind, "map:") || strings.HasPrefix(kind, "array:")
-						switch {
-						case isMap && !compound && kind != "any":
-							// A repeated value: the first one counts.
-							first, ok := fields["0"]
-							if !ok {
-								return skip_, nil
-							}
-							return convert_(first, kind)
-						case !isMap && compound && !strings.HasPrefix(kind, "array:"):
-							return skip_, nil
-						}
-					}
-					text, _ := node.(string)
-					switch {
-					case strings.HasPrefix(kind, "object:"):
-						if !isMap {
-							return nil, fmt.Errorf("expected an object, got %q", text)
-						}
-						object := kinds_[strings.TrimPrefix(kind, "object:")]
-						out := make(map[string]any, len(fields))
-						for key, value := range fields {
-							fieldKind, ok := object[key]
-							if !ok {
-								if fieldKind, ok = object["*"]; !ok {
-									if form_ {
-										continue
-									}
-									return nil, fmt.Errorf("field [%s] is not present in destination object", key)
-								}
-							}
-							if fieldKind == "skip" {
-								continue
-							}
-							v, err := convert_(value, fieldKind)
-							if err != nil {
-								return nil, fmt.Errorf("error assigning field [%s]: %w", key, err)
-							}
-							if v == skip_ {
-								continue
-							}
-							out[key] = v
-						}
-						return out, nil
-					case strings.HasPrefix(kind, "map:"):
-						if !isMap {
-							return nil, fmt.Errorf("expected an object, got %q", text)
-						}
-						out := make(map[string]any, len(fields))
-						for key, value := range fields {
-							v, err := convert_(value, strings.TrimPrefix(kind, "map:"))
-							if err != nil {
-								return nil, err
-							}
-							if v == skip_ {
-								continue
-							}
-							out[key] = v
-						}
-						return out, nil
-					case strings.HasPrefix(kind, "array:"):
-						if !isMap && form_ {
-							v, err := convert_(node, strings.TrimPrefix(kind, "array:"))
-							if err != nil {
-								return nil, fmt.Errorf("error binding array element 0: %w", err)
-							}
-							return []any{v}, nil
-						}
-						if !isMap {
-							return nil, fmt.Errorf("expected an array, got %q", text)
-						}
-						size := len(fields)
-						if form_ {
-							// Missing elements of a form's array are zero values.
-							size = 0
-							for key := range fields {
-								if i, err := strconv.Atoi(key); err == nil && i >= size {
-									size = i + 1
-								}
-							}
-						}
-						out := make([]any, size)
-						for i := range out {
-							value, ok := fields[strconv.Itoa(i)]
-							if !ok && form_ {
-								continue
-							}
-							if !ok {
-								return nil, errors.New("array deepObjects must have consecutive indices")
-							}
-							v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
-							if err != nil {
-								return nil, fmt.Errorf("error binding array element %d: %w", i, err)
-							}
-							if v == skip_ {
-								v = nil
-							}
-							out[i] = v
-						}
-						return out, nil
-					case isMap:
-						if kind != "any" {
-							return nil, fmt.Errorf("expected a value, got an object")
-						}
-						keys := make([]int, 0, len(fields))
-						for key := range fields {
-							if i, err := strconv.Atoi(key); err == nil && i >= 0 && i < len(fields) {
-								keys = append(keys, i)
-							}
-						}
-						out := make(map[string]any, len(fields))
-						for key, value := range fields {
-							v, err := convert_(value, "any")
-							if err != nil {
-								return nil, err
-							}
-							out[key] = v
-						}
-						if len(keys) != len(fields) {
-							return out, nil
-						}
-						array := make([]any, len(fields))
-						for key, value := range out {
-							i, _ := strconv.Atoi(key)
-							array[i] = value
-						}
-						return array, nil
-					case kind == "int":
-						i, err := strconv.ParseInt(text, 10, 64)
-						if err != nil {
-							return nil, fmt.Errorf("expected a valid int, got %s", text)
-						}
-						return i, nil
-					case kind == "float":
-						f, err := strconv.ParseFloat(text, 64)
-						if err != nil || math.IsInf(f, 0) || math.IsNaN(f) {
-							return nil, fmt.Errorf("expected a valid float, got %s", text)
-						}
-						return f, nil
-					case kind == "bool":
-						b, err := strconv.ParseBool(text)
-						if err != nil {
-							return nil, fmt.Errorf("expected a valid bool, got %s", text)
-						}
-						return b, nil
-					case kind == "any":
-						switch text {
-						case "true":
-							return true, nil
-						case "false":
-							return false, nil
-						case "null":
-							return nil, nil
-						}
-						var f float64
-						if err := json.Unmarshal([]byte(text), &f); err == nil {
-							return f, nil
-						}
-						return text, nil
-					default:
-						return text, nil
-					}
-				}
-				if v_, err_ := convert_(tree_, "object:ComplexObject"); err_ != nil {
-					err = err_
-				} else if b_, err_ := json.Marshal(v_); err_ != nil {
-					err = err_
-				} else {
-					err = json.Unmarshal(b_, &value_)
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deepObj", Err: err})
-			return
-		}
-		if found_ {
-			params.DeepObj = value_
-		} else {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deepObj"})
-			return
-		}
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeepObject(w, r, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetQueryDelimited operation middleware
-func (siw *ServerInterfaceWrapper) GetQueryDelimited(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetQueryDelimitedParams
-
-	// ------------- Optional query parameter "sa" -------------
-
-	if values_, found_ := r.URL.Query()["sa"]; found_ {
-		var value_ []int32
-		if len(values_) != 1 {
-			err = errors.New("parameter 'sa' is not exploded, but is specified multiple times")
-		} else {
-			{
-				parts_ := strings.Split(values_[0], " ")
-				value_ = make([]int32, len(parts_))
-				for i_, part_ := range parts_ {
-					if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-						err = err_
-					} else {
-						value_[i_] = int32(v_)
-					}
-					if err != nil {
-						break
-					}
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sa", Err: err})
-			return
-		}
-		params.Sa = &value_
-	}
-
-	// ------------- Optional query parameter "pa" -------------
-
-	if values_, found_ := r.URL.Query()["pa"]; found_ {
-		var value_ []int32
-		if len(values_) != 1 {
-			err = errors.New("parameter 'pa' is not exploded, but is specified multiple times")
-		} else {
-			{
-				parts_ := strings.Split(values_[0], "|")
-				value_ = make([]int32, len(parts_))
-				for i_, part_ := range parts_ {
-					if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-						err = err_
-					} else {
-						value_[i_] = int32(v_)
-					}
-					if err != nil {
-						break
-					}
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pa", Err: err})
-			return
-		}
-		params.Pa = &value_
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetQueryDelimited(w, r, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetQueryForm operation middleware
-func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetQueryFormParams
-
-	// ------------- Optional query parameter "ea" -------------
-
-	if values_, found_ := r.URL.Query()["ea"]; found_ {
-		var value_ []int32
-		{
-			parts_ := values_
-			value_ = make([]int32, len(parts_))
-			for i_, part_ := range parts_ {
-				if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-					err = err_
-				} else {
-					value_[i_] = int32(v_)
-				}
-				if err != nil {
-					break
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
-			return
-		}
-		params.Ea = &value_
-	}
-
-	// ------------- Optional query parameter "a" -------------
-
-	if values_, found_ := r.URL.Query()["a"]; found_ {
-		var value_ []int32
-		if len(values_) != 1 {
-			err = errors.New("parameter 'a' is not exploded, but is specified multiple times")
-		} else {
-			{
-				parts_ := strings.Split(values_[0], ",")
-				value_ = make([]int32, len(parts_))
-				for i_, part_ := range parts_ {
-					if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-						err = err_
-					} else {
-						value_[i_] = int32(v_)
-					}
-					if err != nil {
-						break
-					}
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
-			return
-		}
-		params.A = &value_
-	}
-
-	// ------------- Optional query parameter "eo" -------------
-
-	{
-		// The object's properties are query parameters of their own.
-		var value_ Object
-		found_ := false
-		query_ := r.URL.Query()
-		_ = query_
-		if vs_, ok_ := query_["firstName"]; ok_ {
-			found_ = true
-			if len(vs_) != 1 {
-				err = errors.New("field 'firstName' specified multiple times for param 'eo'")
-			} else {
-				value_.FirstName = vs_[0]
-			}
-		}
-		if vs_, ok_ := query_["role"]; ok_ {
-			found_ = true
-			if len(vs_) != 1 {
-				err = errors.New("field 'role' specified multiple times for param 'eo'")
-			} else {
-				value_.Role = vs_[0]
-			}
-		}
-
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
-			return
-		}
-		if found_ {
-			params.Eo = &value_
-		}
-	}
-
-	// ------------- Optional query parameter "o" -------------
-
-	if values_, found_ := r.URL.Query()["o"]; found_ {
-		var value_ Object
-		if len(values_) != 1 {
-			err = errors.New("parameter 'o' is not exploded, but is specified multiple times")
-		} else {
-			parts_ := strings.Split(values_[0], ",")
-			pairs_ := make([][2]string, 0, len(parts_)/2)
-			if len(parts_)%2 != 0 {
-				err = errors.New("parameter 'o' has invalid format, property/values need to be pairs")
-			} else {
-				for i_ := 0; i_ < len(parts_); i_ += 2 {
-					pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
-				}
-			}
-			if err == nil {
-				for _, kv_ := range pairs_ {
-					switch kv_[0] {
-					case "firstName":
-						value_.FirstName = kv_[1]
-					case "role":
-						value_.Role = kv_[1]
-					}
-					if err != nil {
-						break
-					}
-				}
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
-			return
-		}
-		params.O = &value_
-	}
-
-	// ------------- Optional query parameter "ep" -------------
-
-	if values_, found_ := r.URL.Query()["ep"]; found_ {
-		var value_ int32
-		if len(values_) != 1 {
-			err = errors.New("multiple values for single value parameter 'ep'")
-		} else {
-			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
-				err = err_
-			} else {
-				value_ = int32(v_)
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
-			return
-		}
-		params.Ep = &value_
-	}
-
-	// ------------- Optional query parameter "p" -------------
-
-	if values_, found_ := r.URL.Query()["p"]; found_ {
-		var value_ int32
-		if len(values_) != 1 {
-			err = errors.New("parameter 'p' is not exploded, but is specified multiple times")
-		} else {
-			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
-				err = err_
-			} else {
-				value_ = int32(v_)
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
-			return
-		}
-		params.P = &value_
-	}
-
-	// ------------- Optional query parameter "ps" -------------
-
-	if values_, found_ := r.URL.Query()["ps"]; found_ {
-		var value_ string
-		if len(values_) != 1 {
-			err = errors.New("multiple values for single value parameter 'ps'")
-		} else {
-			value_ = values_[0]
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ps", Err: err})
-			return
-		}
-		params.Ps = &value_
-	}
-
-	// ------------- Optional query parameter "co" -------------
-
-	if paramValue := r.URL.Query().Get("co"); paramValue != "" {
-
-		var value ComplexObject
-		err = json.Unmarshal([]byte(paramValue), &value)
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "co", Err: err})
-			return
-		}
-
-		params.Co = &value
-
-	}
-
-	// ------------- Optional query parameter "1s" -------------
-
-	if values_, found_ := r.URL.Query()["1s"]; found_ {
-		var value_ string
-		if len(values_) != 1 {
-			err = errors.New("multiple values for single value parameter '1s'")
-		} else {
-			value_ = values_[0]
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
-			return
-		}
-		params.N1s = &value_
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetQueryForm(w, r, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetSimpleExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param []int32
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("param"), ",")
-			if err == nil {
-				{
-					parts_ := parts_
-					param = make([]int32, len(parts_))
-					for i_, part_ := range parts_ {
-						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-							err = err_
-						} else {
-							param[i_] = int32(v_)
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleExplodeArray(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetSimpleExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param Object
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("param"), ",")
-			if err == nil {
-				pairs_ := make([][2]string, 0, len(parts_))
-				for _, part_ := range parts_ {
-					kv_ := strings.Split(part_, "=")
-					if len(kv_) != 2 {
-						err = errors.New("parameter 'param' has invalid exploded format")
-						break
-					}
-					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
-				}
-				if err == nil {
-					for _, kv_ := range pairs_ {
-						switch kv_[0] {
-						case "firstName":
-							param.FirstName = kv_[1]
-						case "role":
-							param.Role = kv_[1]
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleExplodeObject(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetSimpleExplodePrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param int32
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		if v_, err_ := strconv.ParseInt(r.PathValue("param"), 10, 32); err_ != nil {
-			err = err_
-		} else {
-			param = int32(v_)
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleExplodePrimitive(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetSimpleNoExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param []int32
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("param"), ",")
-			if err == nil {
-				{
-					parts_ := parts_
-					param = make([]int32, len(parts_))
-					for i_, part_ := range parts_ {
-						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
-							err = err_
-						} else {
-							param[i_] = int32(v_)
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleNoExplodeArray(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetSimpleNoExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param Object
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		{
-			parts_ := strings.Split(r.PathValue("param"), ",")
-			if err == nil {
-				pairs_ := make([][2]string, 0, len(parts_)/2)
-				if len(parts_)%2 != 0 {
-					err = errors.New("parameter 'param' has invalid format, property/values need to be pairs")
-				} else {
-					for i_ := 0; i_ < len(parts_); i_ += 2 {
-						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
-					}
-				}
-				if err == nil {
-					for _, kv_ := range pairs_ {
-						switch kv_[0] {
-						case "firstName":
-							param.FirstName = kv_[1]
-						case "role":
-							param.Role = kv_[1]
-						}
-						if err != nil {
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleNoExplodeObject(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetSimplePrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param int32
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		if v_, err_ := strconv.ParseInt(r.PathValue("param"), 10, 32); err_ != nil {
-			err = err_
-		} else {
-			param = int32(v_)
-		}
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimplePrimitive(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetSimpleString operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleString(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "param" -------------
-	var param string
-
-	if r.PathValue("param") == "" {
-		err = errors.New("parameter 'param' is empty, can't bind its value")
-	} else {
-		param = r.PathValue("param")
-	}
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleString(w, r, param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetStartingWithNumber operation middleware
-func (siw *ServerInterfaceWrapper) GetStartingWithNumber(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "1param" -------------
-	var n1param string
-
-	n1param = r.PathValue("_param")
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetStartingWithNumber(w, r, n1param)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-type UnescapedCookieParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnescapedCookieParamError) Error() string {
-	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
-}
-
-func (e *UnescapedCookieParamError) Unwrap() error {
-	return e.Err
-}
-
-type UnmarshalingParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnmarshalingParamError) Error() string {
-	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *UnmarshalingParamError) Unwrap() error {
-	return e.Err
-}
-
-type RequiredParamError struct {
-	ParamName string
-}
-
-func (e *RequiredParamError) Error() string {
-	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
-}
-
-type RequiredHeaderError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *RequiredHeaderError) Error() string {
-	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
-}
-
-func (e *RequiredHeaderError) Unwrap() error {
-	return e.Err
-}
-
-type InvalidParamFormatError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *InvalidParamFormatError) Error() string {
-	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *InvalidParamFormatError) Unwrap() error {
-	return e.Err
-}
-
-type TooManyValuesForParamError struct {
-	ParamName string
-	Count     int
-}
-
-func (e *TooManyValuesForParamError) Error() string {
-	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
-}
-
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
-
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simplePrimitive/{param}", wrapper.GetSimplePrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleString/{param}", wrapper.GetSimpleString)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleNoExplodeArray/{param}", wrapper.GetSimpleNoExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodeArray/{param}", wrapper.GetSimpleExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleNoExplodeObject/{param}", wrapper.GetSimpleNoExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodeObject/{param}", wrapper.GetSimpleExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelNoExplodeArray/{param}", wrapper.GetLabelNoExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodeArray/{param}", wrapper.GetLabelExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelNoExplodeObject/{param}", wrapper.GetLabelNoExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodeObject/{param}", wrapper.GetLabelExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixNoExplodeArray/{id}", wrapper.GetMatrixNoExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodeArray/{id}", wrapper.GetMatrixExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixNoExplodeObject/{id}", wrapper.GetMatrixNoExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodeObject/{id}", wrapper.GetMatrixExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodePrimitive/{param}", wrapper.GetSimpleExplodePrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelPrimitive/{param}", wrapper.GetLabelPrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodePrimitive/{param}", wrapper.GetLabelExplodePrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixPrimitive/{id}", wrapper.GetMatrixPrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodePrimitive/{id}", wrapper.GetMatrixExplodePrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/contentObject/{param}", wrapper.GetContentObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/passThrough/{param}", wrapper.GetPassThrough)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/startingWithNumber/{_param}", wrapper.GetStartingWithNumber)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryForm", wrapper.GetQueryForm)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryDelimited", wrapper.GetQueryDelimited)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryDeepObject", wrapper.GetDeepObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/header", wrapper.GetHeader)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cookie", wrapper.GetCookie)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/enums", wrapper.EnumParams)
-
-	return m
-}
-
 type SimpleResponseTextResponse string
 
 type GetContentObjectRequestObject struct {
@@ -2994,8 +563,8 @@ func (response GetStartingWithNumber200TextResponse) VisitGetStartingWithNumberR
 	return err
 }
 
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
+// ServerInterface represents all server handlers.
+type ServerInterface interface {
 
 	// (GET /contentObject/{param})
 	GetContentObject(ctx context.Context, request GetContentObjectRequestObject) (GetContentObjectResponseObject, error)
@@ -3082,26 +651,50 @@ type StrictServerInterface interface {
 	GetStartingWithNumber(ctx context.Context, request GetStartingWithNumberRequestObject) (GetStartingWithNumberResponseObject, error)
 }
 
-type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
-type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
+}
 
-type StrictHTTPServerOptions struct {
-	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
+
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
 	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
-		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		},
-	}}
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
 }
 
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
 	if options.RequestErrorHandlerFunc == nil {
 		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -3112,25 +705,72 @@ func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []Strict
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simplePrimitive/{param}", sh.GetSimplePrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleString/{param}", sh.GetSimpleString)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleNoExplodeArray/{param}", sh.GetSimpleNoExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodeArray/{param}", sh.GetSimpleExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleNoExplodeObject/{param}", sh.GetSimpleNoExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodeObject/{param}", sh.GetSimpleExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelNoExplodeArray/{param}", sh.GetLabelNoExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodeArray/{param}", sh.GetLabelExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelNoExplodeObject/{param}", sh.GetLabelNoExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodeObject/{param}", sh.GetLabelExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixNoExplodeArray/{id}", sh.GetMatrixNoExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodeArray/{id}", sh.GetMatrixExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixNoExplodeObject/{id}", sh.GetMatrixNoExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodeObject/{id}", sh.GetMatrixExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodePrimitive/{param}", sh.GetSimpleExplodePrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelPrimitive/{param}", sh.GetLabelPrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodePrimitive/{param}", sh.GetLabelExplodePrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixPrimitive/{id}", sh.GetMatrixPrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodePrimitive/{id}", sh.GetMatrixExplodePrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/contentObject/{param}", sh.GetContentObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/passThrough/{param}", sh.GetPassThrough)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/startingWithNumber/{_param}", sh.GetStartingWithNumber)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryForm", sh.GetQueryForm)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryDelimited", sh.GetQueryDelimited)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryDeepObject", sh.GetDeepObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/header", sh.GetHeader)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cookie", sh.GetCookie)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/enums", sh.EnumParams)
+
+	return m
 }
 
-type strictHandler struct {
-	ssi         StrictServerInterface
-	middlewares []StrictMiddlewareFunc
-	options     StrictHTTPServerOptions
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
 }
 
-// GetContentObject operation middleware
-func (sh *strictHandler) GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) {
+// GetContentObject serves the GetContentObject operation.
+func (sh *serverHandler) GetContentObject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param ComplexObject
+
+	err = json.Unmarshal([]byte(r.PathValue("param")), &param)
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetContentObjectRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetContentObject(ctx, request.(GetContentObjectRequestObject))
+		return sh.si.GetContentObject(ctx, request.(GetContentObjectRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetContentObject")
 	}
 
@@ -3147,16 +787,247 @@ func (sh *strictHandler) GetContentObject(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// GetCookie operation middleware
-func (sh *strictHandler) GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) {
+// GetCookie serves the GetCookie operation.
+func (sh *serverHandler) GetCookie(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the request
+	var params GetCookieParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("p"); err == nil {
+			var value int32
+			if v_, err_ := strconv.ParseInt(cookie.Value, 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value = int32(v_)
+			}
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
+				return
+			}
+			params.P = &value
+
+		}
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("ep"); err == nil {
+			var value int32
+			if v_, err_ := strconv.ParseInt(cookie.Value, 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value = int32(v_)
+			}
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
+				return
+			}
+			params.Ep = &value
+
+		}
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("ea"); err == nil {
+			var value []int32
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					{
+						parts_ := parts_
+						value = make([]int32, len(parts_))
+						for i_, part_ := range parts_ {
+							if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+								err = err_
+							} else {
+								value[i_] = int32(v_)
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
+				return
+			}
+			params.Ea = &value
+
+		}
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("a"); err == nil {
+			var value []int32
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					{
+						parts_ := parts_
+						value = make([]int32, len(parts_))
+						for i_, part_ := range parts_ {
+							if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+								err = err_
+							} else {
+								value[i_] = int32(v_)
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
+				return
+			}
+			params.A = &value
+
+		}
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("eo"); err == nil {
+			var value Object
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					pairs_ := make([][2]string, 0, len(parts_))
+					for _, part_ := range parts_ {
+						kv_ := strings.Split(part_, "=")
+						if len(kv_) != 2 {
+							err = errors.New("parameter 'eo' has invalid exploded format")
+							break
+						}
+						pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+					}
+					if err == nil {
+						for _, kv_ := range pairs_ {
+							switch kv_[0] {
+							case "firstName":
+								value.FirstName = kv_[1]
+							case "role":
+								value.Role = kv_[1]
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
+				return
+			}
+			params.Eo = &value
+
+		}
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("o"); err == nil {
+			var value Object
+			{
+				parts_ := strings.Split(cookie.Value, ",")
+				if err == nil {
+					pairs_ := make([][2]string, 0, len(parts_)/2)
+					if len(parts_)%2 != 0 {
+						err = errors.New("parameter 'o' has invalid format, property/values need to be pairs")
+					} else {
+						for i_ := 0; i_ < len(parts_); i_ += 2 {
+							pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+						}
+					}
+					if err == nil {
+						for _, kv_ := range pairs_ {
+							switch kv_[0] {
+							case "firstName":
+								value.FirstName = kv_[1]
+							case "role":
+								value.Role = kv_[1]
+							}
+							if err != nil {
+								break
+							}
+						}
+					}
+				}
+			}
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
+				return
+			}
+			params.O = &value
+
+		}
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("co"); err == nil {
+			var value ComplexObject
+			var decoded string
+			decoded, err := url.QueryUnescape(cookie.Value)
+			if err != nil {
+				err = fmt.Errorf("Error unescaping cookie parameter 'co'")
+				sh.options.RequestErrorHandlerFunc(w, r, &UnescapedCookieParamError{ParamName: "co", Err: err})
+				return
+			}
+
+			err = json.Unmarshal([]byte(decoded), &value)
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "co", Err: err})
+				return
+			}
+
+			params.Co = &value
+
+		}
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("1s"); err == nil {
+			var value string
+			value = cookie.Value
+			if err != nil {
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
+				return
+			}
+			params.N1s = &value
+
+		}
+	}
+
 	var request GetCookieRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetCookie(ctx, request.(GetCookieRequestObject))
+		return sh.si.GetCookie(ctx, request.(GetCookieRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetCookie")
 	}
 
@@ -3173,16 +1044,43 @@ func (sh *strictHandler) GetCookie(w http.ResponseWriter, r *http.Request, param
 	}
 }
 
-// EnumParams operation middleware
-func (sh *strictHandler) EnumParams(w http.ResponseWriter, r *http.Request, params EnumParamsParams) {
+// EnumParams serves the EnumParams operation.
+func (sh *serverHandler) EnumParams(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the request
+	var params EnumParamsParams
+
+	// ------------- Optional query parameter "enumPathParam" -------------
+
+	if values_, found_ := r.URL.Query()["enumPathParam"]; found_ {
+		var value_ EnumParamsParamsEnumPathParam
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'enumPathParam'")
+		} else {
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value_ = EnumParamsParamsEnumPathParam(v_)
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "enumPathParam", Err: err})
+			return
+		}
+		params.EnumPathParam = &value_
+	}
+
 	var request EnumParamsRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.EnumParams(ctx, request.(EnumParamsRequestObject))
+		return sh.si.EnumParams(ctx, request.(EnumParamsRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "EnumParams")
 	}
 
@@ -3199,16 +1097,287 @@ func (sh *strictHandler) EnumParams(w http.ResponseWriter, r *http.Request, para
 	}
 }
 
-// GetHeader operation middleware
-func (sh *strictHandler) GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) {
+// GetHeader serves the GetHeader operation.
+func (sh *serverHandler) GetHeader(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the request
+	var params GetHeaderParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Primitive" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Primitive")]; found {
+		var XPrimitive int32
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Primitive", Count: n})
+			return
+		}
+
+		if v_, err_ := strconv.ParseInt(valueList[0], 10, 32); err_ != nil {
+			err = err_
+		} else {
+			XPrimitive = int32(v_)
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive", Err: err})
+			return
+		}
+
+		params.XPrimitive = &XPrimitive
+
+	}
+
+	// ------------- Optional header parameter "X-Primitive-Exploded" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Primitive-Exploded")]; found {
+		var XPrimitiveExploded int32
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Primitive-Exploded", Count: n})
+			return
+		}
+
+		if v_, err_ := strconv.ParseInt(valueList[0], 10, 32); err_ != nil {
+			err = err_
+		} else {
+			XPrimitiveExploded = int32(v_)
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive-Exploded", Err: err})
+			return
+		}
+
+		params.XPrimitiveExploded = &XPrimitiveExploded
+
+	}
+
+	// ------------- Optional header parameter "X-Array-Exploded" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Array-Exploded")]; found {
+		var XArrayExploded []int32
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Array-Exploded", Count: n})
+			return
+		}
+
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				{
+					parts_ := parts_
+					XArrayExploded = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							XArrayExploded[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array-Exploded", Err: err})
+			return
+		}
+
+		params.XArrayExploded = &XArrayExploded
+
+	}
+
+	// ------------- Optional header parameter "X-Array" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Array")]; found {
+		var XArray []int32
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Array", Count: n})
+			return
+		}
+
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				{
+					parts_ := parts_
+					XArray = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							XArray[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array", Err: err})
+			return
+		}
+
+		params.XArray = &XArray
+
+	}
+
+	// ------------- Optional header parameter "X-Object-Exploded" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Object-Exploded")]; found {
+		var XObjectExploded Object
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Object-Exploded", Count: n})
+			return
+		}
+
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'X-Object-Exploded' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							XObjectExploded.FirstName = kv_[1]
+						case "role":
+							XObjectExploded.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object-Exploded", Err: err})
+			return
+		}
+
+		params.XObjectExploded = &XObjectExploded
+
+	}
+
+	// ------------- Optional header parameter "X-Object" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Object")]; found {
+		var XObject Object
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Object", Count: n})
+			return
+		}
+
+		{
+			parts_ := strings.Split(valueList[0], ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'X-Object' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							XObject.FirstName = kv_[1]
+						case "role":
+							XObject.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object", Err: err})
+			return
+		}
+
+		params.XObject = &XObject
+
+	}
+
+	// ------------- Optional header parameter "X-Complex-Object" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Complex-Object")]; found {
+		var XComplexObject ComplexObject
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Complex-Object", Count: n})
+			return
+		}
+
+		err = json.Unmarshal([]byte(valueList[0]), &XComplexObject)
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "X-Complex-Object", Err: err})
+			return
+		}
+
+		params.XComplexObject = &XComplexObject
+
+	}
+
+	// ------------- Optional header parameter "X-Pass-Through" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Pass-Through")]; found {
+		var XPassThrough string
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Pass-Through", Count: n})
+			return
+		}
+
+		XPassThrough = valueList[0]
+
+		params.XPassThrough = &XPassThrough
+
+	}
+
+	// ------------- Optional header parameter "1-Starting-With-Number" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("1-Starting-With-Number")]; found {
+		var N1StartingWithNumber string
+		n := len(valueList)
+		if n != 1 {
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "1-Starting-With-Number", Count: n})
+			return
+		}
+
+		N1StartingWithNumber = valueList[0]
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1-Starting-With-Number", Err: err})
+			return
+		}
+
+		params.N1StartingWithNumber = &N1StartingWithNumber
+
+	}
+
 	var request GetHeaderRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetHeader(ctx, request.(GetHeaderRequestObject))
+		return sh.si.GetHeader(ctx, request.(GetHeaderRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetHeader")
 	}
 
@@ -3225,16 +1394,55 @@ func (sh *strictHandler) GetHeader(w http.ResponseWriter, r *http.Request, param
 	}
 }
 
-// GetLabelExplodeArray operation middleware
-func (sh *strictHandler) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
+// GetLabelExplodeArray serves the GetLabelExplodeArray operation.
+func (sh *serverHandler) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param []int32
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ".")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				{
+					parts_ := parts_
+					param = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							param[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetLabelExplodeArrayRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetLabelExplodeArray(ctx, request.(GetLabelExplodeArrayRequestObject))
+		return sh.si.GetLabelExplodeArray(ctx, request.(GetLabelExplodeArrayRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetLabelExplodeArray")
 	}
 
@@ -3251,16 +1459,63 @@ func (sh *strictHandler) GetLabelExplodeArray(w http.ResponseWriter, r *http.Req
 	}
 }
 
-// GetLabelExplodeObject operation middleware
-func (sh *strictHandler) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
+// GetLabelExplodeObject serves the GetLabelExplodeObject operation.
+func (sh *serverHandler) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param Object
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ".")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'param' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetLabelExplodeObjectRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetLabelExplodeObject(ctx, request.(GetLabelExplodeObjectRequestObject))
+		return sh.si.GetLabelExplodeObject(ctx, request.(GetLabelExplodeObjectRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetLabelExplodeObject")
 	}
 
@@ -3277,16 +1532,50 @@ func (sh *strictHandler) GetLabelExplodeObject(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// GetLabelExplodePrimitive operation middleware
-func (sh *strictHandler) GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
+// GetLabelExplodePrimitive serves the GetLabelExplodePrimitive operation.
+func (sh *serverHandler) GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param int32
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ".")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				if len(parts_) != 1 {
+					err = errors.New("parameter 'param': expected single value")
+				} else {
+					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
+						err = err_
+					} else {
+						param = int32(v_)
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetLabelExplodePrimitiveRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetLabelExplodePrimitive(ctx, request.(GetLabelExplodePrimitiveRequestObject))
+		return sh.si.GetLabelExplodePrimitive(ctx, request.(GetLabelExplodePrimitiveRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetLabelExplodePrimitive")
 	}
 
@@ -3303,16 +1592,56 @@ func (sh *strictHandler) GetLabelExplodePrimitive(w http.ResponseWriter, r *http
 	}
 }
 
-// GetLabelNoExplodeArray operation middleware
-func (sh *strictHandler) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
+// GetLabelNoExplodeArray serves the GetLabelNoExplodeArray operation.
+func (sh *serverHandler) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param []int32
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("param"), ".") {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			} else {
+				parts_ = strings.Split(r.PathValue("param")[1:], ",")
+			}
+			if err == nil {
+				{
+					parts_ := parts_
+					param = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							param[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetLabelNoExplodeArrayRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetLabelNoExplodeArray(ctx, request.(GetLabelNoExplodeArrayRequestObject))
+		return sh.si.GetLabelNoExplodeArray(ctx, request.(GetLabelNoExplodeArrayRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetLabelNoExplodeArray")
 	}
 
@@ -3329,16 +1658,63 @@ func (sh *strictHandler) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.R
 	}
 }
 
-// GetLabelNoExplodeObject operation middleware
-func (sh *strictHandler) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
+// GetLabelNoExplodeObject serves the GetLabelNoExplodeObject operation.
+func (sh *serverHandler) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param Object
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("param"), ".") {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			} else {
+				parts_ = strings.Split(r.PathValue("param")[1:], ",")
+			}
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'param' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetLabelNoExplodeObjectRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetLabelNoExplodeObject(ctx, request.(GetLabelNoExplodeObjectRequestObject))
+		return sh.si.GetLabelNoExplodeObject(ctx, request.(GetLabelNoExplodeObjectRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetLabelNoExplodeObject")
 	}
 
@@ -3355,16 +1731,51 @@ func (sh *strictHandler) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.
 	}
 }
 
-// GetLabelPrimitive operation middleware
-func (sh *strictHandler) GetLabelPrimitive(w http.ResponseWriter, r *http.Request, param int32) {
+// GetLabelPrimitive serves the GetLabelPrimitive operation.
+func (sh *serverHandler) GetLabelPrimitive(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param int32
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("param"), ".") {
+				err = errors.New("invalid format for label parameter 'param', should start with '.'")
+			} else {
+				parts_ = strings.Split(r.PathValue("param")[1:], ",")
+			}
+			if err == nil {
+				if len(parts_) != 1 {
+					err = errors.New("parameter 'param': expected single value")
+				} else {
+					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
+						err = err_
+					} else {
+						param = int32(v_)
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetLabelPrimitiveRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetLabelPrimitive(ctx, request.(GetLabelPrimitiveRequestObject))
+		return sh.si.GetLabelPrimitive(ctx, request.(GetLabelPrimitiveRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetLabelPrimitive")
 	}
 
@@ -3381,16 +1792,58 @@ func (sh *strictHandler) GetLabelPrimitive(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// GetMatrixExplodeArray operation middleware
-func (sh *strictHandler) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) {
+// GetMatrixExplodeArray serves the GetMatrixExplodeArray operation.
+func (sh *serverHandler) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id []int32
+
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("id"), ";")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
+			}
+			parts_ = parts_[1:]
+			for i_ := range parts_ {
+				parts_[i_] = strings.TrimPrefix(parts_[i_], "id=")
+			}
+			if err == nil {
+				{
+					parts_ := parts_
+					id = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							id[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
 	var request GetMatrixExplodeArrayRequestObject
 
 	request.Id = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetMatrixExplodeArray(ctx, request.(GetMatrixExplodeArrayRequestObject))
+		return sh.si.GetMatrixExplodeArray(ctx, request.(GetMatrixExplodeArrayRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetMatrixExplodeArray")
 	}
 
@@ -3407,16 +1860,63 @@ func (sh *strictHandler) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// GetMatrixExplodeObject operation middleware
-func (sh *strictHandler) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, id Object) {
+// GetMatrixExplodeObject serves the GetMatrixExplodeObject operation.
+func (sh *serverHandler) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Object
+
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("id"), ";")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
+			}
+			parts_ = parts_[1:]
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'id' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							id.FirstName = kv_[1]
+						case "role":
+							id.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
 	var request GetMatrixExplodeObjectRequestObject
 
 	request.Id = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetMatrixExplodeObject(ctx, request.(GetMatrixExplodeObjectRequestObject))
+		return sh.si.GetMatrixExplodeObject(ctx, request.(GetMatrixExplodeObjectRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetMatrixExplodeObject")
 	}
 
@@ -3433,16 +1933,53 @@ func (sh *strictHandler) GetMatrixExplodeObject(w http.ResponseWriter, r *http.R
 	}
 }
 
-// GetMatrixExplodePrimitive operation middleware
-func (sh *strictHandler) GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request, id int32) {
+// GetMatrixExplodePrimitive serves the GetMatrixExplodePrimitive operation.
+func (sh *serverHandler) GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int32
+
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("id"), ";")
+			if parts_[0] != "" {
+				err = errors.New("invalid format for matrix parameter 'id', should start with ';'")
+			}
+			parts_ = parts_[1:]
+			for i_ := range parts_ {
+				parts_[i_] = strings.TrimPrefix(parts_[i_], "id=")
+			}
+			if err == nil {
+				if len(parts_) != 1 {
+					err = errors.New("parameter 'id': expected single value")
+				} else {
+					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
+						err = err_
+					} else {
+						id = int32(v_)
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
 	var request GetMatrixExplodePrimitiveRequestObject
 
 	request.Id = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetMatrixExplodePrimitive(ctx, request.(GetMatrixExplodePrimitiveRequestObject))
+		return sh.si.GetMatrixExplodePrimitive(ctx, request.(GetMatrixExplodePrimitiveRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetMatrixExplodePrimitive")
 	}
 
@@ -3459,16 +1996,56 @@ func (sh *strictHandler) GetMatrixExplodePrimitive(w http.ResponseWriter, r *htt
 	}
 }
 
-// GetMatrixNoExplodeArray operation middleware
-func (sh *strictHandler) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) {
+// GetMatrixNoExplodeArray serves the GetMatrixNoExplodeArray operation.
+func (sh *serverHandler) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id []int32
+
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
+				err = errors.New("expected parameter 'id' to start with ;id=")
+			} else {
+				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
+			}
+			if err == nil {
+				{
+					parts_ := parts_
+					id = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							id[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
 	var request GetMatrixNoExplodeArrayRequestObject
 
 	request.Id = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetMatrixNoExplodeArray(ctx, request.(GetMatrixNoExplodeArrayRequestObject))
+		return sh.si.GetMatrixNoExplodeArray(ctx, request.(GetMatrixNoExplodeArrayRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetMatrixNoExplodeArray")
 	}
 
@@ -3485,16 +2062,63 @@ func (sh *strictHandler) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.
 	}
 }
 
-// GetMatrixNoExplodeObject operation middleware
-func (sh *strictHandler) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, id Object) {
+// GetMatrixNoExplodeObject serves the GetMatrixNoExplodeObject operation.
+func (sh *serverHandler) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Object
+
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
+				err = errors.New("expected parameter 'id' to start with ;id=")
+			} else {
+				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
+			}
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'id' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							id.FirstName = kv_[1]
+						case "role":
+							id.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
 	var request GetMatrixNoExplodeObjectRequestObject
 
 	request.Id = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetMatrixNoExplodeObject(ctx, request.(GetMatrixNoExplodeObjectRequestObject))
+		return sh.si.GetMatrixNoExplodeObject(ctx, request.(GetMatrixNoExplodeObjectRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetMatrixNoExplodeObject")
 	}
 
@@ -3511,16 +2135,51 @@ func (sh *strictHandler) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http
 	}
 }
 
-// GetMatrixPrimitive operation middleware
-func (sh *strictHandler) GetMatrixPrimitive(w http.ResponseWriter, r *http.Request, id int32) {
+// GetMatrixPrimitive serves the GetMatrixPrimitive operation.
+func (sh *serverHandler) GetMatrixPrimitive(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int32
+
+	if r.PathValue("id") == "" {
+		err = errors.New("parameter 'id' is empty, can't bind its value")
+	} else {
+		{
+			var parts_ []string
+			if !strings.HasPrefix(r.PathValue("id"), ";id=") {
+				err = errors.New("expected parameter 'id' to start with ;id=")
+			} else {
+				parts_ = strings.Split(strings.TrimPrefix(r.PathValue("id"), ";id="), ",")
+			}
+			if err == nil {
+				if len(parts_) != 1 {
+					err = errors.New("parameter 'id': expected single value")
+				} else {
+					if v_, err_ := strconv.ParseInt(parts_[0], 10, 32); err_ != nil {
+						err = err_
+					} else {
+						id = int32(v_)
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
 	var request GetMatrixPrimitiveRequestObject
 
 	request.Id = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetMatrixPrimitive(ctx, request.(GetMatrixPrimitiveRequestObject))
+		return sh.si.GetMatrixPrimitive(ctx, request.(GetMatrixPrimitiveRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetMatrixPrimitive")
 	}
 
@@ -3537,16 +2196,25 @@ func (sh *strictHandler) GetMatrixPrimitive(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// GetPassThrough operation middleware
-func (sh *strictHandler) GetPassThrough(w http.ResponseWriter, r *http.Request, param string) {
+// GetPassThrough serves the GetPassThrough operation.
+func (sh *serverHandler) GetPassThrough(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param string
+
+	param = r.PathValue("param")
+
 	var request GetPassThroughRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetPassThrough(ctx, request.(GetPassThroughRequestObject))
+		return sh.si.GetPassThrough(ctx, request.(GetPassThroughRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetPassThrough")
 	}
 
@@ -3563,16 +2231,258 @@ func (sh *strictHandler) GetPassThrough(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
-// GetDeepObject operation middleware
-func (sh *strictHandler) GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) {
+// GetDeepObject serves the GetDeepObject operation.
+func (sh *serverHandler) GetDeepObject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the request
+	var params GetDeepObjectParams
+
+	// ------------- Required query parameter "deepObj" -------------
+
+	{
+		// The object's properties are query parameters of their own.
+		var value_ ComplexObject
+		found_ := false
+		query_ := r.URL.Query()
+		_ = query_
+		{
+			form_ := false
+			_ = form_
+			tree_ := map[string]any{}
+			insert_ := func(path []string, value string) {
+				node := tree_
+				for _, key := range path[:len(path)-1] {
+					next, ok := node[key].(map[string]any)
+					if !ok {
+						next = map[string]any{}
+						node[key] = next
+					}
+					node = next
+				}
+				node[path[len(path)-1]] = value
+			}
+			for key_, values_ := range query_ {
+				rest_, ok_ := strings.CutPrefix(key_, "deepObj[")
+				if !ok_ {
+					continue
+				}
+				found_ = true
+				path_ := strings.Split(strings.TrimRight(rest_, "]"), "][")
+				if len(values_) == 1 {
+					insert_(path_, values_[0])
+				} else {
+					for i_, value_ := range values_ {
+						insert_(append(path_[:len(path_):len(path_)], strconv.Itoa(i_)), value_)
+					}
+				}
+			}
+			if found_ {
+				kinds_ := map[string]map[string]string{
+					"ComplexObject": {"Id": "int", "IsAdmin": "bool", "Object": "object:Object"},
+					"Object":        {"firstName": "string", "role": "string"},
+				}
+				// In a form, a value of the wrong shape is skipped, as the runtime
+				// library skipped it.
+				skip_ := &struct{}{}
+				var convert_ func(node any, kind string) (any, error)
+				convert_ = func(node any, kind string) (any, error) {
+					fields, isMap := node.(map[string]any)
+					if form_ {
+						compound := strings.HasPrefix(kind, "object:") || strings.HasPrefix(kind, "map:") || strings.HasPrefix(kind, "array:")
+						switch {
+						case isMap && !compound && kind != "any":
+							// A repeated value: the first one counts.
+							first, ok := fields["0"]
+							if !ok {
+								return skip_, nil
+							}
+							return convert_(first, kind)
+						case !isMap && compound && !strings.HasPrefix(kind, "array:"):
+							return skip_, nil
+						}
+					}
+					text, _ := node.(string)
+					switch {
+					case strings.HasPrefix(kind, "object:"):
+						if !isMap {
+							return nil, fmt.Errorf("expected an object, got %q", text)
+						}
+						object := kinds_[strings.TrimPrefix(kind, "object:")]
+						out := make(map[string]any, len(fields))
+						for key, value := range fields {
+							fieldKind, ok := object[key]
+							if !ok {
+								if fieldKind, ok = object["*"]; !ok {
+									if form_ {
+										continue
+									}
+									return nil, fmt.Errorf("field [%s] is not present in destination object", key)
+								}
+							}
+							if fieldKind == "skip" {
+								continue
+							}
+							v, err := convert_(value, fieldKind)
+							if err != nil {
+								return nil, fmt.Errorf("error assigning field [%s]: %w", key, err)
+							}
+							if v == skip_ {
+								continue
+							}
+							out[key] = v
+						}
+						return out, nil
+					case strings.HasPrefix(kind, "map:"):
+						if !isMap {
+							return nil, fmt.Errorf("expected an object, got %q", text)
+						}
+						out := make(map[string]any, len(fields))
+						for key, value := range fields {
+							v, err := convert_(value, strings.TrimPrefix(kind, "map:"))
+							if err != nil {
+								return nil, err
+							}
+							if v == skip_ {
+								continue
+							}
+							out[key] = v
+						}
+						return out, nil
+					case strings.HasPrefix(kind, "array:"):
+						if !isMap && form_ {
+							v, err := convert_(node, strings.TrimPrefix(kind, "array:"))
+							if err != nil {
+								return nil, fmt.Errorf("error binding array element 0: %w", err)
+							}
+							return []any{v}, nil
+						}
+						if !isMap {
+							return nil, fmt.Errorf("expected an array, got %q", text)
+						}
+						size := len(fields)
+						if form_ {
+							// Missing elements of a form's array are zero values.
+							size = 0
+							for key := range fields {
+								if i, err := strconv.Atoi(key); err == nil && i >= size {
+									size = i + 1
+								}
+							}
+						}
+						out := make([]any, size)
+						for i := range out {
+							value, ok := fields[strconv.Itoa(i)]
+							if !ok && form_ {
+								continue
+							}
+							if !ok {
+								return nil, errors.New("array deepObjects must have consecutive indices")
+							}
+							v, err := convert_(value, strings.TrimPrefix(kind, "array:"))
+							if err != nil {
+								return nil, fmt.Errorf("error binding array element %d: %w", i, err)
+							}
+							if v == skip_ {
+								v = nil
+							}
+							out[i] = v
+						}
+						return out, nil
+					case isMap:
+						if kind != "any" {
+							return nil, fmt.Errorf("expected a value, got an object")
+						}
+						keys := make([]int, 0, len(fields))
+						for key := range fields {
+							if i, err := strconv.Atoi(key); err == nil && i >= 0 && i < len(fields) {
+								keys = append(keys, i)
+							}
+						}
+						out := make(map[string]any, len(fields))
+						for key, value := range fields {
+							v, err := convert_(value, "any")
+							if err != nil {
+								return nil, err
+							}
+							out[key] = v
+						}
+						if len(keys) != len(fields) {
+							return out, nil
+						}
+						array := make([]any, len(fields))
+						for key, value := range out {
+							i, _ := strconv.Atoi(key)
+							array[i] = value
+						}
+						return array, nil
+					case kind == "int":
+						i, err := strconv.ParseInt(text, 10, 64)
+						if err != nil {
+							return nil, fmt.Errorf("expected a valid int, got %s", text)
+						}
+						return i, nil
+					case kind == "float":
+						f, err := strconv.ParseFloat(text, 64)
+						if err != nil || math.IsInf(f, 0) || math.IsNaN(f) {
+							return nil, fmt.Errorf("expected a valid float, got %s", text)
+						}
+						return f, nil
+					case kind == "bool":
+						b, err := strconv.ParseBool(text)
+						if err != nil {
+							return nil, fmt.Errorf("expected a valid bool, got %s", text)
+						}
+						return b, nil
+					case kind == "any":
+						switch text {
+						case "true":
+							return true, nil
+						case "false":
+							return false, nil
+						case "null":
+							return nil, nil
+						}
+						var f float64
+						if err := json.Unmarshal([]byte(text), &f); err == nil {
+							return f, nil
+						}
+						return text, nil
+					default:
+						return text, nil
+					}
+				}
+				if v_, err_ := convert_(tree_, "object:ComplexObject"); err_ != nil {
+					err = err_
+				} else if b_, err_ := json.Marshal(v_); err_ != nil {
+					err = err_
+				} else {
+					err = json.Unmarshal(b_, &value_)
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deepObj", Err: err})
+			return
+		}
+		if found_ {
+			params.DeepObj = value_
+		} else {
+			sh.options.RequestErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deepObj"})
+			return
+		}
+	}
+
 	var request GetDeepObjectRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetDeepObject(ctx, request.(GetDeepObjectRequestObject))
+		return sh.si.GetDeepObject(ctx, request.(GetDeepObjectRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetDeepObject")
 	}
 
@@ -3589,16 +2499,81 @@ func (sh *strictHandler) GetDeepObject(w http.ResponseWriter, r *http.Request, p
 	}
 }
 
-// GetQueryDelimited operation middleware
-func (sh *strictHandler) GetQueryDelimited(w http.ResponseWriter, r *http.Request, params GetQueryDelimitedParams) {
+// GetQueryDelimited serves the GetQueryDelimited operation.
+func (sh *serverHandler) GetQueryDelimited(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the request
+	var params GetQueryDelimitedParams
+
+	// ------------- Optional query parameter "sa" -------------
+
+	if values_, found_ := r.URL.Query()["sa"]; found_ {
+		var value_ []int32
+		if len(values_) != 1 {
+			err = errors.New("parameter 'sa' is not exploded, but is specified multiple times")
+		} else {
+			{
+				parts_ := strings.Split(values_[0], " ")
+				value_ = make([]int32, len(parts_))
+				for i_, part_ := range parts_ {
+					if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+						err = err_
+					} else {
+						value_[i_] = int32(v_)
+					}
+					if err != nil {
+						break
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sa", Err: err})
+			return
+		}
+		params.Sa = &value_
+	}
+
+	// ------------- Optional query parameter "pa" -------------
+
+	if values_, found_ := r.URL.Query()["pa"]; found_ {
+		var value_ []int32
+		if len(values_) != 1 {
+			err = errors.New("parameter 'pa' is not exploded, but is specified multiple times")
+		} else {
+			{
+				parts_ := strings.Split(values_[0], "|")
+				value_ = make([]int32, len(parts_))
+				for i_, part_ := range parts_ {
+					if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+						err = err_
+					} else {
+						value_[i_] = int32(v_)
+					}
+					if err != nil {
+						break
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pa", Err: err})
+			return
+		}
+		params.Pa = &value_
+	}
+
 	var request GetQueryDelimitedRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetQueryDelimited(ctx, request.(GetQueryDelimitedRequestObject))
+		return sh.si.GetQueryDelimited(ctx, request.(GetQueryDelimitedRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetQueryDelimited")
 	}
 
@@ -3615,16 +2590,235 @@ func (sh *strictHandler) GetQueryDelimited(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// GetQueryForm operation middleware
-func (sh *strictHandler) GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) {
+// GetQueryForm serves the GetQueryForm operation.
+func (sh *serverHandler) GetQueryForm(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the request
+	var params GetQueryFormParams
+
+	// ------------- Optional query parameter "ea" -------------
+
+	if values_, found_ := r.URL.Query()["ea"]; found_ {
+		var value_ []int32
+		{
+			parts_ := values_
+			value_ = make([]int32, len(parts_))
+			for i_, part_ := range parts_ {
+				if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+					err = err_
+				} else {
+					value_[i_] = int32(v_)
+				}
+				if err != nil {
+					break
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
+			return
+		}
+		params.Ea = &value_
+	}
+
+	// ------------- Optional query parameter "a" -------------
+
+	if values_, found_ := r.URL.Query()["a"]; found_ {
+		var value_ []int32
+		if len(values_) != 1 {
+			err = errors.New("parameter 'a' is not exploded, but is specified multiple times")
+		} else {
+			{
+				parts_ := strings.Split(values_[0], ",")
+				value_ = make([]int32, len(parts_))
+				for i_, part_ := range parts_ {
+					if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+						err = err_
+					} else {
+						value_[i_] = int32(v_)
+					}
+					if err != nil {
+						break
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
+			return
+		}
+		params.A = &value_
+	}
+
+	// ------------- Optional query parameter "eo" -------------
+
+	{
+		// The object's properties are query parameters of their own.
+		var value_ Object
+		found_ := false
+		query_ := r.URL.Query()
+		_ = query_
+		if vs_, ok_ := query_["firstName"]; ok_ {
+			found_ = true
+			if len(vs_) != 1 {
+				err = errors.New("field 'firstName' specified multiple times for param 'eo'")
+			} else {
+				value_.FirstName = vs_[0]
+			}
+		}
+		if vs_, ok_ := query_["role"]; ok_ {
+			found_ = true
+			if len(vs_) != 1 {
+				err = errors.New("field 'role' specified multiple times for param 'eo'")
+			} else {
+				value_.Role = vs_[0]
+			}
+		}
+
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
+			return
+		}
+		if found_ {
+			params.Eo = &value_
+		}
+	}
+
+	// ------------- Optional query parameter "o" -------------
+
+	if values_, found_ := r.URL.Query()["o"]; found_ {
+		var value_ Object
+		if len(values_) != 1 {
+			err = errors.New("parameter 'o' is not exploded, but is specified multiple times")
+		} else {
+			parts_ := strings.Split(values_[0], ",")
+			pairs_ := make([][2]string, 0, len(parts_)/2)
+			if len(parts_)%2 != 0 {
+				err = errors.New("parameter 'o' has invalid format, property/values need to be pairs")
+			} else {
+				for i_ := 0; i_ < len(parts_); i_ += 2 {
+					pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+				}
+			}
+			if err == nil {
+				for _, kv_ := range pairs_ {
+					switch kv_[0] {
+					case "firstName":
+						value_.FirstName = kv_[1]
+					case "role":
+						value_.Role = kv_[1]
+					}
+					if err != nil {
+						break
+					}
+				}
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
+			return
+		}
+		params.O = &value_
+	}
+
+	// ------------- Optional query parameter "ep" -------------
+
+	if values_, found_ := r.URL.Query()["ep"]; found_ {
+		var value_ int32
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'ep'")
+		} else {
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value_ = int32(v_)
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
+			return
+		}
+		params.Ep = &value_
+	}
+
+	// ------------- Optional query parameter "p" -------------
+
+	if values_, found_ := r.URL.Query()["p"]; found_ {
+		var value_ int32
+		if len(values_) != 1 {
+			err = errors.New("parameter 'p' is not exploded, but is specified multiple times")
+		} else {
+			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
+				err = err_
+			} else {
+				value_ = int32(v_)
+			}
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
+			return
+		}
+		params.P = &value_
+	}
+
+	// ------------- Optional query parameter "ps" -------------
+
+	if values_, found_ := r.URL.Query()["ps"]; found_ {
+		var value_ string
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter 'ps'")
+		} else {
+			value_ = values_[0]
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ps", Err: err})
+			return
+		}
+		params.Ps = &value_
+	}
+
+	// ------------- Optional query parameter "co" -------------
+
+	if paramValue := r.URL.Query().Get("co"); paramValue != "" {
+
+		var value ComplexObject
+		err = json.Unmarshal([]byte(paramValue), &value)
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "co", Err: err})
+			return
+		}
+
+		params.Co = &value
+
+	}
+
+	// ------------- Optional query parameter "1s" -------------
+
+	if values_, found_ := r.URL.Query()["1s"]; found_ {
+		var value_ string
+		if len(values_) != 1 {
+			err = errors.New("multiple values for single value parameter '1s'")
+		} else {
+			value_ = values_[0]
+		}
+		if err != nil {
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
+			return
+		}
+		params.N1s = &value_
+	}
+
 	var request GetQueryFormRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetQueryForm(ctx, request.(GetQueryFormRequestObject))
+		return sh.si.GetQueryForm(ctx, request.(GetQueryFormRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetQueryForm")
 	}
 
@@ -3641,16 +2835,51 @@ func (sh *strictHandler) GetQueryForm(w http.ResponseWriter, r *http.Request, pa
 	}
 }
 
-// GetSimpleExplodeArray operation middleware
-func (sh *strictHandler) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
+// GetSimpleExplodeArray serves the GetSimpleExplodeArray operation.
+func (sh *serverHandler) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param []int32
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				{
+					parts_ := parts_
+					param = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							param[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetSimpleExplodeArrayRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetSimpleExplodeArray(ctx, request.(GetSimpleExplodeArrayRequestObject))
+		return sh.si.GetSimpleExplodeArray(ctx, request.(GetSimpleExplodeArrayRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetSimpleExplodeArray")
 	}
 
@@ -3667,16 +2896,59 @@ func (sh *strictHandler) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// GetSimpleExplodeObject operation middleware
-func (sh *strictHandler) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
+// GetSimpleExplodeObject serves the GetSimpleExplodeObject operation.
+func (sh *serverHandler) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param Object
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_))
+				for _, part_ := range parts_ {
+					kv_ := strings.Split(part_, "=")
+					if len(kv_) != 2 {
+						err = errors.New("parameter 'param' has invalid exploded format")
+						break
+					}
+					pairs_ = append(pairs_, [2]string{kv_[0], kv_[1]})
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetSimpleExplodeObjectRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetSimpleExplodeObject(ctx, request.(GetSimpleExplodeObjectRequestObject))
+		return sh.si.GetSimpleExplodeObject(ctx, request.(GetSimpleExplodeObjectRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetSimpleExplodeObject")
 	}
 
@@ -3693,16 +2965,37 @@ func (sh *strictHandler) GetSimpleExplodeObject(w http.ResponseWriter, r *http.R
 	}
 }
 
-// GetSimpleExplodePrimitive operation middleware
-func (sh *strictHandler) GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
+// GetSimpleExplodePrimitive serves the GetSimpleExplodePrimitive operation.
+func (sh *serverHandler) GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param int32
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		if v_, err_ := strconv.ParseInt(r.PathValue("param"), 10, 32); err_ != nil {
+			err = err_
+		} else {
+			param = int32(v_)
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetSimpleExplodePrimitiveRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetSimpleExplodePrimitive(ctx, request.(GetSimpleExplodePrimitiveRequestObject))
+		return sh.si.GetSimpleExplodePrimitive(ctx, request.(GetSimpleExplodePrimitiveRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetSimpleExplodePrimitive")
 	}
 
@@ -3719,16 +3012,51 @@ func (sh *strictHandler) GetSimpleExplodePrimitive(w http.ResponseWriter, r *htt
 	}
 }
 
-// GetSimpleNoExplodeArray operation middleware
-func (sh *strictHandler) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
+// GetSimpleNoExplodeArray serves the GetSimpleNoExplodeArray operation.
+func (sh *serverHandler) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param []int32
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				{
+					parts_ := parts_
+					param = make([]int32, len(parts_))
+					for i_, part_ := range parts_ {
+						if v_, err_ := strconv.ParseInt(part_, 10, 32); err_ != nil {
+							err = err_
+						} else {
+							param[i_] = int32(v_)
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetSimpleNoExplodeArrayRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetSimpleNoExplodeArray(ctx, request.(GetSimpleNoExplodeArrayRequestObject))
+		return sh.si.GetSimpleNoExplodeArray(ctx, request.(GetSimpleNoExplodeArrayRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetSimpleNoExplodeArray")
 	}
 
@@ -3745,16 +3073,58 @@ func (sh *strictHandler) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.
 	}
 }
 
-// GetSimpleNoExplodeObject operation middleware
-func (sh *strictHandler) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
+// GetSimpleNoExplodeObject serves the GetSimpleNoExplodeObject operation.
+func (sh *serverHandler) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param Object
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		{
+			parts_ := strings.Split(r.PathValue("param"), ",")
+			if err == nil {
+				pairs_ := make([][2]string, 0, len(parts_)/2)
+				if len(parts_)%2 != 0 {
+					err = errors.New("parameter 'param' has invalid format, property/values need to be pairs")
+				} else {
+					for i_ := 0; i_ < len(parts_); i_ += 2 {
+						pairs_ = append(pairs_, [2]string{parts_[i_], parts_[i_+1]})
+					}
+				}
+				if err == nil {
+					for _, kv_ := range pairs_ {
+						switch kv_[0] {
+						case "firstName":
+							param.FirstName = kv_[1]
+						case "role":
+							param.Role = kv_[1]
+						}
+						if err != nil {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetSimpleNoExplodeObjectRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetSimpleNoExplodeObject(ctx, request.(GetSimpleNoExplodeObjectRequestObject))
+		return sh.si.GetSimpleNoExplodeObject(ctx, request.(GetSimpleNoExplodeObjectRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetSimpleNoExplodeObject")
 	}
 
@@ -3771,16 +3141,37 @@ func (sh *strictHandler) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http
 	}
 }
 
-// GetSimplePrimitive operation middleware
-func (sh *strictHandler) GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
+// GetSimplePrimitive serves the GetSimplePrimitive operation.
+func (sh *serverHandler) GetSimplePrimitive(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param int32
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		if v_, err_ := strconv.ParseInt(r.PathValue("param"), 10, 32); err_ != nil {
+			err = err_
+		} else {
+			param = int32(v_)
+		}
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetSimplePrimitiveRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetSimplePrimitive(ctx, request.(GetSimplePrimitiveRequestObject))
+		return sh.si.GetSimplePrimitive(ctx, request.(GetSimplePrimitiveRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetSimplePrimitive")
 	}
 
@@ -3797,16 +3188,33 @@ func (sh *strictHandler) GetSimplePrimitive(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// GetSimpleString operation middleware
-func (sh *strictHandler) GetSimpleString(w http.ResponseWriter, r *http.Request, param string) {
+// GetSimpleString serves the GetSimpleString operation.
+func (sh *serverHandler) GetSimpleString(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "param" -------------
+	var param string
+
+	if r.PathValue("param") == "" {
+		err = errors.New("parameter 'param' is empty, can't bind its value")
+	} else {
+		param = r.PathValue("param")
+	}
+	if err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		return
+	}
+
 	var request GetSimpleStringRequestObject
 
 	request.Param = param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetSimpleString(ctx, request.(GetSimpleStringRequestObject))
+		return sh.si.GetSimpleString(ctx, request.(GetSimpleStringRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetSimpleString")
 	}
 
@@ -3823,16 +3231,25 @@ func (sh *strictHandler) GetSimpleString(w http.ResponseWriter, r *http.Request,
 	}
 }
 
-// GetStartingWithNumber operation middleware
-func (sh *strictHandler) GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) {
+// GetStartingWithNumber serves the GetStartingWithNumber operation.
+func (sh *serverHandler) GetStartingWithNumber(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "1param" -------------
+	var n1param string
+
+	n1param = r.PathValue("_param")
+
 	var request GetStartingWithNumberRequestObject
 
 	request.N1param = n1param
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.GetStartingWithNumber(ctx, request.(GetStartingWithNumberRequestObject))
+		return sh.si.GetStartingWithNumber(ctx, request.(GetStartingWithNumberRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "GetStartingWithNumber")
 	}
 
@@ -3847,6 +3264,75 @@ func (sh *strictHandler) GetStartingWithNumber(w http.ResponseWriter, r *http.Re
 	} else if response != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
 	}
+}
+
+type UnescapedCookieParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
+}
+
+func (e *UnescapedCookieParamError) Unwrap() error {
+	return e.Err
+}
+
+type UnmarshalingParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *UnmarshalingParamError) Unwrap() error {
+	return e.Err
+}
+
+type RequiredParamError struct {
+	ParamName string
+}
+
+func (e *RequiredParamError) Error() string {
+	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
+}
+
+type RequiredHeaderError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *RequiredHeaderError) Error() string {
+	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
+}
+
+func (e *RequiredHeaderError) Unwrap() error {
+	return e.Err
+}
+
+type InvalidParamFormatError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *InvalidParamFormatError) Unwrap() error {
+	return e.Err
+}
+
+type TooManyValuesForParamError struct {
+	ParamName string
+	Count     int
+}
+
+func (e *TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
 }
 
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.

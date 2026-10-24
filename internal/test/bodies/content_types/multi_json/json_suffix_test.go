@@ -29,7 +29,7 @@ func (s *testStrictServerInterface) SuffixTest(ctx context.Context, request mult
 // From issue-1298: a request body with a custom +json suffix content type must
 // round-trip through the strict server via the generated typed client method.
 func TestIssue1298(t *testing.T) {
-	h := multijson.Handler(multijson.NewStrictHandler(&testStrictServerInterface{t: t}, nil))
+	h := multijson.Handler(&testStrictServerInterface{t: t})
 	ts := httptest.NewServer(h)
 	defer ts.Close()
 

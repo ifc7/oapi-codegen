@@ -158,7 +158,7 @@ func TestStrictResponseCastJSONWire(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := other.Handler(other.NewStrictHandler(fixedResponseStrictServer{response: tt.response}, nil))
+			handler := other.Handler(fixedResponseStrictServer{response: tt.response})
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/example", nil))
 

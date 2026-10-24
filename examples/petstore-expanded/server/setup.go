@@ -8,7 +8,7 @@ import (
 	"github.com/oapi-codegen/oapi-codegen/v2/examples/petstore-expanded/api"
 )
 
-// NewServer creates a fully configured *http.Server with the strict petstore
+// NewServer creates a fully configured *http.Server with the petstore
 // handler and OpenAPI validation middleware. The caller should set Addr before
 // calling ListenAndServe, or provide a net.Listener and call Serve.
 func NewServer() (*http.Server, error) {
@@ -20,9 +20,8 @@ func NewServer() (*http.Server, error) {
 	swagger.Servers = nil
 
 	petStore := NewPetStore()
-	petStoreStrictHandler := api.NewStrictHandler(petStore, nil)
 
-	h := api.Handler(petStoreStrictHandler)
+	h := api.Handler(petStore)
 
 	return &http.Server{Handler: middleware.OapiRequestValidator(swagger)(h)}, nil
 }

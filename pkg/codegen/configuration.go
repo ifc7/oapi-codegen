@@ -10,7 +10,7 @@ import (
 )
 
 // defaultStreamingContentTypes are the regex patterns matched against
-// response Content-Type to decide when the strict-server should emit a
+// response Content-Type to decide when the server should emit a
 // flush-per-chunk streaming path. User-supplied patterns are merged on top.
 var defaultStreamingContentTypes = []string{
 	"text/event-stream",

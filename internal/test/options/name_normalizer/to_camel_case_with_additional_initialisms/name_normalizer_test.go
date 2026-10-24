@@ -24,7 +24,7 @@ func TestToCamelCaseWithAdditionalInitialismsNormalizer(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, client.GetHTTPPet)
 
-	assert.NotNil(t, StrictServerInterface.GetHTTPPet)
+	assert.NotNil(t, ServerInterface.GetHTTPPet)
 
 	oneOf := OneOf2Things{}
 	assert.Zero(t, oneOf)
