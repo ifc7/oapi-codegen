@@ -27,8 +27,7 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/getkin/kin-openapi/openapi3"
-
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
 )
 
@@ -36,7 +35,7 @@ type ParameterDefinition struct {
 	ParamName string // The original json parameter name, eg param_name
 	In        string // Where the parameter is defined - path, header, cookie, query
 	Required  bool   // Is this a required parameter?
-	Spec      *openapi3.Parameter
+	Spec      *model.Parameter
 	Schema    Schema
 
 	// Shared is true for a parameter declared at the path-item level, which
@@ -243,14 +242,14 @@ func (p ParameterDefinitions) FindByName(name string) *ParameterDefinition {
 // DescribeParameters walks the given parameters dictionary, and generates the above
 // descriptors into a flat list. This makes it a lot easier to traverse the
 // data in the template engine.
-func DescribeParameters(params openapi3.Parameters, path []string) ([]ParameterDefinition, error) {
+func DescribeParameters(params model.Parameters, path []string) ([]ParameterDefinition, error) {
 	return describeParameters(params, path, false)
 }
 
 // describeParameters is DescribeParameters for operation parameters (shared
 // false) and for parameters shared by a whole path item (shared true), whose
 // path carries no operation name.
-func describeParameters(params openapi3.Parameters, path []string, shared bool) ([]ParameterDefinition, error) {
+func describeParameters(params model.Parameters, path []string, shared bool) ([]ParameterDefinition, error) {
 	outParams := make([]ParameterDefinition, 0, len(params))
 	for _, paramOrRef := range params {
 		param := paramOrRef.Value
@@ -324,11 +323,11 @@ func describeParameters(params openapi3.Parameters, path []string, shared bool) 
 // collision fixed for issue #2090, so only they participate in collision
 // detection. The check is exact: it describes the parameter and asks whether it
 // hoisted anything, rather than second-guessing which schema shapes hoist.
-func paramNeedsHoisting(paramRef *openapi3.ParameterRef) (bool, error) {
+func paramNeedsHoisting(paramRef *model.ParameterRef) (bool, error) {
 	if paramRef == nil || paramRef.Value == nil {
 		return false, nil
 	}
-	described, err := DescribeParameters(openapi3.Parameters{paramRef}, nil)
+	described, err := DescribeParameters(model.Parameters{paramRef}, nil)
 	if err != nil {
 		return false, err
 	}
@@ -345,7 +344,7 @@ func paramNeedsHoisting(paramRef *openapi3.ParameterRef) (bool, error) {
 // disambiguate colliding names; source is a human-readable identifier for the
 // scope used in generated doc comments.
 type sharedParamScope struct {
-	item    *openapi3.PathItem
+	item    *model.PathItem
 	hashKey string
 	source  string
 }
@@ -354,7 +353,7 @@ type sharedParamScope struct {
 // declare path-item-level (shared) parameters: regular paths, webhooks, and
 // callback path items. All three share the one global Go type namespace, so
 // they must be considered together when detecting and resolving collisions.
-func enumerateSharedParamScopes(swagger *openapi3.T) []sharedParamScope {
+func enumerateSharedParamScopes(swagger *model.Document) []sharedParamScope {
 	var scopes []sharedParamScope
 
 	if swagger.Paths != nil {
@@ -415,7 +414,7 @@ func enumerateSharedParamScopes(swagger *openapi3.T) []sharedParamScope {
 // the scope (git-style: extended to the full hash only if two scopes' short
 // hashes clash). A parameter that doesn't collide keeps its historical
 // undecorated name, so existing generated code is unaffected.
-func resolveSharedParameters(swagger *openapi3.T) (map[*openapi3.PathItem][]ParameterDefinition, error) {
+func resolveSharedParameters(swagger *model.Document) (map[*model.PathItem][]ParameterDefinition, error) {
 	scopes := enumerateSharedParamScopes(swagger)
 
 	// Count, per shared-parameter name, how many scopes hoist a helper type
@@ -446,7 +445,7 @@ func resolveSharedParameters(swagger *openapi3.T) (map[*openapi3.PathItem][]Para
 	// parameter. Tokens are hashes of the scope key; a short prefix is used
 	// unless two scopes' short prefixes clash, in which case both fall back to
 	// the full hash.
-	tokenScopeKeys := map[*openapi3.PathItem]string{}
+	tokenScopeKeys := map[*model.PathItem]string{}
 	var needToken []string
 	for _, scope := range scopes {
 		if len(scope.item.Operations()) == 0 {
@@ -462,7 +461,7 @@ func resolveSharedParameters(swagger *openapi3.T) (map[*openapi3.PathItem][]Para
 	}
 	tokens := assignScopeTokens(needToken)
 
-	result := map[*openapi3.PathItem][]ParameterDefinition{}
+	result := map[*model.PathItem][]ParameterDefinition{}
 	for _, scope := range scopes {
 		if _, done := result[scope.item]; done {
 			continue
@@ -518,7 +517,7 @@ func assignScopeTokens(keys []string) map[string]string {
 // that does not collide keeps its historical undecorated name (issue #2090).
 // For the disambiguated types, a doc comment is set explaining the otherwise
 // opaque hash prefix and pointing back to the source path.
-func describeSharedParameters(params openapi3.Parameters, source, token string, colliding map[string]bool) ([]ParameterDefinition, error) {
+func describeSharedParameters(params model.Parameters, source, token string, colliding map[string]bool) ([]ParameterDefinition, error) {
 	out := make([]ParameterDefinition, 0, len(params))
 	for _, paramRef := range params {
 		collides := token != "" && paramRef.Value != nil && colliding[paramRef.Value.Name]
@@ -526,7 +525,7 @@ func describeSharedParameters(params openapi3.Parameters, source, token string, 
 		if collides {
 			path = []string{token}
 		}
-		described, err := describeParameters(openapi3.Parameters{paramRef}, path, true)
+		described, err := describeParameters(model.Parameters{paramRef}, path, true)
 		if err != nil {
 			return nil, err
 		}
@@ -581,7 +580,7 @@ type SecuritySchemeScopes struct {
 // when it declares any (an empty list declaring that it needs none), and the
 // document's otherwise. Schemes are sorted by name, so the generated code is
 // deterministic.
-func operationSecurity(operation *openapi3.SecurityRequirements, document openapi3.SecurityRequirements) []SecurityRequirementDefinition {
+func operationSecurity(operation *model.SecurityRequirements, document model.SecurityRequirements) []SecurityRequirementDefinition {
 	requirements := document
 	if operation != nil {
 		requirements = *operation
@@ -646,7 +645,7 @@ type OperationDefinition struct {
 	// source location is unavailable (e.g. a programmatically-built spec),
 	// in which case route registration falls back to the default order.
 	SpecOrder   int
-	Spec        *openapi3.Operation
+	Spec        *model.Operation
 	IsAlias     bool   // True when this path is a $ref alias of another path item
 	AliasTarget string // When IsAlias is true, this is the OperationId of the canonical operation (for route registration to reference the correct wrapper)
 	PathItemRef string // The path item's $ref (if any); used to qualify externally-loaded schemas referenced from this operation's responses
@@ -913,7 +912,7 @@ func (o *OperationDefinition) DeprecationComment() string {
 // the client response-wrapper field types (GetResponseTypeDefinitions) must make
 // this identical decision — otherwise the wrapper references per-content-type
 // type names that were never declared (see issue #2389).
-func responseMediaTypeSuffix(content openapi3.Content, mediaType string) string {
+func responseMediaTypeSuffix(content model.Content, mediaType string) string {
 	if !util.IsMediaTypeJson(mediaType) {
 		return ""
 	}
@@ -1321,11 +1320,11 @@ type ResponseContentDefinition struct {
 // schema must carry its body in a Body field. embedded is true when the
 // generated type is a reusable response envelope that operations embed in a
 // struct, rather than a type that operations use as a method receiver.
-func responseSchemaNeedsBodyWrapper(sref *openapi3.SchemaRef, schema Schema, path []string, embedded bool) (bool, error) {
+func responseSchemaNeedsBodyWrapper(sref *model.SchemaRef, schema Schema, path []string, embedded bool) (bool, error) {
 	return responseSchemaNeedsBodyWrapperSeen(sref, schema, path, embedded, map[string]struct{}{})
 }
 
-func responseSchemaNeedsBodyWrapperSeen(sref *openapi3.SchemaRef, schema Schema, path []string, embedded bool, seenRefs map[string]struct{}) (bool, error) {
+func responseSchemaNeedsBodyWrapperSeen(sref *model.SchemaRef, schema Schema, path []string, embedded bool, seenRefs map[string]struct{}) (bool, error) {
 	if goTypeNeedsBodyWrapper(schema.TypeDecl(), embedded) {
 		return true, nil
 	}
@@ -1345,7 +1344,7 @@ func responseSchemaNeedsBodyWrapperSeen(sref *openapi3.SchemaRef, schema Schema,
 
 		resolved := *sref.Value
 		resolved.Extensions = combinedSchemaExtensions(sref)
-		resolvedRef := openapi3.NewSchemaRef("", &resolved)
+		resolvedRef := model.NewSchemaRef("", &resolved)
 		resolvedSchema, err := GenerateGoSchema(resolvedRef, path)
 		if err != nil {
 			return false, fmt.Errorf("generating referenced response schema: %w", err)
@@ -1362,7 +1361,7 @@ func responseSchemaNeedsBodyWrapperSeen(sref *openapi3.SchemaRef, schema Schema,
 
 	// A composition lowered to a referenced member's type is classified by
 	// that member.
-	member, memberSchema, err := loweredToMember(sref.Value, schema.TypeDecl(), func(member *openapi3.SchemaRef) (Schema, error) {
+	member, memberSchema, err := loweredToMember(sref.Value, schema.TypeDecl(), func(member *model.SchemaRef) (Schema, error) {
 		return GenerateGoSchema(member, path)
 	})
 	if err != nil {
@@ -1545,13 +1544,13 @@ func FilterParameterDefinitionByType(params []ParameterDefinition, in string) []
 // OperationDefinitions returns all operations for a swagger definition.
 // pathItemSourceLine returns the 1-based source line on which a path item's
 // key is declared, when the spec was loaded with origin tracking enabled
-// (see LoadSwagger). Returns 0 when the location is unavailable — e.g. a
+// (see pkg/engine/kin). Returns 0 when the location is unavailable — e.g. a
 // spec built in memory or one whose loader did not record origins.
-func pathItemSourceLine(pathItem *openapi3.PathItem) int {
+func pathItemSourceLine(pathItem *model.PathItem) int {
 	if pathItem == nil || pathItem.Origin == nil || pathItem.Origin.Key == nil {
 		return 0
 	}
-	// kin-openapi >= v0.143.0 calls attachOriginToResolved for $ref-resolved
+	// The kin loader attaches an origin to $ref-resolved
 	// path items, giving them an Origin from the *external* file rather than
 	// the base spec. Those line numbers are meaningless for base-spec
 	// declaration order, so treat them as unavailable (return 0), which lets
@@ -1563,7 +1562,7 @@ func pathItemSourceLine(pathItem *openapi3.PathItem) int {
 	return pathItem.Origin.Key.Line
 }
 
-func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
+func OperationDefinitions(swagger *model.Document) ([]OperationDefinition, error) {
 	var operations []OperationDefinition
 
 	if swagger == nil || swagger.Paths == nil {
@@ -1731,14 +1730,14 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 // (body / response generation, type definitions, etc.) but are routed
 // to webhook-specific templates.
 //
-// kin-openapi only populates the Webhooks field for OpenAPI 3.1+
+// Webhooks is only populated for OpenAPI 3.1+
 // documents, so a missing/empty map naturally short-circuits this for
 // 3.0 specs without an explicit version check.
 //
 // The result mirrors OperationDefinitions in structure, minus the
 // path-alias logic (webhooks have no path template) and the path-
 // parameter extraction (webhooks have no path params).
-func WebhookOperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
+func WebhookOperationDefinitions(swagger *model.Document) ([]OperationDefinition, error) {
 	var operations []OperationDefinition
 	if swagger == nil || len(swagger.Webhooks) == 0 {
 		return operations, nil
@@ -1862,7 +1861,7 @@ func WebhookOperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, er
 // expression itself -- the caller of the generated CallbackInitiator
 // supplies the resolved target URL at runtime (the same way it would
 // for a webhook).
-func CallbackOperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
+func CallbackOperationDefinitions(swagger *model.Document) ([]OperationDefinition, error) {
 	var operations []OperationDefinition
 	if swagger == nil || swagger.Paths == nil {
 		return operations, nil
@@ -2010,7 +2009,7 @@ func generateDefaultOperationID(opName string, requestPath string) (string, erro
 // imported package already declares it (with any As/From/Merge methods), so
 // redeclaring locally would just produce an awkward duplicate with
 // package-qualified union elements.
-func GenerateBodyDefinitions(operationID string, bodyOrRef *openapi3.RequestBodyRef, pathItemRef string) ([]RequestBodyDefinition, []TypeDefinition, error) {
+func GenerateBodyDefinitions(operationID string, bodyOrRef *model.RequestBodyRef, pathItemRef string) ([]RequestBodyDefinition, []TypeDefinition, error) {
 	if bodyOrRef == nil {
 		return nil, nil, nil
 	}
@@ -2119,7 +2118,7 @@ func GenerateBodyDefinitions(operationID string, bodyOrRef *openapi3.RequestBody
 	return bodyDefinitions, typeDefinitions, nil
 }
 
-func GenerateResponseDefinitions(operationID string, responses map[string]*openapi3.ResponseRef, pathItemRef string) ([]ResponseDefinition, error) {
+func GenerateResponseDefinitions(operationID string, responses map[string]*model.ResponseRef, pathItemRef string) ([]ResponseDefinition, error) {
 	externalPkg := externalPackageFor(pathItemRef)
 
 	var responseDefinitions []ResponseDefinition

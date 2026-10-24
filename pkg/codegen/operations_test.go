@@ -20,9 +20,10 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 func TestIsJson(t *testing.T) {
@@ -72,8 +73,8 @@ func TestIsJson(t *testing.T) {
 	for _, test := range suite {
 		t.Run(test.name, func(t *testing.T) {
 			pd := ParameterDefinition{
-				Spec: &openapi3.Parameter{
-					Content: make(map[string]*openapi3.MediaType),
+				Spec: &model.Parameter{
+					Content: make(map[string]*model.MediaType),
 				},
 			}
 			for _, mediaType := range test.mediaTypes {
@@ -226,21 +227,21 @@ func TestDeprecationComment(t *testing.T) {
 		{
 			name: "non-deprecated operation returns empty string",
 			op: &OperationDefinition{
-				Spec: &openapi3.Operation{Deprecated: false},
+				Spec: &model.Operation{Deprecated: false},
 			},
 			want: "",
 		},
 		{
 			name: "deprecated operation without x-deprecated-reason uses default message",
 			op: &OperationDefinition{
-				Spec: &openapi3.Operation{Deprecated: true},
+				Spec: &model.Operation{Deprecated: true},
 			},
 			want: "// Deprecated: this operation has been marked as deprecated upstream, but no `x-deprecated-reason` was set",
 		},
 		{
 			name: "deprecated operation with x-deprecated-reason uses the reason",
 			op: &OperationDefinition{
-				Spec: &openapi3.Operation{
+				Spec: &model.Operation{
 					Deprecated: true,
 					Extensions: map[string]any{
 						"x-deprecated-reason": "Use /v2/foo instead.",
@@ -252,7 +253,7 @@ func TestDeprecationComment(t *testing.T) {
 		{
 			name: "deprecated operation with non-string x-deprecated-reason falls back to default message",
 			op: &OperationDefinition{
-				Spec: &openapi3.Operation{
+				Spec: &model.Operation{
 					Deprecated: true,
 					Extensions: map[string]any{
 						"x-deprecated-reason": 42,
@@ -277,8 +278,8 @@ func TestOperationDefinition_GenerateFunctionComment(t *testing.T) {
 			Method:      "GET",
 			Path:        "/foo",
 			Summary:     summary,
-			Spec: &openapi3.Operation{
-				RequestBody: &openapi3.RequestBodyRef{},
+			Spec: &model.Operation{
+				RequestBody: &model.RequestBodyRef{},
 			},
 		}
 	}
@@ -288,7 +289,7 @@ func TestOperationDefinition_GenerateFunctionComment(t *testing.T) {
 			Method:      "GET",
 			Path:        "/foo",
 			Summary:     summary,
-			Spec:        &openapi3.Operation{},
+			Spec:        &model.Operation{},
 		}
 	}
 	opWithDescription := func(summary, description string) OperationDefinition {
@@ -297,7 +298,7 @@ func TestOperationDefinition_GenerateFunctionComment(t *testing.T) {
 			Method:      "GET",
 			Path:        "/foo",
 			Summary:     summary,
-			Spec:        &openapi3.Operation{Description: description},
+			Spec:        &model.Operation{Description: description},
 		}
 	}
 	opWithBodyAndDescription := func(summary, description string) OperationDefinition {
@@ -306,9 +307,9 @@ func TestOperationDefinition_GenerateFunctionComment(t *testing.T) {
 			Method:      "GET",
 			Path:        "/foo",
 			Summary:     summary,
-			Spec: &openapi3.Operation{
+			Spec: &model.Operation{
 				Description: description,
-				RequestBody: &openapi3.RequestBodyRef{},
+				RequestBody: &model.RequestBodyRef{},
 			},
 		}
 	}
@@ -525,7 +526,7 @@ func TestOperationDefinition_GenerateFunctionComment(t *testing.T) {
 				Method:      "GET",
 				Path:        "/foo",
 				Summary:     "Line one\nLine two",
-				Spec:        &openapi3.Operation{},
+				Spec:        &model.Operation{},
 			},
 			originalFunctionName:    "GetFoo",
 			functionSuffix:          "",
@@ -573,26 +574,26 @@ func TestRequestBodyDefinition_GenerateFunctionComment(t *testing.T) {
 		Method:      "POST",
 		Path:        "/foo",
 		Summary:     "Create a foo",
-		Spec:        &openapi3.Operation{},
+		Spec:        &model.Operation{},
 	}
 	parentNoSummary := OperationDefinition{
 		OperationId: "CreateFoo",
 		Method:      "POST",
 		Path:        "/foo",
-		Spec:        &openapi3.Operation{},
+		Spec:        &model.Operation{},
 	}
 	parentWithSummaryAndDescription := OperationDefinition{
 		OperationId: "CreateFoo",
 		Method:      "POST",
 		Path:        "/foo",
 		Summary:     "Create a foo",
-		Spec:        &openapi3.Operation{Description: "Detailed description."},
+		Spec:        &model.Operation{Description: "Detailed description."},
 	}
 	parentNoSummaryWithDescription := OperationDefinition{
 		OperationId: "CreateFoo",
 		Method:      "POST",
 		Path:        "/foo",
-		Spec:        &openapi3.Operation{Description: "Detailed description."},
+		Spec:        &model.Operation{Description: "Detailed description."},
 	}
 	body := RequestBodyDefinition{
 		ContentType: "application/json",
@@ -715,7 +716,7 @@ func TestRequestBodyDefinition_GenerateFunctionComment(t *testing.T) {
 				Method:      "POST",
 				Path:        "/foo",
 				Summary:     "Create a foo\r\nLine two",
-				Spec:        &openapi3.Operation{},
+				Spec:        &model.Operation{},
 			},
 			originalFunctionName:    "CreateFoo",
 			functionSuffix:          "WithJSONBody",
@@ -735,7 +736,7 @@ func TestRequestBodyDefinition_GenerateFunctionComment(t *testing.T) {
 				Method:      "POST",
 				Path:        "/foo",
 				Summary:     "Create a foo\rLine two",
-				Spec:        &openapi3.Operation{},
+				Spec:        &model.Operation{},
 			},
 			originalFunctionName:    "CreateFoo",
 			functionSuffix:          "WithJSONBody",
@@ -762,7 +763,7 @@ func TestJsonTag(t *testing.T) {
 		pd := ParameterDefinition{
 			ParamName: "foo",
 			Required:  true,
-			Spec:      &openapi3.Parameter{},
+			Spec:      &model.Parameter{},
 		}
 		assert.Equal(t, "`json:\"foo\"`", pd.JsonTag())
 	})
@@ -771,7 +772,7 @@ func TestJsonTag(t *testing.T) {
 		pd := ParameterDefinition{
 			ParamName: "foo",
 			Required:  false,
-			Spec:      &openapi3.Parameter{},
+			Spec:      &model.Parameter{},
 		}
 		assert.Equal(t, "`json:\"foo,omitempty\"`", pd.JsonTag())
 	})
@@ -780,7 +781,7 @@ func TestJsonTag(t *testing.T) {
 		pd := ParameterDefinition{
 			ParamName: "foo",
 			Required:  true,
-			Spec: &openapi3.Parameter{
+			Spec: &model.Parameter{
 				Extensions: map[string]any{
 					"x-oapi-codegen-extra-tags": map[string]any{
 						"validate": "required",
@@ -796,9 +797,9 @@ func TestJsonTag(t *testing.T) {
 		pd := ParameterDefinition{
 			ParamName: "foo",
 			Required:  true,
-			Spec: &openapi3.Parameter{
-				Schema: &openapi3.SchemaRef{
-					Value: &openapi3.Schema{
+			Spec: &model.Parameter{
+				Schema: &model.SchemaRef{
+					Value: &model.Schema{
 						Extensions: map[string]any{
 							"x-oapi-codegen-extra-tags": map[string]any{
 								"validate": "required",
@@ -815,14 +816,14 @@ func TestJsonTag(t *testing.T) {
 		pd := ParameterDefinition{
 			ParamName: "foo",
 			Required:  true,
-			Spec: &openapi3.Parameter{
+			Spec: &model.Parameter{
 				Extensions: map[string]any{
 					"x-oapi-codegen-extra-tags": map[string]any{
 						"validate": "param-level",
 					},
 				},
-				Schema: &openapi3.SchemaRef{
-					Value: &openapi3.Schema{
+				Schema: &model.SchemaRef{
+					Value: &model.Schema{
 						Extensions: map[string]any{
 							"x-oapi-codegen-extra-tags": map[string]any{
 								"validate": "schema-level",
@@ -858,7 +859,7 @@ func TestGenerateFunctionComment_GofmtHeading(t *testing.T) {
 					Method:      "POST",
 					Path:        "/pets:validate",
 					Summary:     "Validate pets",
-					Spec:        &openapi3.Operation{Description: "Validate pets"},
+					Spec:        &model.Operation{Description: "Validate pets"},
 				}
 				return op.GenerateFunctionComment("ValidatePets", "", false)
 			}(),
@@ -871,7 +872,7 @@ func TestGenerateFunctionComment_GofmtHeading(t *testing.T) {
 					Method:      "POST",
 					Path:        "/pets:validate",
 					Summary:     "Validate pets",
-					Spec:        &openapi3.Operation{Description: "Validate pets"},
+					Spec:        &model.Operation{Description: "Validate pets"},
 				}
 				body := RequestBodyDefinition{ContentType: "application/json"}
 				return body.GenerateFunctionComment("ValidatePets", parent, "WithJSONBody", false)
@@ -885,7 +886,7 @@ func TestGenerateFunctionComment_GofmtHeading(t *testing.T) {
 					Method:      "POST",
 					Path:        "/pets:validate",
 					Summary:     "Validate pets",
-					Spec:        &openapi3.Operation{Description: "Validates all pets in the store"},
+					Spec:        &model.Operation{Description: "Validates all pets in the store"},
 				}
 				return op.GenerateFunctionComment("ValidatePets", "", false)
 			}(),
@@ -898,7 +899,7 @@ func TestGenerateFunctionComment_GofmtHeading(t *testing.T) {
 					Method:      "POST",
 					Path:        "/pets:validate",
 					Summary:     "Validate pets",
-					Spec:        &openapi3.Operation{Description: "Validates all pets in the store"},
+					Spec:        &model.Operation{Description: "Validates all pets in the store"},
 				}
 				body := RequestBodyDefinition{ContentType: "application/json"}
 				return body.GenerateFunctionComment("ValidatePets", parent, "WithJSONBody", false)
@@ -954,11 +955,11 @@ func TestGenerateServerInterface(t *testing.T) {
 }
 
 func TestOperationSecurity(t *testing.T) {
-	document := openapi3.SecurityRequirements{{"bearer": {"read"}}}
+	document := model.SecurityRequirements{{"bearer": {"read"}}}
 	tests := []struct {
 		name      string
-		operation *openapi3.SecurityRequirements
-		document  openapi3.SecurityRequirements
+		operation *model.SecurityRequirements
+		document  model.SecurityRequirements
 		want      []SecurityRequirementDefinition
 	}{
 		{
@@ -968,7 +969,7 @@ func TestOperationSecurity(t *testing.T) {
 		},
 		{
 			name:      "overrides the document's, sorting schemes",
-			operation: &openapi3.SecurityRequirements{{"oauth2": {"a"}, "apiKey": {}}, {}},
+			operation: &model.SecurityRequirements{{"oauth2": {"a"}, "apiKey": {}}, {}},
 			document:  document,
 			want: []SecurityRequirementDefinition{
 				{{Scheme: "apiKey", Scopes: []string{}}, {Scheme: "oauth2", Scopes: []string{"a"}}},
@@ -977,7 +978,7 @@ func TestOperationSecurity(t *testing.T) {
 		},
 		{
 			name:      "an empty list removes the document's",
-			operation: &openapi3.SecurityRequirements{},
+			operation: &model.SecurityRequirements{},
 			document:  document,
 			want:      nil,
 		},

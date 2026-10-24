@@ -16,9 +16,10 @@ package codegen
 import (
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 func TestToCamelCase(t *testing.T) {
@@ -157,14 +158,14 @@ func TestToCamelCaseWithInitialisms(t *testing.T) {
 }
 
 func TestSortedSchemaKeysWithXOrder(t *testing.T) {
-	withOrder := func(i float64) *openapi3.SchemaRef {
-		return &openapi3.SchemaRef{
-			Value: &openapi3.Schema{
+	withOrder := func(i float64) *model.SchemaRef {
+		return &model.SchemaRef{
+			Value: &model.Schema{
 				Extensions: map[string]any{"x-order": i},
 			},
 		}
 	}
-	dict := map[string]*openapi3.SchemaRef{
+	dict := map[string]*model.SchemaRef{
 		"first":            withOrder(1),
 		"minusTenth":       withOrder(-10),
 		"zero":             withOrder(0),
@@ -381,12 +382,12 @@ func TestOrderedParamsFromUri(t *testing.T) {
 }
 
 func TestSortParamsByPath(t *testing.T) {
-	strSchema := &openapi3.Schema{Type: &openapi3.Types{"string"}}
+	strSchema := &model.Schema{Type: &model.Types{"string"}}
 
 	t.Run("reorders params to match path order", func(t *testing.T) {
 		params := []ParameterDefinition{
-			{ParamName: "b", In: "path", Spec: &openapi3.Parameter{Name: "b", Schema: &openapi3.SchemaRef{Value: strSchema}}},
-			{ParamName: "a", In: "path", Spec: &openapi3.Parameter{Name: "a", Schema: &openapi3.SchemaRef{Value: strSchema}}},
+			{ParamName: "b", In: "path", Spec: &model.Parameter{Name: "b", Schema: &model.SchemaRef{Value: strSchema}}},
+			{ParamName: "a", In: "path", Spec: &model.Parameter{Name: "a", Schema: &model.SchemaRef{Value: strSchema}}},
 		}
 		sorted, err := SortParamsByPath("/foo/{a}/bar/{b}", params)
 		require.NoError(t, err)
@@ -397,7 +398,7 @@ func TestSortParamsByPath(t *testing.T) {
 
 	t.Run("errors on missing parameter", func(t *testing.T) {
 		params := []ParameterDefinition{
-			{ParamName: "a", In: "path", Spec: &openapi3.Parameter{Name: "a", Schema: &openapi3.SchemaRef{Value: strSchema}}},
+			{ParamName: "a", In: "path", Spec: &model.Parameter{Name: "a", Schema: &model.SchemaRef{Value: strSchema}}},
 		}
 		_, err := SortParamsByPath("/foo/{a}/bar/{b}", params)
 		assert.Error(t, err)
@@ -407,9 +408,9 @@ func TestSortParamsByPath(t *testing.T) {
 		// This is the Keycloak-style path where {client-uuid} appears twice.
 		// The spec only declares 3 unique parameters.
 		params := []ParameterDefinition{
-			{ParamName: "realm", In: "path", Spec: &openapi3.Parameter{Name: "realm", Schema: &openapi3.SchemaRef{Value: strSchema}}},
-			{ParamName: "client-uuid", In: "path", Spec: &openapi3.Parameter{Name: "client-uuid", Schema: &openapi3.SchemaRef{Value: strSchema}}},
-			{ParamName: "role-name", In: "path", Spec: &openapi3.Parameter{Name: "role-name", Schema: &openapi3.SchemaRef{Value: strSchema}}},
+			{ParamName: "realm", In: "path", Spec: &model.Parameter{Name: "realm", Schema: &model.SchemaRef{Value: strSchema}}},
+			{ParamName: "client-uuid", In: "path", Spec: &model.Parameter{Name: "client-uuid", Schema: &model.SchemaRef{Value: strSchema}}},
+			{ParamName: "role-name", In: "path", Spec: &model.Parameter{Name: "role-name", Schema: &model.SchemaRef{Value: strSchema}}},
 		}
 		path := "/admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/composites/clients/{client-uuid}"
 		sorted, err := SortParamsByPath(path, params)
@@ -765,10 +766,10 @@ func TestPathToTypeName_LeadingDigit(t *testing.T) {
 
 func TestTypeDefinitionsEquivalent(t *testing.T) {
 	def1 := TypeDefinition{TypeName: "name", Schema: Schema{
-		OAPISchema: &openapi3.Schema{},
+		OAPISchema: &model.Schema{},
 	}}
 	def2 := TypeDefinition{TypeName: "name", Schema: Schema{
-		OAPISchema: &openapi3.Schema{},
+		OAPISchema: &model.Schema{},
 	}}
 	assert.True(t, TypeDefinitionsEquivalent(def1, def2))
 }

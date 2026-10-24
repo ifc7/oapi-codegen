@@ -3,10 +3,12 @@ package namingconflicts
 import (
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
 )
 
 // ---------------------------------------------------------------------------
@@ -475,7 +477,7 @@ func TestXGoNameOnRequestBodyPreserved(t *testing.T) {
 // The assertion is that the generated code does not contain the string
 // `"openapi_types"` as an import path.
 func TestLineComments(t *testing.T) {
-	swagger, err := openapi3.NewLoader().LoadFromFile("spec_importnames.yaml")
+	swagger, err := kin.Engine{}.Load("spec_importnames.yaml", engine.LoadOptions{})
 	require.NoError(t, err)
 
 	opts := codegen.Configuration{

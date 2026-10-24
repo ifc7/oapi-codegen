@@ -28,7 +28,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 var (
@@ -360,7 +360,7 @@ func SortedMapKeys[T any](m map[string]T) []string {
 // order, since Golang scrambles dictionary keys. This isn't a generic key sort, because
 // we support an extension to grant specific orders to schemas to help control output
 // ordering.
-func SortedSchemaKeys(dict map[string]*openapi3.SchemaRef) []string {
+func SortedSchemaKeys(dict map[string]*model.SchemaRef) []string {
 	keys := make([]string, len(dict))
 	orders := make(map[string]int64, len(dict))
 	i := 0
@@ -383,7 +383,7 @@ func SortedSchemaKeys(dict map[string]*openapi3.SchemaRef) []string {
 	return keys
 }
 
-func schemaXOrder(v *openapi3.SchemaRef) (int64, bool) {
+func schemaXOrder(v *model.SchemaRef) (int64, bool) {
 	if v == nil {
 		return 0, false
 	}
@@ -586,7 +586,7 @@ func ValidateStdHTTPPath(path string) error {
 // ValidateStdHTTPPaths validates every path in the document for ServeMux.
 // Paths whose operations have all been removed (e.g. by tag or operation-id
 // filtering) emit no routes, so they are skipped.
-func ValidateStdHTTPPaths(spec *openapi3.T) error {
+func ValidateStdHTTPPaths(spec *model.Document) error {
 	if spec == nil || spec.Paths == nil {
 		return nil
 	}
@@ -871,7 +871,7 @@ func SchemaNameToTypeName(name string) string {
 // differently, in that if you want additionalProperties code to be generated,
 // you must specify an additionalProperties type
 // If additionalProperties it true/false, this field will be non-nil.
-func SchemaHasAdditionalProperties(schema *openapi3.Schema) bool {
+func SchemaHasAdditionalProperties(schema *model.Schema) bool {
 	if schema.AdditionalProperties.Has != nil && *schema.AdditionalProperties.Has {
 		return true
 	}
@@ -985,7 +985,7 @@ func EscapePathElements(path string) string {
 // and the definition of the schema. If the schema overrides the name via
 // x-go-name, the new name is returned, otherwise, the original name is
 // returned.
-func renameSchema(schemaName string, schemaRef *openapi3.SchemaRef) (string, error) {
+func renameSchema(schemaName string, schemaRef *model.SchemaRef) (string, error) {
 	// References will not change type names.
 	if schemaRef.Ref != "" {
 		return SchemaNameToTypeName(schemaName), nil
@@ -1004,7 +1004,7 @@ func renameSchema(schemaName string, schemaRef *openapi3.SchemaRef) (string, err
 
 // renameParameter generates the name for a parameter, taking x-go-name into
 // account
-func renameParameter(parameterName string, parameterRef *openapi3.ParameterRef) (string, error) {
+func renameParameter(parameterName string, parameterRef *model.ParameterRef) (string, error) {
 	if parameterRef.Ref != "" {
 		return SchemaNameToTypeName(parameterName), nil
 	}
@@ -1022,7 +1022,7 @@ func renameParameter(parameterName string, parameterRef *openapi3.ParameterRef) 
 
 // renameResponse generates the name for a parameter, taking x-go-name into
 // account
-func renameResponse(responseName string, responseRef *openapi3.ResponseRef) (string, error) {
+func renameResponse(responseName string, responseRef *model.ResponseRef) (string, error) {
 	if responseRef.Ref != "" {
 		return SchemaNameToTypeName(responseName), nil
 	}
@@ -1040,7 +1040,7 @@ func renameResponse(responseName string, responseRef *openapi3.ResponseRef) (str
 
 // renameRequestBody generates the name for a parameter, taking x-go-name into
 // account
-func renameRequestBody(requestBodyName string, requestBodyRef *openapi3.RequestBodyRef) (string, error) {
+func renameRequestBody(requestBodyName string, requestBodyRef *model.RequestBodyRef) (string, error) {
 	if requestBodyRef.Ref != "" {
 		return SchemaNameToTypeName(requestBodyName), nil
 	}
@@ -1059,7 +1059,7 @@ func renameRequestBody(requestBodyName string, requestBodyRef *openapi3.RequestB
 // findSchemaByRefPath turns a $ref path into a schema. This will return ""
 // if the schema wasn't found, and it'll only work successfully for schemas
 // defined within the spec that we parsed.
-func findSchemaNameByRefPath(refPath string, spec *openapi3.T) (string, error) {
+func findSchemaNameByRefPath(refPath string, spec *model.Document) (string, error) {
 	if spec.Components == nil {
 		return "", nil
 	}
@@ -1099,7 +1099,7 @@ func findSchemaNameByRefPath(refPath string, spec *openapi3.T) (string, error) {
 	return "", nil
 }
 
-func ParseGoImportExtension(v *openapi3.SchemaRef) (*goImport, error) {
+func ParseGoImportExtension(v *model.SchemaRef) (*goImport, error) {
 	// An x-go-type-import is only meaningful in concert with an x-go-type
 	// override. Without one, the imported package is never referenced in
 	// the generated code, producing an "imported and not used" compile
@@ -1159,8 +1159,8 @@ func TypeDefinitionsEquivalent(t1, t2 TypeDefinition) bool {
 	return reflect.DeepEqual(t1.Schema.OAPISchema, t2.Schema.OAPISchema)
 }
 
-// isAdditionalPropertiesExplicitFalse determines whether an openapi3.Schema is explicitly defined as `additionalProperties: false`
-func isAdditionalPropertiesExplicitFalse(s *openapi3.Schema) bool {
+// isAdditionalPropertiesExplicitFalse determines whether an model.Schema is explicitly defined as `additionalProperties: false`
+func isAdditionalPropertiesExplicitFalse(s *model.Schema) bool {
 	if s.AdditionalProperties.Has == nil {
 		return false
 	}

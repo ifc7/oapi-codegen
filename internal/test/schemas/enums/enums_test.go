@@ -6,16 +6,18 @@ import (
 	"go/token"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
 )
 
 // issue-illegal_enum_names: codegen must produce valid, unique Go identifiers
 // for enum values that are empty strings, contain spaces, hyphens, leading
 // digits, leading/trailing underscores, or that collide after normalization.
 func TestIllegalEnumNames(t *testing.T) {
-	swagger, err := openapi3.NewLoader().LoadFromFile("spec.yaml")
+	swagger, err := kin.Engine{}.Load("spec.yaml", engine.LoadOptions{})
 	require.NoError(t, err)
 
 	opts := codegen.Configuration{

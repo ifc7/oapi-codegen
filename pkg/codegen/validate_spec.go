@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 // openAPIConverterURL converts OpenAPI 2.0 (Swagger) documents to OpenAPI 3.
@@ -19,7 +19,7 @@ const openAPIConverterURL = "https://converter.swagger.io/"
 // Without it, such a document fails partway through generation, on whichever
 // part of it first differs from OpenAPI 3. A document that declares no
 // version is taken to be OpenAPI 3, as a file of shared definitions often is.
-func ValidateOpenAPIVersion(spec *openapi3.T) error {
+func ValidateOpenAPIVersion(spec *model.Document) error {
 	if _, ok := spec.Extensions["swagger"]; ok && spec.OpenAPI == "" {
 		return fmt.Errorf("the document is OpenAPI 2.0 (Swagger), which oapi-codegen doesn't support: convert it to OpenAPI 3, for instance with %s", openAPIConverterURL)
 	}
@@ -46,7 +46,7 @@ func ValidateOpenAPIVersion(spec *openapi3.T) error {
 // are checked. `$ref`s are not followed: every ref resolves to a component that
 // is validated at its own definition, and the contents of external documents are
 // never copied into the generated output, so they cannot affect it.
-func ValidateSpec(spec *openapi3.T) error {
+func ValidateSpec(spec *model.Document) error {
 	if spec == nil {
 		return nil
 	}
@@ -225,7 +225,7 @@ func (v *specValidator) checkExtensions(ext map[string]any, where string) {
 	}
 }
 
-func (v *specValidator) walkDocument(spec *openapi3.T) {
+func (v *specValidator) walkDocument(spec *model.Document) {
 	if spec.Paths != nil {
 		paths := spec.Paths.Map()
 		for _, path := range SortedMapKeys(paths) {
@@ -244,7 +244,7 @@ func (v *specValidator) walkDocument(spec *openapi3.T) {
 	}
 }
 
-func (v *specValidator) walkComponents(c *openapi3.Components) {
+func (v *specValidator) walkComponents(c *model.Components) {
 	for _, name := range SortedMapKeys(c.Schemas) {
 		v.walkSchemaRef(c.Schemas[name], fmt.Sprintf("schema %q", name))
 	}
@@ -265,7 +265,7 @@ func (v *specValidator) walkComponents(c *openapi3.Components) {
 	}
 }
 
-func (v *specValidator) walkPathItem(item *openapi3.PathItem, where string) {
+func (v *specValidator) walkPathItem(item *model.PathItem, where string) {
 	if item == nil {
 		return
 	}
@@ -277,7 +277,7 @@ func (v *specValidator) walkPathItem(item *openapi3.PathItem, where string) {
 	}
 }
 
-func (v *specValidator) walkOperation(op *openapi3.Operation, where string) {
+func (v *specValidator) walkOperation(op *model.Operation, where string) {
 	if op == nil {
 		return
 	}
@@ -298,7 +298,7 @@ func (v *specValidator) walkOperation(op *openapi3.Operation, where string) {
 	}
 }
 
-func (v *specValidator) walkParameterRef(ref *openapi3.ParameterRef, where string) {
+func (v *specValidator) walkParameterRef(ref *model.ParameterRef, where string) {
 	if ref == nil {
 		return
 	}
@@ -315,7 +315,7 @@ func (v *specValidator) walkParameterRef(ref *openapi3.ParameterRef, where strin
 	v.walkSchemaRef(p.Schema, loc)
 }
 
-func (v *specValidator) walkRequestBodyRef(ref *openapi3.RequestBodyRef, where string) {
+func (v *specValidator) walkRequestBodyRef(ref *model.RequestBodyRef, where string) {
 	if ref == nil {
 		return
 	}
@@ -328,7 +328,7 @@ func (v *specValidator) walkRequestBodyRef(ref *openapi3.RequestBodyRef, where s
 	v.walkContent(ref.Value.Content, loc)
 }
 
-func (v *specValidator) walkResponseRef(ref *openapi3.ResponseRef, where string) {
+func (v *specValidator) walkResponseRef(ref *model.ResponseRef, where string) {
 	if ref == nil {
 		return
 	}
@@ -345,7 +345,7 @@ func (v *specValidator) walkResponseRef(ref *openapi3.ResponseRef, where string)
 	v.checkExtensions(r.Extensions, where)
 }
 
-func (v *specValidator) walkHeaderRef(ref *openapi3.HeaderRef, where string) {
+func (v *specValidator) walkHeaderRef(ref *model.HeaderRef, where string) {
 	if ref == nil {
 		return
 	}
@@ -358,7 +358,7 @@ func (v *specValidator) walkHeaderRef(ref *openapi3.HeaderRef, where string) {
 	v.walkSchemaRef(ref.Value.Schema, where)
 }
 
-func (v *specValidator) walkCallbackRef(ref *openapi3.CallbackRef, where string) {
+func (v *specValidator) walkCallbackRef(ref *model.CallbackRef, where string) {
 	if ref == nil {
 		return
 	}
@@ -372,7 +372,7 @@ func (v *specValidator) walkCallbackRef(ref *openapi3.CallbackRef, where string)
 	}
 }
 
-func (v *specValidator) walkContent(content openapi3.Content, where string) {
+func (v *specValidator) walkContent(content model.Content, where string) {
 	for _, mediaType := range SortedMapKeys(content) {
 		v.checkNoControl(mediaType, "content type in "+where)
 		media := content[mediaType]
@@ -385,7 +385,7 @@ func (v *specValidator) walkContent(content openapi3.Content, where string) {
 	}
 }
 
-func (v *specValidator) walkSchemaRef(ref *openapi3.SchemaRef, where string) {
+func (v *specValidator) walkSchemaRef(ref *model.SchemaRef, where string) {
 	if ref == nil {
 		return
 	}
@@ -401,7 +401,7 @@ func (v *specValidator) walkSchemaRef(ref *openapi3.SchemaRef, where string) {
 	v.walkSchema(ref.Value, where)
 }
 
-func (v *specValidator) walkSchema(s *openapi3.Schema, where string) {
+func (v *specValidator) walkSchema(s *model.Schema, where string) {
 	if s == nil {
 		return
 	}

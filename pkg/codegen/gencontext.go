@@ -3,7 +3,7 @@ package codegen
 import (
 	"slices"
 
-	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 // genContext carries the state that has to survive the mutual recursion
@@ -29,7 +29,7 @@ type genContext struct {
 	// The key is the schema node that owns the allOf, not the allOf slice:
 	// both versions rebuild that slice on every call, to merge the schema's
 	// own keywords as a member, so only the owner is stable across re-entry.
-	inProgress map[*openapi3.Schema]*mergeFrame
+	inProgress map[*model.Schema]*mergeFrame
 
 	// nameHint is the path a type generated at this position would be named
 	// from — the argument the calling frame would hand to PathToTypeName.
@@ -67,29 +67,29 @@ type compositionState struct {
 	// than reads from the spec, for error messages that name the members of
 	// a composition: the parent's own keywords, which generateAllOf merges
 	// as a member, are the schema itself ("").
-	memberLabels map[*openapi3.SchemaRef]string
+	memberLabels map[*model.SchemaRef]string
 	// madeUp records the allOfs the merge makes for positions several
 	// members declare, which the spec doesn't spell out.
-	madeUp map[*openapi3.Schema]bool
+	madeUp map[*model.Schema]bool
 	// unionComponents holds, for a schema the merge made from an allOf with
 	// several oneOfs or anyOfs, those unions (see unionComponent).
-	unionComponents map[*openapi3.Schema][]unionComponent
+	unionComponents map[*model.Schema][]unionComponent
 	// subschemas holds the allOfs the merge makes of the schemas several
 	// members declare for one position, by those schemas, so the same ones
 	// always make the same allOf (see allOfMerge.subschema).
-	subschemas map[string]*openapi3.SchemaRef
+	subschemas map[string]*model.SchemaRef
 	// variantKeyCache holds the JSON keys of the union variants read so far,
 	// by schema (see genContext.variantKeys).
-	variantKeyCache map[*openapi3.Schema][]string
+	variantKeyCache map[*model.Schema][]string
 }
 
 func newCompositionState() *compositionState {
 	return &compositionState{
-		memberLabels:    make(map[*openapi3.SchemaRef]string),
-		madeUp:          make(map[*openapi3.Schema]bool),
-		unionComponents: make(map[*openapi3.Schema][]unionComponent),
-		subschemas:      make(map[string]*openapi3.SchemaRef),
-		variantKeyCache: make(map[*openapi3.Schema][]string),
+		memberLabels:    make(map[*model.SchemaRef]string),
+		madeUp:          make(map[*model.Schema]bool),
+		unionComponents: make(map[*model.Schema][]unionComponent),
+		subschemas:      make(map[string]*model.SchemaRef),
+		variantKeyCache: make(map[*model.Schema][]string),
 	}
 }
 
@@ -129,7 +129,7 @@ func currentRunSettings() runSettings {
 func newGenContext(nameHint []string) genContext {
 	return genContext{
 		run:         currentRunSettings(),
-		inProgress:  make(map[*openapi3.Schema]*mergeFrame),
+		inProgress:  make(map[*model.Schema]*mergeFrame),
 		nameHint:    slices.Clone(nameHint),
 		composition: newCompositionState(),
 	}

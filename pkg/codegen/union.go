@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 // effectiveBranches counts the branches of a oneOf or anyOf other than a bare
@@ -19,7 +19,7 @@ import (
 // schemaIsNullable, which inspects anyOf/oneOf for the same idiom and wraps the
 // result in a pointer at the call site. It returns the count, whether there
 // was a null branch, and the first effective branch.
-func effectiveBranches(elements openapi3.SchemaRefs) (count int, hadNull bool, sole *openapi3.SchemaRef) {
+func effectiveBranches(elements model.SchemaRefs) (count int, hadNull bool, sole *model.SchemaRef) {
 	for _, e := range elements {
 		if e != nil && isNullTypeSchema(e.Value) {
 			hadNull = true
@@ -45,7 +45,7 @@ func effectiveBranches(elements openapi3.SchemaRefs) (count int, hadNull bool, s
 // outSchema inherits the branch's underlying representation. The caller will
 // apply nullability (schemaIsNullable returns true because the original
 // anyOf/oneOf contained a null branch).
-func collapseNullableUnion(ctx genContext, outSchema *Schema, sole *openapi3.SchemaRef, path []string) error {
+func collapseNullableUnion(ctx genContext, outSchema *Schema, sole *model.SchemaRef, path []string) error {
 	elementSchema, err := generateGoSchema(ctx.at(path), sole, path)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func collapseNullableUnion(ctx genContext, outSchema *Schema, sole *openapi3.Sch
 // accessors use. An inline branch is named after its path, and defined under
 // that name in outSchema's additional types unless it generated as that named
 // type already, along with the types it brings.
-func generateUnionElement(ctx genContext, outSchema *Schema, element *openapi3.SchemaRef, elementPath []string) (Schema, error) {
+func generateUnionElement(ctx genContext, outSchema *Schema, element *model.SchemaRef, elementPath []string) (Schema, error) {
 	elementSchema, err := generateGoSchema(ctx.at(elementPath), element, elementPath)
 	if err != nil {
 		return Schema{}, err
@@ -89,7 +89,7 @@ func generateUnionElement(ctx genContext, outSchema *Schema, element *openapi3.S
 // mapExplicitly maps goType, the type of the $ref variant ref, under every key
 // the discriminator's mapping gives that $ref, and reports whether it gives it
 // any.
-func mapExplicitly(into map[string]string, mapping map[string]openapi3.MappingRef, ref, goType string) bool {
+func mapExplicitly(into map[string]string, mapping map[string]model.MappingRef, ref, goType string) bool {
 	mapped := false
 	for k, v := range mapping {
 		if v.Ref == ref {
@@ -102,7 +102,7 @@ func mapExplicitly(into map[string]string, mapping map[string]openapi3.MappingRe
 
 // addUnionElement adds a variant's type to outSchema's union members, and the
 // JSON property names the variant declares to the union's.
-func addUnionElement(outSchema *Schema, element *openapi3.SchemaRef, goType string) {
+func addUnionElement(outSchema *Schema, element *model.SchemaRef, goType string) {
 	// The same type can appear twice, e.g. as a member of both an anyOf
 	// and a oneOf; its accessors are generated once.
 	outSchema.UnionElements = appendUnique(outSchema.UnionElements, UnionElement(goType))
@@ -114,11 +114,11 @@ func addUnionElement(outSchema *Schema, element *openapi3.SchemaRef, goType stri
 // unionTextKinds returns the sorted JSON types of a union's branches when
 // every branch (other than a 3.1 null branch) is a single scalar type, or is
 // itself a union of scalar types, such as a `$ref` to one; and nil otherwise.
-func unionTextKinds(branches openapi3.SchemaRefs) []string {
+func unionTextKinds(branches model.SchemaRefs) []string {
 	return unionTextKindsAt(branches, 0)
 }
 
-func unionTextKindsAt(branches openapi3.SchemaRefs, depth int) []string {
+func unionTextKindsAt(branches model.SchemaRefs, depth int) []string {
 	if depth > 8 {
 		// A union that contains itself; it can't be bound from text.
 		return nil
@@ -153,7 +153,7 @@ func unionTextKindsAt(branches openapi3.SchemaRefs, depth int) []string {
 			return nil
 		}
 		switch types[0] {
-		case openapi3.TypeBoolean, openapi3.TypeInteger, openapi3.TypeNumber, openapi3.TypeString:
+		case model.TypeBoolean, model.TypeInteger, model.TypeNumber, model.TypeString:
 			kinds = appendUnique(kinds, types[0])
 		default:
 			return nil
@@ -183,7 +183,7 @@ func (s Schema) AdoptedProperties() []Property {
 func (s Schema) UnionTextNonStringKinds() string {
 	var kinds []string
 	for _, kind := range s.UnionTextKinds {
-		if kind != openapi3.TypeString {
+		if kind != model.TypeString {
 			kinds = append(kinds, kind)
 		}
 	}
@@ -200,7 +200,7 @@ func (s Schema) UnionTextAccepts(kind string) bool {
 // property when it is boolean, integer or number, and "" (a string) otherwise.
 // The union's own declaration of the property wins; failing that, every
 // element that declares it must agree.
-func discriminatorValueType(outSchema *Schema, elements openapi3.SchemaRefs, property string) string {
+func discriminatorValueType(outSchema *Schema, elements model.SchemaRefs, property string) string {
 	for _, p := range outSchema.Properties {
 		if p.JsonFieldName == property {
 			return scalarType(p.Schema.OAPISchema)
@@ -226,7 +226,7 @@ func discriminatorValueType(outSchema *Schema, elements openapi3.SchemaRefs, pro
 
 // findProperty looks up a property on a schema, including properties it
 // gets from allOf members, as a variant that extends a base schema does.
-func findProperty(s *openapi3.Schema, name string, depth int) *openapi3.Schema {
+func findProperty(s *model.Schema, name string, depth int) *model.Schema {
 	if s == nil || depth > 8 {
 		return nil
 	}
@@ -246,7 +246,7 @@ func findProperty(s *openapi3.Schema, name string, depth int) *openapi3.Schema {
 
 // propertyNames returns the property names a schema declares, including
 // those it gets from allOf members.
-func propertyNames(s *openapi3.Schema, depth int) []string {
+func propertyNames(s *model.Schema, depth int) []string {
 	if s == nil || depth > 8 {
 		return nil
 	}
@@ -261,7 +261,7 @@ func propertyNames(s *openapi3.Schema, depth int) []string {
 
 // scalarType returns "boolean", "integer" or "number" for a schema of that
 // single (non-null) type, and "" for anything else.
-func scalarType(s *openapi3.Schema) string {
+func scalarType(s *model.Schema) string {
 	if s == nil {
 		return ""
 	}
@@ -270,7 +270,7 @@ func scalarType(s *openapi3.Schema) string {
 		return ""
 	}
 	switch types[0] {
-	case openapi3.TypeBoolean, openapi3.TypeInteger, openapi3.TypeNumber:
+	case model.TypeBoolean, model.TypeInteger, model.TypeNumber:
 		return types[0]
 	}
 	return ""

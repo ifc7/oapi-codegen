@@ -4,23 +4,24 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
-// schemaWithExtension builds a minimal *openapi3.T whose single schema
+// schemaWithExtension builds a minimal *model.Document whose single schema
 // component carries the supplied extension map.
-func schemaWithExtension(ext map[string]any) *openapi3.T {
-	s := openapi3.NewSchema()
-	s.Type = &openapi3.Types{"string"}
+func schemaWithExtension(ext map[string]any) *model.Document {
+	s := model.NewSchema()
+	s.Type = &model.Types{"string"}
 	s.Extensions = ext
-	ref := &openapi3.SchemaRef{Value: s}
-	return &openapi3.T{
+	ref := &model.SchemaRef{Value: s}
+	return &model.Document{
 		OpenAPI: "3.0.3",
-		Info:    &openapi3.Info{Title: "t", Version: "0"},
-		Components: &openapi3.Components{
-			Schemas: openapi3.Schemas{"S": ref},
+		Info:    &model.Info{Title: "t", Version: "0"},
+		Components: &model.Components{
+			Schemas: model.Schemas{"S": ref},
 		},
 	}
 }

@@ -506,7 +506,8 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
 )
 
 // TestRejected generates code from spec.yaml with config.yaml, the way the
@@ -520,7 +521,7 @@ func TestRejected(t *testing.T) {
 	cfg = cfg.UpdateDefaults()
 	require.NoError(t, cfg.Validate())
 
-	spec, err := util.LoadSwagger("spec.yaml")
+	spec, err := kin.Engine{}.Load("spec.yaml", engine.LoadOptions{})
 	require.NoError(t, err)
 	_, err = codegen.Generate(spec, cfg)
 	require.Error(t, err)

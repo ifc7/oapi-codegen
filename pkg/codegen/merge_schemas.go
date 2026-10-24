@@ -11,14 +11,14 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 // inProgressAllOf returns, for a composition that an enclosing frame is
 // already generating, a schema that refers to the type that frame is building,
 // instead of inlining the body a second time, which is what used to recurse
 // until the stack ran out (issue #2542). ok is false when no frame is.
-func (ctx genContext) inProgressAllOf(schema *openapi3.Schema, skipOptionalPointer bool) (Schema, bool) {
+func (ctx genContext) inProgressAllOf(schema *model.Schema, skipOptionalPointer bool) (Schema, bool) {
 	frame, ok := ctx.inProgress[schema]
 	if !ok {
 		return Schema{}, false
@@ -38,7 +38,7 @@ func (ctx genContext) inProgressAllOf(schema *openapi3.Schema, skipOptionalPoint
 // at the composition, keeps the description and
 // x-go-type-skip-optional-pointer the caller passes, and names the composition
 // when something underneath referred back to it (see mergeFrame).
-func finishAllOf(ctx genContext, frame *mergeFrame, schema *openapi3.Schema, merged Schema, description string, extensions map[string]any, skipOptionalPointer bool) (Schema, error) {
+func finishAllOf(ctx genContext, frame *mergeFrame, schema *model.Schema, merged Schema, description string, extensions map[string]any, skipOptionalPointer bool) (Schema, error) {
 	// The composition generated as an alias of another type, such as the
 	// $ref of `allOf: [$ref X]`: remember that type's schema, which
 	// OAPISchema no longer points to, so generatesMarshalJSON can tell that X
@@ -100,10 +100,10 @@ func finishAllOf(ctx genContext, frame *mergeFrame, schema *openapi3.Schema, mer
 }
 
 // nonNullTypes returns a type array's entries other than "null".
-func nonNullTypes(t *openapi3.Types) []string {
+func nonNullTypes(t *model.Types) []string {
 	var out []string
 	for _, typ := range t.Slice() {
-		if typ != openapi3.TypeNull {
+		if typ != model.TypeNull {
 			out = append(out, typ)
 		}
 	}
@@ -111,10 +111,10 @@ func nonNullTypes(t *openapi3.Types) []string {
 }
 
 // sameSchema reports whether two schema positions describe the same schema:
-// the same $ref, or inline schemas with the same content. kin-openapi's
-// source-location metadata is not part of the JSON encoding, so two identical
+// the same $ref, or inline schemas with the same content. Source-location
+// metadata is not part of the JSON encoding, so two identical
 // schemas declared in different places compare equal.
-func sameSchema(r1, r2 *openapi3.SchemaRef) bool {
+func sameSchema(r1, r2 *model.SchemaRef) bool {
 	if r1.Ref != "" || r2.Ref != "" {
 		return r1.Ref == r2.Ref
 	}
