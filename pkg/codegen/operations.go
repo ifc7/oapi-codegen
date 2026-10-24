@@ -28,7 +28,6 @@ import (
 	"unicode"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
 )
 
 type ParameterDefinition struct {
@@ -130,7 +129,7 @@ func (pd ParameterDefinition) IsJson() bool {
 	p := pd.Spec
 	if len(p.Content) == 1 {
 		for k := range p.Content {
-			if util.IsMediaTypeJson(k) {
+			if isMediaTypeJson(k) {
 				return true
 			}
 		}
@@ -913,12 +912,12 @@ func (o *OperationDefinition) DeprecationComment() string {
 // this identical decision — otherwise the wrapper references per-content-type
 // type names that were never declared (see issue #2389).
 func responseMediaTypeSuffix(content model.Content, mediaType string) string {
-	if !util.IsMediaTypeJson(mediaType) {
+	if !isMediaTypeJson(mediaType) {
 		return ""
 	}
 	jsonCount := 0
 	for mt := range content {
-		if util.IsMediaTypeJson(mt) {
+		if isMediaTypeJson(mt) {
 			jsonCount++
 		}
 	}
@@ -965,7 +964,7 @@ func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefini
 					// we know how to deserialize them; anything else is
 					// skipped (the raw body remains available).
 					case mappedTag != "":
-						if !util.IsMediaTypeJson(contentTypeName) &&
+						if !isMediaTypeJson(contentTypeName) &&
 							!slices.Contains(contentTypesJSON, contentTypeName) &&
 							!slices.Contains(contentTypesHalJSON, contentTypeName) &&
 							!slices.Contains(contentTypesYAML, contentTypeName) &&
@@ -980,7 +979,7 @@ func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefini
 						typeName = fmt.Sprintf("HALJSON%s", nameNormalizer(responseName))
 						tag = "HALJSON"
 					// Vendored JSON
-					case slices.Contains(contentTypesJSON, contentTypeName) || util.IsMediaTypeJson(contentTypeName):
+					case slices.Contains(contentTypesJSON, contentTypeName) || isMediaTypeJson(contentTypeName):
 						baseTypeName := fmt.Sprintf("%s%s", nameNormalizer(contentTypeName), nameNormalizer(responseName))
 
 						typeName = strings.ReplaceAll(baseTypeName, "Json", "JSON")
@@ -1050,7 +1049,7 @@ func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefini
 					// undeclared base type (e.g. an XML-only component response)
 					// nor silently decodes into the JSON type when the JSON and
 					// non-JSON schemas differ.
-					if IsGoTypeReference(responseRef.Ref) && util.IsMediaTypeJson(contentTypeName) {
+					if IsGoTypeReference(responseRef.Ref) && isMediaTypeJson(contentTypeName) {
 						// Determine the imported package for an external response.
 						// Either the operation came from an externally-ref'd path
 						// item and the response ref is relative to that file
@@ -1227,7 +1226,7 @@ func (r RequestBodyDefinition) IsSupportedByClient() bool {
 // - application/vnd.api+json
 // - application/*+json
 func (r RequestBodyDefinition) IsJSON() bool {
-	return util.IsMediaTypeJson(r.ContentType)
+	return isMediaTypeJson(r.ContentType)
 }
 
 // IsFormdata returns whether this body is form-urlencoded
@@ -1439,7 +1438,7 @@ func (r ResponseContentDefinition) NameTagOrContentType() string {
 // - application/vnd.api+json
 // - application/*+json
 func (r ResponseContentDefinition) IsJSON() bool {
-	return util.IsMediaTypeJson(r.ContentType)
+	return isMediaTypeJson(r.ContentType)
 }
 
 // IsFormdata returns whether this content is form-urlencoded
@@ -2034,7 +2033,7 @@ func GenerateBodyDefinitions(operationID string, bodyOrRef *model.RequestBodyRef
 			return nil, nil, fmt.Errorf("resolving content-types short name for %s: %w", operationID, err)
 		}
 		if tag == "" {
-			if util.IsMediaTypeJson(contentType) {
+			if isMediaTypeJson(contentType) {
 				tag = mediaTypeToCamelCase(contentType)
 			} else {
 				bd := RequestBodyDefinition{
@@ -2147,7 +2146,7 @@ func GenerateResponseDefinitions(operationID string, responses map[string]*model
 			if err != nil {
 				return nil, fmt.Errorf("resolving content-types short name for %s.%s: %w", operationID, statusCode, err)
 			}
-			if tag == "" && util.IsMediaTypeJson(contentType) {
+			if tag == "" && isMediaTypeJson(contentType) {
 				tag = mediaTypeToCamelCase(contentType)
 			}
 			if tag == "" {
@@ -2194,7 +2193,7 @@ func GenerateResponseDefinitions(operationID string, responses map[string]*model
 			// declares JSON content, so only JSON media types can be
 			// redirected this way.
 			componentTypeName := ""
-			if externalPkg == "" && util.IsMediaTypeJson(contentType) {
+			if externalPkg == "" && isMediaTypeJson(contentType) {
 				switch {
 				case responseOrRef.Ref != "":
 					// An operation (or another component) reaching a

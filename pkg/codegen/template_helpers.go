@@ -23,8 +23,6 @@ import (
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
 )
 
 const (
@@ -135,7 +133,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 		SortedMapKeys := SortedMapKeys(responseRef.Value.Content)
 		jsonCount := 0
 		for _, contentTypeName := range SortedMapKeys {
-			if slices.Contains(contentTypesJSON, contentTypeName) || util.IsMediaTypeJson(contentTypeName) {
+			if slices.Contains(contentTypesJSON, contentTypeName) || isMediaTypeJson(contentTypeName) {
 				jsonCount++
 			}
 		}
@@ -152,7 +150,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 			switch {
 
 			// JSON:
-			case slices.Contains(contentTypesJSON, contentTypeName) || util.IsMediaTypeJson(contentTypeName):
+			case slices.Contains(contentTypesJSON, contentTypeName) || isMediaTypeJson(contentTypeName):
 				if typeDefinition.ContentTypeName == contentTypeName {
 					caseAction := fmt.Sprintf("var dest %s\n"+
 						"if err := json.Unmarshal(bodyBytes, &dest); err != nil { \n"+

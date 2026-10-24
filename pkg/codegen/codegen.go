@@ -37,7 +37,6 @@ import (
 	"golang.org/x/tools/imports"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
 )
 
 // Embed the templates directory
@@ -838,7 +837,7 @@ func GenerateTypesForResponses(t *template.Template, responses model.ResponseBod
 		SortedMapKeys := SortedMapKeys(content)
 		for _, mediaType := range SortedMapKeys {
 			response := response.Content[mediaType]
-			if !util.IsMediaTypeJson(mediaType) {
+			if !isMediaTypeJson(mediaType) {
 				continue
 			}
 
@@ -893,7 +892,7 @@ func GenerateTypesForRequestBodies(t *template.Template, bodies map[string]*mode
 		response := requestBodyRef.Value
 		for _, mediaType := range SortedMapKeys(response.Content) {
 			body := response.Content[mediaType]
-			if !util.IsMediaTypeJson(mediaType) {
+			if !isMediaTypeJson(mediaType) {
 				continue
 			}
 
@@ -1539,7 +1538,7 @@ func GetRequestBodiesImports(bodies map[string]*model.RequestBodyRef) (map[strin
 	for _, r := range bodies {
 		response := r.Value
 		for mediaType, body := range response.Content {
-			if !util.IsMediaTypeJson(mediaType) {
+			if !isMediaTypeJson(mediaType) {
 				continue
 			}
 
@@ -1558,7 +1557,7 @@ func GetResponsesImports(responses map[string]*model.ResponseRef) (map[string]go
 	for _, r := range responses {
 		response := r.Value
 		for mediaType, body := range response.Content {
-			if !util.IsMediaTypeJson(mediaType) {
+			if !isMediaTypeJson(mediaType) {
 				continue
 			}
 
