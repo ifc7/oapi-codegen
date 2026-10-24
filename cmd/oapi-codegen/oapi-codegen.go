@@ -91,9 +91,9 @@ func main() {
 	}
 
 	if flag.NArg() < 1 {
-		errExit("Please specify a path to a OpenAPI 3.0 spec file\n")
+		errExit("Please specify a path to an OpenAPI 3.0 or 3.1 spec file\n")
 	} else if flag.NArg() > 1 {
-		errExit("Only one OpenAPI 3.0 spec file is accepted and it must be the last CLI argument\n")
+		errExit("Only one OpenAPI 3.0 or 3.1 spec file is accepted and it must be the last CLI argument\n")
 	}
 
 	var opts configuration

@@ -170,6 +170,10 @@ func constructImportMapping(importMapping map[string]string) importMap {
 // the descriptions we've built up above from the schema objects.
 // opts defines
 func Generate(spec *openapi3.T, opts Configuration) (string, error) {
+	if err := ValidateOpenAPIVersion(spec); err != nil {
+		return "", err
+	}
+
 	// This is global state
 	globalState.options = opts
 	globalState.spec = spec

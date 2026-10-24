@@ -306,9 +306,9 @@ This lets you focus on the business logic of each endpoint, rather than (un)mars
 - Support multiple OpenAPI files by having a package per OpenAPI file
 - Support of OpenAPI 3.0 and 3.1
   - OpenAPI 3.1 support includes [webhooks](https://spec.openapis.org/oas/v3.1.0#oasWebhooks) and version-aware handling of 3.1 idioms such as `type: [T, "null"]` nullability and enums declared via `oneOf` + `const`
-  - Note that this does not include OpenAPI 2.0 (aka Swagger). If you have an old Swagger
-    specification, you can use a [converter](https://converter.swagger.io/) before
-    using oapi-codegen.
+  - Note that this does not include OpenAPI 2.0 (aka Swagger), which `oapi-codegen` rejects. If you
+    have an old Swagger specification, you can use a [converter](https://converter.swagger.io/)
+    before using oapi-codegen.
 - Extract parameters from requests, to reduce work required by your implementation
 - Implicit `additionalProperties` are ignored by default ([more details](#additional-properties-additionalproperties))
 - Prune unused types by default
