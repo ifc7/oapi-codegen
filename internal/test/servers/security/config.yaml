@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../../configuration-schema.json
+package: serverssecurity
+output: security.gen.go
+generate:
+  server: true
+  models: true

@@ -565,6 +565,65 @@ func sharedParameterTypeDefs(sharedParams []ParameterDefinition) []TypeDefinitio
 	return typeDefs
 }
 
+// SecurityRequirementDefinition is one way to satisfy an operation's security:
+// every scheme it lists, each with the scopes it requires. An empty one lets
+// the operation be called anonymously.
+type SecurityRequirementDefinition []SecuritySchemeScopes
+
+// SecuritySchemeScopes names a security scheme and the scopes a security
+// requirement needs of it.
+type SecuritySchemeScopes struct {
+	Scheme string
+	Scopes []string
+}
+
+// operationSecurity returns an operation's security requirements: its own
+// when it declares any (an empty list declaring that it needs none), and the
+// document's otherwise. Schemes are sorted by name, so the generated code is
+// deterministic.
+func operationSecurity(operation *openapi3.SecurityRequirements, document openapi3.SecurityRequirements) []SecurityRequirementDefinition {
+	requirements := document
+	if operation != nil {
+		requirements = *operation
+	}
+	var out []SecurityRequirementDefinition
+	for _, requirement := range requirements {
+		def := SecurityRequirementDefinition{}
+		for _, scheme := range SortedMapKeys(requirement) {
+			def = append(def, SecuritySchemeScopes{Scheme: scheme, Scopes: requirement[scheme]})
+		}
+		out = append(out, def)
+	}
+	return out
+}
+
+// securityRequirementsLiteral returns requirements as a composite literal of
+// []SecurityRequirement with the type elided, as an element of a map or slice
+// literal of them.
+func securityRequirementsLiteral(requirements []SecurityRequirementDefinition) string {
+	var b strings.Builder
+	b.WriteString("{")
+	for i, requirement := range requirements {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString("{")
+		for j, scheme := range requirement {
+			if j > 0 {
+				b.WriteString(", ")
+			}
+			scopes := make([]string, len(scheme.Scopes))
+			for k, scope := range scheme.Scopes {
+				scopes[k] = StringToGoString(scope)
+			}
+			fmt.Fprintf(&b, "%s: {%s}", StringToGoString(scheme.Scheme), strings.Join(scopes, ", "))
+		}
+		b.WriteString("}")
+	}
+	b.WriteString("}")
+	return b.String()
+}
+
 // OperationDefinition describes an Operation
 type OperationDefinition struct {
 	// OperationId is the `operationId` field from the OpenAPI Specification, after going through a `nameNormalizer`, and will be used to generate function names
@@ -591,6 +650,10 @@ type OperationDefinition struct {
 	IsAlias     bool   // True when this path is a $ref alias of another path item
 	AliasTarget string // When IsAlias is true, this is the OperationId of the canonical operation (for route registration to reference the correct wrapper)
 	PathItemRef string // The path item's $ref (if any); used to qualify externally-loaded schemas referenced from this operation's responses
+	// SecurityRequirements are the ways a request may satisfy the
+	// operation's security, any one of which is enough. Empty when the
+	// operation declares no security.
+	SecurityRequirements []SecurityRequirementDefinition
 
 	// IsWebhook is true when this OperationDefinition was sourced from
 	// spec.Webhooks (OpenAPI 3.1+). Webhook operations have no path
@@ -710,6 +773,13 @@ func (o *OperationDefinition) AllParams() []ParameterDefinition {
 // engine.
 func (o OperationDefinition) RequiresParamObject() bool {
 	return len(o.Params()) > 0
+}
+
+// SecurityRequirementsLiteral returns the operation's security requirements
+// as a []SecurityRequirement composite literal with the type elided. This is
+// used from the template engine.
+func (o OperationDefinition) SecurityRequirementsLiteral() string {
+	return securityRequirementsLiteral(o.SecurityRequirements)
 }
 
 // HasBody is called by the template engine to determine whether to generate body
@@ -1608,17 +1678,18 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 				CookieParams: FilterParameterDefinitionByType(allParams, "cookie"),
 				OperationId:  nameNormalizer(operationId),
 				// Replace newlines in summary.
-				Summary:         op.Summary,
-				Method:          opName,
-				Path:            requestPath,
-				SpecOrder:       pathSpecOrder,
-				Spec:            op,
-				Bodies:          bodyDefinitions,
-				Responses:       responseDefinitions,
-				TypeDefinitions: typeDefinitions,
-				IsAlias:         isAlias,
-				AliasTarget:     aliasTarget,
-				PathItemRef:     pathItem.Ref,
+				Summary:              op.Summary,
+				Method:               opName,
+				Path:                 requestPath,
+				SpecOrder:            pathSpecOrder,
+				Spec:                 op,
+				Bodies:               bodyDefinitions,
+				Responses:            responseDefinitions,
+				TypeDefinitions:      typeDefinitions,
+				IsAlias:              isAlias,
+				AliasTarget:          aliasTarget,
+				PathItemRef:          pathItem.Ref,
+				SecurityRequirements: operationSecurity(op.Security, swagger.Security),
 			}
 
 			if op.RequestBody != nil {
@@ -2424,8 +2495,8 @@ func sortOperationsBySpecOrder(ops []OperationDefinition) []OperationDefinition 
 }
 
 // GenerateServer generates the server: each operation's request and response
-// objects, the ServerInterface, and the net/http handler that routes requests
-// to it.
+// objects, the ServerInterface, the net/http handler that routes requests to
+// it, and the operations' security requirements.
 func GenerateServer(t *template.Template, operations []OperationDefinition) (string, error) {
 	var buf bytes.Buffer
 	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-interface.tmpl"}, t, operations); err != nil {
@@ -2438,6 +2509,16 @@ func GenerateServer(t *template.Template, operations []OperationDefinition) (str
 	}
 	buf.WriteString("\n")
 	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-handler.tmpl"}, t, operations); err != nil {
+		return "", err
+	}
+	var secured []OperationDefinition
+	for _, op := range operations {
+		if len(op.SecurityRequirements) > 0 && !op.IsAlias {
+			secured = append(secured, op)
+		}
+	}
+	buf.WriteString("\n")
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-security.tmpl"}, t, secured); err != nil {
 		return "", err
 	}
 	return buf.String(), nil

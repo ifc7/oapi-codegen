@@ -11,6 +11,9 @@ type serverHandler struct {
     {{if not .IsAlias}}
     // {{$opid}} serves the {{$opid}} operation.
     func (sh *serverHandler) {{$opid}}(w http.ResponseWriter, r *http.Request) {
+        {{if .SecurityRequirements -}}
+        r = r.WithContext(context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity[{{$opid | toGoString}}]))
+        {{end -}}
         {{template "param.bindRequest" (dict "Op" . "Handler" "sh.options.RequestErrorHandlerFunc")}}
 
         var request {{$opid | ucFirst}}RequestObject

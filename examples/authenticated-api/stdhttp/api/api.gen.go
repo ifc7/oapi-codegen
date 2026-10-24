@@ -635,6 +635,7 @@ type serverHandler struct {
 
 // ListThings serves the ListThings operation.
 func (sh *serverHandler) ListThings(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity["ListThings"]))
 
 	var request ListThingsRequestObject
 
@@ -660,6 +661,7 @@ func (sh *serverHandler) ListThings(w http.ResponseWriter, r *http.Request) {
 
 // AddThing serves the AddThing operation.
 func (sh *serverHandler) AddThing(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity["AddThing"]))
 
 	var request AddThingRequestObject
 
@@ -757,6 +759,34 @@ type TooManyValuesForParamError struct {
 
 func (e *TooManyValuesForParamError) Error() string {
 	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
+}
+
+// SecurityRequirement is one way to satisfy an operation's security: it maps
+// each security scheme the request must satisfy to the scopes it needs of
+// that scheme. An empty SecurityRequirement lets the request through
+// anonymously.
+type SecurityRequirement map[string][]string
+
+// operationSecurity holds the security requirements of each operation that
+// declares any.
+var operationSecurity = map[string][]SecurityRequirement{
+	"ListThings": {{"BearerAuth": {}}},
+	"AddThing":   {{"BearerAuth": {"things:w"}}},
+}
+
+type securityRequirementsKey struct{}
+
+// SecurityRequirements returns the security requirements of the operation
+// that ctx's request is for: the request is authorized when it satisfies any
+// one of them. It returns nil when the operation declares no security.
+//
+// The server stores them in the request's context before it binds the
+// request, so a MiddlewareFunc, a ServerInterface method and the
+// RequestErrorHandlerFunc can all read them. Every request for the operation
+// shares them, so they must not be modified.
+func SecurityRequirements(ctx context.Context) []SecurityRequirement {
+	requirements, _ := ctx.Value(securityRequirementsKey{}).([]SecurityRequirement)
+	return requirements
 }
 
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.

@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: servers/security
+  version: 1.0.0
+  description: |
+    Each operation's security requirements reach the request's context, with
+    their alternatives (OR), combined schemes (AND) and anonymous ({})
+    alternatives intact.
+# The document's requirement, which operations without their own inherit.
+security:
+  - bearerAuth: [things:read]
+paths:
+  /inherited:
+    get:
+      operationId: Inherited
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: No content
+  /alternatives:
+    get:
+      operationId: Alternatives
+      # Either an OAuth2 token with both scopes, or an API key together with a
+      # bearer token, or no credentials at all.
+      security:
+        - oauth2: [things:read, "things:write \"all\""]
+        - apiKey: []
+          bearerAuth: []
+        - {}
+      responses:
+        "204":
+          description: No content
+  /public:
+    get:
+      operationId: Public
+      # An empty list removes the document's requirement.
+      security: []
+      responses:
+        "204":
+          description: No content
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    oauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.com/token
+          scopes:
+            things:read: Read things
+            "things:write \"all\"": Write all things

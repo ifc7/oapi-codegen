@@ -15,8 +15,9 @@ info:
     scheme not defined under components/securitySchemes must be tolerated by
     the code generator and produce a package that compiles without error.
 # issue #2367: security references a scheme ("api_key") that is NOT declared
-# under components/securitySchemes; the generator must not emit a dangling
-# context-key constant that references an undeclared type.
+# under components/securitySchemes. The generator once emitted a dangling
+# context-key constant for it; now the scheme is kept by name in the
+# operation's security requirements, and the package must still compile.
 security:
   - api_key: []
 paths:

@@ -954,6 +954,73 @@ func TestGenerateServerInterface(t *testing.T) {
 	assert.Equal(t, 1, strings.Count(out, "type ServerInterface interface"))
 }
 
+func TestOperationSecurity(t *testing.T) {
+	document := openapi3.SecurityRequirements{{"bearer": {"read"}}}
+	tests := []struct {
+		name      string
+		operation *openapi3.SecurityRequirements
+		document  openapi3.SecurityRequirements
+		want      []SecurityRequirementDefinition
+	}{
+		{
+			name:     "inherits the document's",
+			document: document,
+			want:     []SecurityRequirementDefinition{{{Scheme: "bearer", Scopes: []string{"read"}}}},
+		},
+		{
+			name:      "overrides the document's, sorting schemes",
+			operation: &openapi3.SecurityRequirements{{"oauth2": {"a"}, "apiKey": {}}, {}},
+			document:  document,
+			want: []SecurityRequirementDefinition{
+				{{Scheme: "apiKey", Scopes: []string{}}, {Scheme: "oauth2", Scopes: []string{"a"}}},
+				{},
+			},
+		},
+		{
+			name:      "an empty list removes the document's",
+			operation: &openapi3.SecurityRequirements{},
+			document:  document,
+			want:      nil,
+		},
+		{
+			name: "none anywhere",
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, operationSecurity(tt.operation, tt.document))
+		})
+	}
+}
+
+func TestGenerateServerSecurity(t *testing.T) {
+	funcs := make(template.FuncMap, len(TemplateFunctions)+1)
+	for k, v := range TemplateFunctions {
+		funcs[k] = v
+	}
+	funcs["opts"] = func() Configuration { return Configuration{} }
+	base := template.New("codegen").Funcs(funcs)
+	require.NoError(t, LoadTemplates(templates, base))
+
+	t.Run("omitted without security", func(t *testing.T) {
+		out, err := GenerateServer(base, []OperationDefinition{{OperationId: "Ping"}})
+		require.NoError(t, err)
+		assert.NotContains(t, out, "SecurityRequirement")
+	})
+
+	t.Run("stored for a secured operation", func(t *testing.T) {
+		out, err := GenerateServer(base, []OperationDefinition{{
+			OperationId:          "Ping",
+			SecurityRequirements: []SecurityRequirementDefinition{{{Scheme: "bearer", Scopes: []string{"read"}}}},
+		}})
+		require.NoError(t, err)
+		assert.Contains(t, out, `"Ping": {{"bearer": {"read"}}},`)
+		assert.Contains(t, out, `context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity["Ping"])`)
+		assert.Contains(t, out, "func SecurityRequirements(ctx context.Context) []SecurityRequirement {")
+	})
+}
+
 func TestServerResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.0.3"
