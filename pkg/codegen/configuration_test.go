@@ -32,3 +32,17 @@ func TestConfigurationValidateImportMappingKeys(t *testing.T) {
 	}
 	require.NoError(t, cfg.Validate())
 }
+
+func TestConfigurationValidateEngine(t *testing.T) {
+	cfg := Configuration{PackageName: "api"}
+	for _, name := range []string{"", "kin", "libopenapi"} {
+		cfg.Engine = name
+		require.NoError(t, cfg.Validate(), name)
+	}
+
+	cfg.Engine = "swagger"
+	err := cfg.Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "`engine` configuration was incorrect")
+	assert.Contains(t, err.Error(), `unknown engine "swagger"`)
+}

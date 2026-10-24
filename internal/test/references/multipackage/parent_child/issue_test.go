@@ -7,11 +7,11 @@ import (
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/engines"
 )
 
 func TestIssue(t *testing.T) {
-	swagger, err := kin.Engine{}.Load("child.api.yaml", engine.LoadOptions{})
+	swagger, err := engines.Load("", "child.api.yaml", engine.LoadOptions{})
 	require.NoError(t, err)
 
 	opts := codegen.Configuration{

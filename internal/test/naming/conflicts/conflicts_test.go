@@ -8,7 +8,7 @@ import (
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/engines"
 )
 
 // ---------------------------------------------------------------------------
@@ -477,7 +477,7 @@ func TestXGoNameOnRequestBodyPreserved(t *testing.T) {
 // The assertion is that the generated code does not contain the string
 // `"openapi_types"` as an import path.
 func TestLineComments(t *testing.T) {
-	swagger, err := kin.Engine{}.Load("spec_importnames.yaml", engine.LoadOptions{})
+	swagger, err := engines.Load("", "spec_importnames.yaml", engine.LoadOptions{})
 	require.NoError(t, err)
 
 	opts := codegen.Configuration{

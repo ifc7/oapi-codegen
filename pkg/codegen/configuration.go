@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
 )
 
 // defaultStreamingContentTypes are the regex patterns matched against
@@ -27,6 +29,10 @@ type AdditionalImport struct {
 type Configuration struct {
 	// PackageName to generate the code under
 	PackageName string `yaml:"package"`
+	// Engine names the OpenAPI library that loads the spec: "kin" (the
+	// default) or "libopenapi". The OAPI_CODEGEN_ENGINE environment variable
+	// overrides it.
+	Engine string `yaml:"engine,omitempty"`
 	// Generate specifies which supported output formats to generate
 	Generate GenerateOptions `yaml:"generate,omitempty"`
 	// OutputOptions are used to modify the output code in some way.
@@ -47,6 +53,10 @@ func (o Configuration) Validate() error {
 	}
 
 	var errs []error
+	if err := engine.Validate(o.Engine); err != nil {
+		errs = append(errs, fmt.Errorf("`engine` configuration was incorrect: %w", err))
+	}
+
 	if problems := o.Generate.Validate(); problems != nil {
 		for k, v := range problems {
 			errs = append(errs, fmt.Errorf("`generate` configuration for %v was incorrect: %v", k, v))

@@ -8,6 +8,7 @@
 | --- | --- |
 | `package` | Go package name for the generated file. |
 | `output` | Path of the generated file. The `-o` flag is used when this is omitted. |
+| `engine` | The OpenAPI library that loads the spec: `kin` (kin-openapi, the default) or `libopenapi` (not available yet). The `OAPI_CODEGEN_ENGINE` environment variable overrides it. |
 | `generate` | Which outputs to emit. See below. |
 | `output-options` | Filters and tweaks applied to the generated code. See below. |
 | `import-mapping` | Maps a `$ref`'d document path or URL to a Go import path, so types from that document come from another package. A value of `-` means the current package. Keys must be document paths, not JSON pointers. |

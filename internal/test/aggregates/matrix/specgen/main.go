@@ -507,7 +507,7 @@ import (
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/engines"
 )
 
 // TestRejected generates code from spec.yaml with config.yaml, the way the
@@ -521,7 +521,7 @@ func TestRejected(t *testing.T) {
 	cfg = cfg.UpdateDefaults()
 	require.NoError(t, cfg.Validate())
 
-	spec, err := kin.Engine{}.Load("spec.yaml", engine.LoadOptions{})
+	spec, err := engines.Load("", "spec.yaml", engine.LoadOptions{})
 	require.NoError(t, err)
 	_, err = codegen.Generate(spec, cfg)
 	require.Error(t, err)

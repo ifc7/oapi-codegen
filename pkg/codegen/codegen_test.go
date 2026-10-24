@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/engines"
 )
 
 const (
@@ -103,7 +103,7 @@ func TestExtPropGoTypeSkipOptionalPointer(t *testing.T) {
 		},
 	}
 	spec := "test_specs/x-go-type-skip-optional-pointer.yaml"
-	swagger, err := kin.Engine{}.Load(spec, engine.LoadOptions{})
+	swagger, err := engines.Load("", spec, engine.LoadOptions{})
 	require.NoError(t, err)
 
 	// Run our code generation:
@@ -139,7 +139,7 @@ func TestGoTypeImport(t *testing.T) {
 		},
 	}
 	spec := "test_specs/x-go-type-import-pet.yaml"
-	swagger, err := kin.Engine{}.Load(spec, engine.LoadOptions{})
+	swagger, err := engines.Load("", spec, engine.LoadOptions{})
 	require.NoError(t, err)
 
 	// Run our code generation:
@@ -181,7 +181,7 @@ func TestGoAllofTypeOverride(t *testing.T) {
 		},
 	}
 	spec := "test_specs/x-go-type-pet-allof.yaml"
-	swagger, err := kin.Engine{}.Load(spec, engine.LoadOptions{})
+	swagger, err := engines.Load("", spec, engine.LoadOptions{})
 	require.NoError(t, err)
 
 	// Run our code generation:
@@ -221,7 +221,7 @@ func TestRemoteExternalReference(t *testing.T) {
 		},
 	}
 	spec := "test_specs/remote-external-reference.yaml"
-	swagger, err := kin.Engine{}.Load(spec, engine.LoadOptions{})
+	swagger, err := engines.Load("", spec, engine.LoadOptions{})
 	require.NoError(t, err)
 
 	// Run our code generation:
@@ -458,7 +458,7 @@ func TestBodylessResponseWithDefaultCatchAll(t *testing.T) {
 		},
 	}
 
-	swagger, err := kin.Engine{}.Load("test_specs/bodyless-response-default.yaml", engine.LoadOptions{})
+	swagger, err := engines.Load("", "test_specs/bodyless-response-default.yaml", engine.LoadOptions{})
 	require.NoError(t, err)
 
 	code, err := Generate(swagger, opts)
