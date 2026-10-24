@@ -379,35 +379,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		typeDefinitions = strings.Join([]string{enumsOut, componentDecls, opDecls, allOfOut, unionOut, unionAndAdditionalOut}, "")
 	}
 
-	var serverURLsDefinitions string
-	if opts.Generate.ServerURLs {
-		// Server-URL enum-typed variables are routed through the same
-		// typedef.tmpl + constants.tmpl pipelines as any other
-		// enum-bearing schema, so they get matching `type X string`,
-		// `const ( … )` block, and `Valid()` method. We do this here
-		// (rather than in collectComponentTypes) so the types are
-		// emitted even when `generate.models` is disabled.
-		serverURLEnumTypes, err := BuildServerURLTypeDefinitions(spec)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go types for server URL variables: %w", err)
-		}
-		serverURLEnumTypeDecls, err := GenerateTypes(t, serverURLEnumTypes)
-		if err != nil {
-			return "", fmt.Errorf("error generating type declarations for server URL variables: %w", err)
-		}
-		serverURLEnumConstants, err := GenerateEnums(t, serverURLEnumTypes)
-		if err != nil {
-			return "", fmt.Errorf("error generating enums for server URL variables: %w", err)
-		}
-
-		serverURLsBody, err := GenerateServerURLs(t, spec)
-		if err != nil {
-			return "", fmt.Errorf("error generating Server URLs: %w", err)
-		}
-
-		serverURLsDefinitions = serverURLEnumTypeDecls + serverURLEnumConstants + serverURLsBody
-	}
-
 	var serverOut string
 	if opts.Generate.Server {
 		var responses []ResponseDefinition
@@ -516,11 +487,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 	_, err = w.WriteString(importsOut)
 	if err != nil {
 		return "", fmt.Errorf("error writing imports: %w", err)
-	}
-
-	_, err = w.WriteString(serverURLsDefinitions)
-	if err != nil {
-		return "", fmt.Errorf("error writing Server URLs: %w", err)
 	}
 
 	_, err = w.WriteString(typeDefinitions)

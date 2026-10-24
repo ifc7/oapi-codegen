@@ -124,8 +124,6 @@ type GenerateOptions struct {
 	Client bool `yaml:"client,omitempty"`
 	// Models specifies whether to generate type definitions
 	Models bool `yaml:"models,omitempty"`
-	// ServerURLs generates types for the `Server` definitions' URLs, instead of needing to provide your own values
-	ServerURLs bool `yaml:"server-urls,omitempty"`
 }
 
 // AnyOperationGenerator returns true if any code generator that emits
