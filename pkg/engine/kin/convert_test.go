@@ -1,12 +1,7 @@
 package kin
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
@@ -16,9 +11,9 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/enginetest"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
@@ -32,104 +27,12 @@ var omittedFields = []string{
 	"SecurityScheme.Flows",
 }
 
-// fixture is one document the repository generates code from: the spec
-// named by a go:generate directive, with the Overlay its configuration
-// applies.
-type fixture struct {
-	name string
-	spec string
-	opts engine.LoadOptions
-}
-
-// generateFixtures finds every oapi-codegen go:generate directive under the
-// repository's internal/test and examples modules.
-func generateFixtures(t *testing.T) []fixture {
-	t.Helper()
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-
-	var fixtures []fixture
-	for _, dir := range []string{"internal/test", "examples"} {
-		err := filepath.WalkDir(filepath.Join(root, dir), func(path string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") {
-				return err
-			}
-			data, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			scanner := bufio.NewScanner(bytes.NewReader(data))
-			for scanner.Scan() {
-				line := scanner.Text()
-				if !strings.HasPrefix(line, "//go:generate ") || !strings.Contains(line, "oapi-codegen") {
-					continue
-				}
-				fx, err := parseDirective(filepath.Dir(path), strings.Fields(line))
-				if err != nil {
-					return fmt.Errorf("%s: %w", path, err)
-				}
-				rel, _ := filepath.Rel(root, fx.spec)
-				fx.name = rel
-				fixtures = append(fixtures, fx)
-			}
-			return scanner.Err()
-		})
-		require.NoError(t, err)
-	}
-	require.NotEmpty(t, fixtures)
-	return fixtures
-}
-
-func parseDirective(dir string, fields []string) (fixture, error) {
-	spec := fields[len(fields)-1]
-	var config string
-	for i, field := range fields {
-		switch {
-		case field == "-config" || field == "--config":
-			if i+1 < len(fields) {
-				config = fields[i+1]
-			}
-		case strings.HasPrefix(field, "-config="), strings.HasPrefix(field, "--config="):
-			_, config, _ = strings.Cut(field, "=")
-		}
-	}
-	fx := fixture{
-		spec: filepath.Join(dir, spec),
-		opts: engine.LoadOptions{OverlayStrict: true},
-	}
-	if config == "" {
-		return fx, nil
-	}
-	data, err := os.ReadFile(filepath.Join(dir, config))
-	if err != nil {
-		return fx, err
-	}
-	var cfg struct {
-		OutputOptions struct {
-			Overlay struct {
-				Path   string `yaml:"path"`
-				Strict *bool  `yaml:"strict"`
-			} `yaml:"overlay"`
-		} `yaml:"output-options"`
-	}
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return fx, fmt.Errorf("reading %s: %w", config, err)
-	}
-	if overlay := cfg.OutputOptions.Overlay; overlay.Path != "" {
-		fx.opts.OverlayPath = filepath.Join(dir, overlay.Path)
-		if overlay.Strict != nil {
-			fx.opts.OverlayStrict = *overlay.Strict
-		}
-	}
-	return fx, nil
-}
-
 // TestConvertFidelity converts every document the repository generates from
 // and checks the model against kin's value field by field.
 func TestConvertFidelity(t *testing.T) {
-	for _, fx := range generateFixtures(t) {
-		t.Run(fx.name, func(t *testing.T) {
-			spec, err := LoadSpecWithOverlay(fx.spec, fx.opts)
+	for _, fx := range enginetest.GenerateFixtures(t) {
+		t.Run(fx.Name, func(t *testing.T) {
+			spec, err := LoadSpecWithOverlay(fx.Spec, fx.Opts)
 			require.NoError(t, err)
 
 			doc := Convert(spec)
