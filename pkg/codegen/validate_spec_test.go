@@ -217,9 +217,8 @@ func TestValidateOpenAPIVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			spec, err := openapi3.NewLoader().LoadFromData([]byte(tt.doc))
-			require.NoError(t, err)
-			err = ValidateOpenAPIVersion(spec)
+			spec := loadTestSpec(t, []byte(tt.doc))
+			err := ValidateOpenAPIVersion(spec)
 			if tt.wantErr == "" {
 				assert.NoError(t, err)
 			} else {
@@ -245,9 +244,8 @@ paths:
         200:
           description: ok
 `
-	spec, err := openapi3.NewLoader().LoadFromData([]byte(doc))
-	require.NoError(t, err)
-	_, err = Generate(spec, Configuration{PackageName: "api", Generate: GenerateOptions{Server: true, Models: true}})
+	spec := loadTestSpec(t, []byte(doc))
+	_, err := Generate(spec, Configuration{PackageName: "api", Generate: GenerateOptions{Server: true, Models: true}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "OpenAPI 2.0 (Swagger)")
 }

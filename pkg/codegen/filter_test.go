@@ -3,7 +3,6 @@ package codegen
 import (
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,12 +21,8 @@ func TestFilterOperationsByTag(t *testing.T) {
 			},
 		}
 
-		loader := openapi3.NewLoader()
-		loader.IsExternalRefsAllowed = true
-
 		// Get a spec from the test definition in this file:
-		swagger, err := loader.LoadFromData([]byte(testOpenAPIDefinition))
-		assert.NoError(t, err)
+		swagger := loadTestSpec(t, []byte(testOpenAPIDefinition), withExternalRefsAllowed())
 
 		// Run our code generation:
 		code, err := Generate(swagger, opts)
@@ -50,12 +45,8 @@ func TestFilterOperationsByTag(t *testing.T) {
 			},
 		}
 
-		loader := openapi3.NewLoader()
-		loader.IsExternalRefsAllowed = true
-
 		// Get a spec from the test definition in this file:
-		swagger, err := loader.LoadFromData([]byte(testOpenAPIDefinition))
-		assert.NoError(t, err)
+		swagger := loadTestSpec(t, []byte(testOpenAPIDefinition), withExternalRefsAllowed())
 
 		// Run our code generation:
 		code, err := Generate(swagger, opts)
@@ -81,12 +72,8 @@ func TestFilterOperationsByOperationID(t *testing.T) {
 			},
 		}
 
-		loader := openapi3.NewLoader()
-		loader.IsExternalRefsAllowed = true
-
 		// Get a spec from the test definition in this file:
-		swagger, err := loader.LoadFromData([]byte(testOpenAPIDefinition))
-		assert.NoError(t, err)
+		swagger := loadTestSpec(t, []byte(testOpenAPIDefinition), withExternalRefsAllowed())
 
 		// Run our code generation:
 		code, err := Generate(swagger, opts)
@@ -109,12 +96,8 @@ func TestFilterOperationsByOperationID(t *testing.T) {
 			},
 		}
 
-		loader := openapi3.NewLoader()
-		loader.IsExternalRefsAllowed = true
-
 		// Get a spec from the test definition in this file:
-		swagger, err := loader.LoadFromData([]byte(testOpenAPIDefinition))
-		assert.NoError(t, err)
+		swagger := loadTestSpec(t, []byte(testOpenAPIDefinition), withExternalRefsAllowed())
 
 		// Run our code generation:
 		code, err := Generate(swagger, opts)

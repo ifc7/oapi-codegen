@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -32,12 +31,8 @@ func TestExampleOpenAPICodeGeneration(t *testing.T) {
 		},
 	}
 
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-
 	// Get a spec from the test definition in this file:
-	swagger, err := loader.LoadFromData([]byte(testOpenAPIDefinition))
-	assert.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(testOpenAPIDefinition), withExternalRefsAllowed())
 
 	// Run our code generation:
 	code, err := Generate(swagger, opts)
@@ -303,9 +298,7 @@ paths:
         '200':
           description: Success
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	opts := Configuration{
 		PackageName: "api",
@@ -358,9 +351,7 @@ components:
       enum:
         - migrating
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	opts := Configuration{
 		PackageName: "api",
@@ -433,15 +424,11 @@ components:
 		},
 	}
 
-	loader := openapi3.NewLoader()
-
-	swaggerA, err := loader.LoadFromData([]byte(specAFirst))
-	require.NoError(t, err)
+	swaggerA := loadTestSpec(t, []byte(specAFirst))
 	codeA, err := Generate(swaggerA, opts)
 	require.NoError(t, err)
 
-	swaggerC, err := loader.LoadFromData([]byte(specCFirst))
-	require.NoError(t, err)
+	swaggerC := loadTestSpec(t, []byte(specCFirst))
 	codeC, err := Generate(swaggerC, opts)
 	require.NoError(t, err)
 
@@ -548,9 +535,7 @@ paths:
         '200':
           description: ok
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	opts := Configuration{
 		PackageName: "api",
@@ -588,9 +573,7 @@ components:
           type: string
           enum: ["YES", "NO", "N\\A"]
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	opts := Configuration{
 		PackageName:   "api",
@@ -628,14 +611,6 @@ paths:
       operationId: getApple
       responses: { '200': { description: ok } }
 `
-	load := func() *openapi3.T {
-		loader := openapi3.NewLoader()
-		loader.IncludeOrigin = true // recover spec declaration order for SpecOrder
-		swagger, err := loader.LoadFromData([]byte(spec))
-		require.NoError(t, err)
-		return swagger
-	}
-
 	base := Configuration{
 		PackageName: "api",
 		Generate:    GenerateOptions{Server: true, Models: true},
@@ -646,7 +621,8 @@ paths:
 			strings.Index(code, `options.BaseURL+"/apple"`)
 	}
 
-	code, err := Generate(load(), base)
+	// IncludeOrigin recovers spec declaration order for SpecOrder.
+	code, err := Generate(loadTestSpec(t, []byte(spec), withIncludeOrigin()), base)
 	require.NoError(t, err)
 	zebra, apple := regOrder(code)
 	require.NotEqual(t, -1, zebra)

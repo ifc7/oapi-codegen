@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -186,10 +185,7 @@ func TestExternalTypeQualification(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "common.yaml"), []byte(externalTypesCommonSpec), 0o600))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "api.yaml"), []byte(externalTypesAPISpec), 0o600))
 
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	swagger, err := loader.LoadFromFile(filepath.Join(dir, "api.yaml"))
-	require.NoError(t, err)
+	swagger := loadTestSpecFile(t, filepath.Join(dir, "api.yaml"))
 
 	code, err := Generate(swagger, Configuration{
 		PackageName: "api",

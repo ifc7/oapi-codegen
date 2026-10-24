@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,8 +21,7 @@ func generateSpec(t *testing.T, spec string, opts ...func(*Configuration)) strin
 
 // generateSpecErr is generateSpec for the cases that are meant to fail.
 func generateSpecErr(spec string, opts ...func(*Configuration)) (string, error) {
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
+	swagger, err := loadTestSpecData([]byte(spec))
 	if err != nil {
 		return "", err
 	}
@@ -470,12 +468,9 @@ func TestMergeSchemasRemoteRecursiveSchemaFlattenedTwice(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "common.yml"), []byte(remoteRecursiveCommonSpec), 0o600))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "user.yml"), []byte(remoteRecursiveUserSpec), 0o600))
 
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	swagger, err := loader.LoadFromFile(filepath.Join(dir, "user.yml"))
-	require.NoError(t, err)
+	swagger := loadTestSpecFile(t, filepath.Join(dir, "user.yml"))
 
-	_, err = Generate(swagger, Configuration{
+	_, err := Generate(swagger, Configuration{
 		PackageName:   "user",
 		Generate:      GenerateOptions{Models: true},
 		OutputOptions: OutputOptions{SkipPrune: true},

@@ -3,21 +3,18 @@ package codegen
 import (
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFindReferences(t *testing.T) {
 	t.Run("unfiltered", func(t *testing.T) {
-		swagger, err := openapi3.NewLoader().LoadFromData([]byte(pruneSpecTestFixture))
-		assert.NoError(t, err)
+		swagger := loadTestSpec(t, []byte(pruneSpecTestFixture))
 
 		refs := findComponentRefs(swagger)
 		assert.Len(t, refs, 14)
 	})
 	t.Run("only cat", func(t *testing.T) {
-		swagger, err := openapi3.NewLoader().LoadFromData([]byte(pruneSpecTestFixture))
-		assert.NoError(t, err)
+		swagger := loadTestSpec(t, []byte(pruneSpecTestFixture))
 		opts := Configuration{
 			OutputOptions: OutputOptions{
 				IncludeTags: []string{"cat"},
@@ -30,8 +27,7 @@ func TestFindReferences(t *testing.T) {
 		assert.Len(t, refs, 7)
 	})
 	t.Run("only dog", func(t *testing.T) {
-		swagger, err := openapi3.NewLoader().LoadFromData([]byte(pruneSpecTestFixture))
-		assert.NoError(t, err)
+		swagger := loadTestSpec(t, []byte(pruneSpecTestFixture))
 
 		opts := Configuration{
 			OutputOptions: OutputOptions{
@@ -48,8 +44,7 @@ func TestFindReferences(t *testing.T) {
 
 func TestFilterOnlyCat(t *testing.T) {
 	// Get a spec from the test definition in this file:
-	swagger, err := openapi3.NewLoader().LoadFromData([]byte(pruneSpecTestFixture))
-	assert.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(pruneSpecTestFixture))
 
 	opts := Configuration{
 		OutputOptions: OutputOptions{
@@ -78,8 +73,7 @@ func TestFilterOnlyCat(t *testing.T) {
 
 func TestFilterOnlyDog(t *testing.T) {
 	// Get a spec from the test definition in this file:
-	swagger, err := openapi3.NewLoader().LoadFromData([]byte(pruneSpecTestFixture))
-	assert.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(pruneSpecTestFixture))
 
 	opts := Configuration{
 		OutputOptions: OutputOptions{
@@ -108,8 +102,7 @@ func TestFilterOnlyDog(t *testing.T) {
 
 func TestPruningUnusedComponents(t *testing.T) {
 	// Get a spec from the test definition in this file:
-	swagger, err := openapi3.NewLoader().LoadFromData([]byte(pruneComprehensiveTestFixture))
-	assert.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(pruneComprehensiveTestFixture))
 
 	assert.Len(t, swagger.Components.Schemas, 8)
 	assert.Len(t, swagger.Components.Parameters, 1)

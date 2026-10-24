@@ -16,7 +16,6 @@ package codegen
 import (
 	"go/format"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 	"text/template"
@@ -1136,8 +1135,7 @@ components:
 
 	for _, server := range servers {
 		t.Run(server.name, func(t *testing.T) {
-			swagger, err := openapi3.NewLoader().LoadFromData([]byte(spec))
-			require.NoError(t, err)
+			swagger := loadTestSpec(t, []byte(spec))
 
 			server.generate.Models = true
 			code, err := Generate(swagger, Configuration{
@@ -1235,13 +1233,7 @@ components:
 
 	for _, server := range servers {
 		t.Run(server.name, func(t *testing.T) {
-			loader := openapi3.NewLoader()
-			loader.IsExternalRefsAllowed = true
-			loader.ReadFromURIFunc = func(_ *openapi3.Loader, _ *url.URL) ([]byte, error) {
-				return []byte(externalSpec), nil
-			}
-			swagger, err := loader.LoadFromDataWithPath([]byte(spec), &url.URL{Path: "root.yaml"})
-			require.NoError(t, err)
+			swagger := loadTestSpec(t, []byte(spec), withExternalRef("root.yaml", []byte(externalSpec)))
 
 			server.generate.Models = true
 			code, err := Generate(swagger, Configuration{
@@ -1681,9 +1673,8 @@ paths:
 `
 	for name, spec := range map[string]string{"webhook": webhookSpec, "callback": callbackSpec} {
 		t.Run(name, func(t *testing.T) {
-			swagger, err := openapi3.NewLoader().LoadFromData([]byte(spec))
-			require.NoError(t, err)
-			_, err = Generate(swagger, Configuration{
+			swagger := loadTestSpec(t, []byte(spec))
+			_, err := Generate(swagger, Configuration{
 				PackageName: "api",
 				Generate:    GenerateOptions{Models: true},
 			})

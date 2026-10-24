@@ -3,7 +3,6 @@ package codegen
 import (
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,9 +36,8 @@ components:
       type: string
       enum: [red, green]
 `
-	swagger, err := openapi3.NewLoader().LoadFromData([]byte(spec))
-	require.NoError(t, err)
-	_, err = Generate(swagger, Configuration{PackageName: "api", Generate: GenerateOptions{Server: true}})
+	swagger := loadTestSpec(t, []byte(spec))
+	_, err := Generate(swagger, Configuration{PackageName: "api", Generate: GenerateOptions{Server: true}})
 	require.NoError(t, err)
 	ops, err := OperationDefinitions(swagger)
 	require.NoError(t, err)
@@ -82,8 +80,7 @@ paths:
           headers:
             X-Rate-Limit: {schema: {type: integer}}
 `
-	swagger, err := openapi3.NewLoader().LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 	code, err := Generate(swagger, Configuration{PackageName: "api", Generate: GenerateOptions{
 		Server: true, Client: true, Models: true,
 	}})

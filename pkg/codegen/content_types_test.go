@@ -4,7 +4,6 @@ import (
 	"go/format"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -55,9 +54,7 @@ func contentTypesTestConfiguration(contentTypes map[string][]string) Configurati
 }
 
 func TestContentTypesShortName(t *testing.T) {
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(contentTypesVendoredSpec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(contentTypesVendoredSpec))
 
 	code, err := Generate(swagger, contentTypesTestConfiguration(map[string][]string{
 		"V1": {`^application/vnd\.mycompany\.v1\+json$`},
@@ -80,9 +77,7 @@ func TestContentTypesShortName(t *testing.T) {
 }
 
 func TestContentTypesUnsetKeepsDefaultNames(t *testing.T) {
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(contentTypesVendoredSpec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(contentTypesVendoredSpec))
 
 	code, err := Generate(swagger, contentTypesTestConfiguration(nil))
 	require.NoError(t, err)
@@ -114,9 +109,7 @@ paths:
         '204':
           description: no content
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	// Renaming a built-in means adding the new key and disabling the default
 	// one; leaving both matching is an ambiguity error (checked below).
@@ -170,9 +163,7 @@ paths:
               schema:
                 type: string
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	// Without a mapping, text/csv gets no model at all.
 	code, err := Generate(swagger, contentTypesTestConfiguration(nil))
@@ -204,11 +195,9 @@ paths:
 }
 
 func TestContentTypesAmbiguousMatchErrors(t *testing.T) {
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(contentTypesVendoredSpec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(contentTypesVendoredSpec))
 
-	_, err = Generate(swagger, contentTypesTestConfiguration(map[string][]string{
+	_, err := Generate(swagger, contentTypesTestConfiguration(map[string][]string{
 		"Mine":  {`^application/vnd\.mycompany\.`},
 		"AnyV1": {`\.v1\+json$`},
 	}))
