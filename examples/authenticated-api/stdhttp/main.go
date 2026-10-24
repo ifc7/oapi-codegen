@@ -29,7 +29,7 @@ func main() {
 
 	svr := server.NewServer()
 
-	h := api.HandlerFromMux(svr, r)
+	h := api.HandlerFromMux(api.NewStrictHandler(svr, nil), r)
 	// wrap the existing handler with our global middleware
 	h = mw(h)
 

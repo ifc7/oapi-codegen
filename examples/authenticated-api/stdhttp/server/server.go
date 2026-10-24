@@ -1,9 +1,9 @@
 package server
 
 import (
-	"encoding/json"
+	"context"
+	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"sort"
 	"sync"
@@ -43,9 +43,9 @@ func CreateMiddleware(v JWSValidator) (func(next http.Handler) http.Handler, err
 }
 
 // Ensure that we implement the server interface
-var _ api.ServerInterface = (*server)(nil)
+var _ api.StrictServerInterface = (*server)(nil)
 
-func (s *server) ListThings(w http.ResponseWriter, r *http.Request) {
+func (s *server) ListThings(ctx context.Context, request api.ListThingsRequestObject) (api.ListThingsResponseObject, error) {
 	// This handler will only be called when a valid JWT is presented for
 	// access.
 	s.RLock()
@@ -68,8 +68,7 @@ func (s *server) ListThings(w http.ResponseWriter, r *http.Request) {
 
 	s.RUnlock()
 
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(things)
+	return api.ListThings200JSONResponse(things), nil
 }
 
 type int64s []int64
@@ -88,24 +87,13 @@ func (in int64s) Swap(i, j int) {
 
 var _ sort.Interface = (int64s)(nil)
 
-func (s *server) AddThing(w http.ResponseWriter, r *http.Request) {
+func (s *server) AddThing(ctx context.Context, request api.AddThingRequestObject) (api.AddThingResponseObject, error) {
 	// This handler will only be called when the JWT is valid and the JWT contains
 	// the scopes required.
-	bodyBytes, err := io.ReadAll(r.Body)
-	defer func() { _ = r.Body.Close() }()
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("could not bind request body"))
-		return
+	if request.Body == nil {
+		return nil, errors.New("missing request body")
 	}
-
-	var thing api.Thing
-	err = json.Unmarshal(bodyBytes, &thing)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("could not bind request body"))
-		return
-	}
+	thing := *request.Body
 
 	s.Lock()
 	defer s.Unlock()
@@ -117,6 +105,5 @@ func (s *server) AddThing(w http.ResponseWriter, r *http.Request) {
 	}
 	s.lastID++
 
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(thingWithId)
+	return api.AddThing201JSONResponse{thingWithId}, nil
 }

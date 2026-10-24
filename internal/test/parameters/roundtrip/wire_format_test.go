@@ -1,6 +1,7 @@
 package parametersroundtrip_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 
 	. "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp/gen"
 )
+
+var _ StrictServerInterface = (*testServer)(nil)
 
 type testServer struct {
 	array                []int32
@@ -41,228 +44,255 @@ func (t *testServer) reset() {
 }
 
 // (GET /contentObject/{param})
-func (t *testServer) GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) {
-	t.complexObject = &param
+func (t *testServer) GetContentObject(ctx context.Context, request GetContentObjectRequestObject) (GetContentObjectResponseObject, error) {
+	t.complexObject = &request.Param
+	return GetContentObject200TextResponse(""), nil
 }
 
 // (GET /labelExplodeArray/{.param*})
-func (t *testServer) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
-	t.array = param
+func (t *testServer) GetLabelExplodeArray(ctx context.Context, request GetLabelExplodeArrayRequestObject) (GetLabelExplodeArrayResponseObject, error) {
+	t.array = request.Param
+	return GetLabelExplodeArray200TextResponse(""), nil
 }
 
 // (GET /labelExplodeObject/{.param*})
-func (t *testServer) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
-	t.object = &param
+func (t *testServer) GetLabelExplodeObject(ctx context.Context, request GetLabelExplodeObjectRequestObject) (GetLabelExplodeObjectResponseObject, error) {
+	t.object = &request.Param
+	return GetLabelExplodeObject200TextResponse(""), nil
 }
 
 // (GET /labelNoExplodeArray/{.param})
-func (t *testServer) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
-	t.array = param
+func (t *testServer) GetLabelNoExplodeArray(ctx context.Context, request GetLabelNoExplodeArrayRequestObject) (GetLabelNoExplodeArrayResponseObject, error) {
+	t.array = request.Param
+	return GetLabelNoExplodeArray200TextResponse(""), nil
 }
 
 // (GET /labelNoExplodeObject/{.param})
-func (t *testServer) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
-	t.object = &param
+func (t *testServer) GetLabelNoExplodeObject(ctx context.Context, request GetLabelNoExplodeObjectRequestObject) (GetLabelNoExplodeObjectResponseObject, error) {
+	t.object = &request.Param
+	return GetLabelNoExplodeObject200TextResponse(""), nil
 }
 
 // (GET /matrixExplodeArray/{.param*})
-func (t *testServer) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
-	t.array = param
+func (t *testServer) GetMatrixExplodeArray(ctx context.Context, request GetMatrixExplodeArrayRequestObject) (GetMatrixExplodeArrayResponseObject, error) {
+	t.array = request.Id
+	return GetMatrixExplodeArray200TextResponse(""), nil
 }
 
 // (GET /matrixExplodeObject/{.param*})
-func (t *testServer) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
-	t.object = &param
+func (t *testServer) GetMatrixExplodeObject(ctx context.Context, request GetMatrixExplodeObjectRequestObject) (GetMatrixExplodeObjectResponseObject, error) {
+	t.object = &request.Id
+	return GetMatrixExplodeObject200TextResponse(""), nil
 }
 
 // (GET /matrixNoExplodeArray/{.param})
-func (t *testServer) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
-	t.array = param
+func (t *testServer) GetMatrixNoExplodeArray(ctx context.Context, request GetMatrixNoExplodeArrayRequestObject) (GetMatrixNoExplodeArrayResponseObject, error) {
+	t.array = request.Id
+	return GetMatrixNoExplodeArray200TextResponse(""), nil
 }
 
 // (GET /matrixNoExplodeObject/{.param})
-func (t *testServer) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
-	t.object = &param
+func (t *testServer) GetMatrixNoExplodeObject(ctx context.Context, request GetMatrixNoExplodeObjectRequestObject) (GetMatrixNoExplodeObjectResponseObject, error) {
+	t.object = &request.Id
+	return GetMatrixNoExplodeObject200TextResponse(""), nil
 }
 
 // (GET /simpleExplodeArray/{param*})
-func (t *testServer) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
-	t.array = param
+func (t *testServer) GetSimpleExplodeArray(ctx context.Context, request GetSimpleExplodeArrayRequestObject) (GetSimpleExplodeArrayResponseObject, error) {
+	t.array = request.Param
+	return GetSimpleExplodeArray200TextResponse(""), nil
 }
 
 // (GET /simpleExplodeObject/{param*})
-func (t *testServer) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
-	t.object = &param
+func (t *testServer) GetSimpleExplodeObject(ctx context.Context, request GetSimpleExplodeObjectRequestObject) (GetSimpleExplodeObjectResponseObject, error) {
+	t.object = &request.Param
+	return GetSimpleExplodeObject200TextResponse(""), nil
 }
 
 // (GET /simpleNoExplodeArray/{param})
-func (t *testServer) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
-	t.array = param
+func (t *testServer) GetSimpleNoExplodeArray(ctx context.Context, request GetSimpleNoExplodeArrayRequestObject) (GetSimpleNoExplodeArrayResponseObject, error) {
+	t.array = request.Param
+	return GetSimpleNoExplodeArray200TextResponse(""), nil
 }
 
 // (GET /simpleNoExplodeObject/{param})
-func (t *testServer) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
-	t.object = &param
+func (t *testServer) GetSimpleNoExplodeObject(ctx context.Context, request GetSimpleNoExplodeObjectRequestObject) (GetSimpleNoExplodeObjectResponseObject, error) {
+	t.object = &request.Param
+	return GetSimpleNoExplodeObject200TextResponse(""), nil
 }
 
 // (GET /passThrough/{param})
-func (t *testServer) GetPassThrough(w http.ResponseWriter, r *http.Request, param string) {
-	t.passThrough = &param
+func (t *testServer) GetPassThrough(ctx context.Context, request GetPassThroughRequestObject) (GetPassThroughResponseObject, error) {
+	t.passThrough = &request.Param
+	return GetPassThrough200TextResponse(""), nil
 }
 
 // (GET /startingWithjNumber/{param})
-func (t *testServer) GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) {
-	t.n1param = &n1param
+func (t *testServer) GetStartingWithNumber(ctx context.Context, request GetStartingWithNumberRequestObject) (GetStartingWithNumberResponseObject, error) {
+	t.n1param = &request.N1param
+	return GetStartingWithNumber200TextResponse(""), nil
 }
 
 // (GET /queryDeepObject)
-func (t *testServer) GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) {
-	t.complexObject = &params.DeepObj
+func (t *testServer) GetDeepObject(ctx context.Context, request GetDeepObjectRequestObject) (GetDeepObjectResponseObject, error) {
+	t.complexObject = &request.Params.DeepObj
+	return GetDeepObjectdefaultTextResponse{StatusCode: http.StatusOK}, nil
 }
 
 // (GET /simplePrimitive/{param})
-func (t *testServer) GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
-	t.primitive = &param
+func (t *testServer) GetSimplePrimitive(ctx context.Context, request GetSimplePrimitiveRequestObject) (GetSimplePrimitiveResponseObject, error) {
+	t.primitive = &request.Param
+	return GetSimplePrimitive200TextResponse(""), nil
 }
 
 // (GET /simpleString/{param})
-func (t *testServer) GetSimpleString(w http.ResponseWriter, r *http.Request, param string) {
+func (t *testServer) GetSimpleString(ctx context.Context, request GetSimpleStringRequestObject) (GetSimpleStringResponseObject, error) {
+	return GetSimpleString200TextResponse(""), nil
 }
 
 // (GET /simpleExplodePrimitive/{param})
-func (t *testServer) GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
-	t.primitive = &param
+func (t *testServer) GetSimpleExplodePrimitive(ctx context.Context, request GetSimpleExplodePrimitiveRequestObject) (GetSimpleExplodePrimitiveResponseObject, error) {
+	t.primitive = &request.Param
+	return GetSimpleExplodePrimitive200TextResponse(""), nil
 }
 
 // (GET /labelPrimitive/{.param})
-func (t *testServer) GetLabelPrimitive(w http.ResponseWriter, r *http.Request, param int32) {
-	t.primitive = &param
+func (t *testServer) GetLabelPrimitive(ctx context.Context, request GetLabelPrimitiveRequestObject) (GetLabelPrimitiveResponseObject, error) {
+	t.primitive = &request.Param
+	return GetLabelPrimitive200TextResponse(""), nil
 }
 
 // (GET /labelExplodePrimitive/{.param*})
-func (t *testServer) GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
-	t.primitive = &param
+func (t *testServer) GetLabelExplodePrimitive(ctx context.Context, request GetLabelExplodePrimitiveRequestObject) (GetLabelExplodePrimitiveResponseObject, error) {
+	t.primitive = &request.Param
+	return GetLabelExplodePrimitive200TextResponse(""), nil
 }
 
 // (GET /matrixPrimitive/{;id})
-func (t *testServer) GetMatrixPrimitive(w http.ResponseWriter, r *http.Request, id int32) {
-	t.primitive = &id
+func (t *testServer) GetMatrixPrimitive(ctx context.Context, request GetMatrixPrimitiveRequestObject) (GetMatrixPrimitiveResponseObject, error) {
+	t.primitive = &request.Id
+	return GetMatrixPrimitive200TextResponse(""), nil
 }
 
 // (GET /matrixExplodePrimitive/{;id*})
-func (t *testServer) GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request, id int32) {
-	t.primitive = &id
+func (t *testServer) GetMatrixExplodePrimitive(ctx context.Context, request GetMatrixExplodePrimitiveRequestObject) (GetMatrixExplodePrimitiveResponseObject, error) {
+	t.primitive = &request.Id
+	return GetMatrixExplodePrimitive200TextResponse(""), nil
 }
 
 // (GET /queryDelimited)
-func (t *testServer) GetQueryDelimited(w http.ResponseWriter, r *http.Request, params GetQueryDelimitedParams) {
-	t.queryDelimitedParams = &params
-	if params.Sa != nil {
-		t.array = *params.Sa
+func (t *testServer) GetQueryDelimited(ctx context.Context, request GetQueryDelimitedRequestObject) (GetQueryDelimitedResponseObject, error) {
+	t.queryDelimitedParams = &request.Params
+	if request.Params.Sa != nil {
+		t.array = *request.Params.Sa
 	}
-	if params.Pa != nil {
-		t.array = *params.Pa
+	if request.Params.Pa != nil {
+		t.array = *request.Params.Pa
 	}
+	return GetQueryDelimited200TextResponse(""), nil
 }
 
 // (GET /queryForm)
-func (t *testServer) GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) {
-	t.queryParams = &params
-	if params.Ea != nil {
-		t.array = *params.Ea
+func (t *testServer) GetQueryForm(ctx context.Context, request GetQueryFormRequestObject) (GetQueryFormResponseObject, error) {
+	t.queryParams = &request.Params
+	if request.Params.Ea != nil {
+		t.array = *request.Params.Ea
 	}
-	if params.A != nil {
-		t.array = *params.A
+	if request.Params.A != nil {
+		t.array = *request.Params.A
 	}
-	if params.Eo != nil {
-		t.object = params.Eo
+	if request.Params.Eo != nil {
+		t.object = request.Params.Eo
 	}
-	if params.O != nil {
-		t.object = params.O
+	if request.Params.O != nil {
+		t.object = request.Params.O
 	}
-	if params.P != nil {
-		t.primitive = params.P
+	if request.Params.P != nil {
+		t.primitive = request.Params.P
 	}
-	if params.Ps != nil {
-		t.primitiveString = params.Ps
+	if request.Params.Ps != nil {
+		t.primitiveString = request.Params.Ps
 	}
-	if params.Ep != nil {
-		t.primitive = params.Ep
+	if request.Params.Ep != nil {
+		t.primitive = request.Params.Ep
 	}
-	if params.Co != nil {
-		t.complexObject = params.Co
+	if request.Params.Co != nil {
+		t.complexObject = request.Params.Co
 	}
-	if params.N1s != nil {
-		t.n1param = params.N1s
+	if request.Params.N1s != nil {
+		t.n1param = request.Params.N1s
 	}
+	return GetQueryForm200TextResponse(""), nil
 }
 
 // (GET /header)
-func (t *testServer) GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) {
-	t.headerParams = &params
-	if params.XPrimitive != nil {
-		t.primitive = params.XPrimitive
+func (t *testServer) GetHeader(ctx context.Context, request GetHeaderRequestObject) (GetHeaderResponseObject, error) {
+	t.headerParams = &request.Params
+	if request.Params.XPrimitive != nil {
+		t.primitive = request.Params.XPrimitive
 	}
-	if params.XPrimitiveExploded != nil {
-		t.primitive = params.XPrimitiveExploded
+	if request.Params.XPrimitiveExploded != nil {
+		t.primitive = request.Params.XPrimitiveExploded
 	}
-	if params.XArray != nil {
-		t.array = *params.XArray
+	if request.Params.XArray != nil {
+		t.array = *request.Params.XArray
 	}
-	if params.XArrayExploded != nil {
-		t.array = *params.XArrayExploded
+	if request.Params.XArrayExploded != nil {
+		t.array = *request.Params.XArrayExploded
 	}
-	if params.XObject != nil {
-		t.object = params.XObject
+	if request.Params.XObject != nil {
+		t.object = request.Params.XObject
 	}
-	if params.XObjectExploded != nil {
-		t.object = params.XObjectExploded
+	if request.Params.XObjectExploded != nil {
+		t.object = request.Params.XObjectExploded
 	}
-	if params.XComplexObject != nil {
-		t.complexObject = params.XComplexObject
+	if request.Params.XComplexObject != nil {
+		t.complexObject = request.Params.XComplexObject
 	}
-	if params.N1StartingWithNumber != nil {
-		t.n1param = params.N1StartingWithNumber
+	if request.Params.N1StartingWithNumber != nil {
+		t.n1param = request.Params.N1StartingWithNumber
 	}
+	return GetHeaderdefaultTextResponse{StatusCode: http.StatusOK}, nil
 }
 
 // (GET /cookie)
-func (t *testServer) GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) {
-	t.cookieParams = &params
-	if params.Ea != nil {
-		t.array = *params.Ea
+func (t *testServer) GetCookie(ctx context.Context, request GetCookieRequestObject) (GetCookieResponseObject, error) {
+	t.cookieParams = &request.Params
+	if request.Params.Ea != nil {
+		t.array = *request.Params.Ea
 	}
-	if params.A != nil {
-		t.array = *params.A
+	if request.Params.A != nil {
+		t.array = *request.Params.A
 	}
-	if params.Eo != nil {
-		t.object = params.Eo
+	if request.Params.Eo != nil {
+		t.object = request.Params.Eo
 	}
-	if params.O != nil {
-		t.object = params.O
+	if request.Params.O != nil {
+		t.object = request.Params.O
 	}
-	if params.P != nil {
-		t.primitive = params.P
+	if request.Params.P != nil {
+		t.primitive = request.Params.P
 	}
-	if params.Ep != nil {
-		t.primitive = params.Ep
+	if request.Params.Ep != nil {
+		t.primitive = request.Params.Ep
 	}
-	if params.Co != nil {
-		t.complexObject = params.Co
+	if request.Params.Co != nil {
+		t.complexObject = request.Params.Co
 	}
-	if params.N1s != nil {
-		t.n1param = params.N1s
+	if request.Params.N1s != nil {
+		t.n1param = request.Params.N1s
 	}
+	return GetCookiedefaultTextResponse{StatusCode: http.StatusOK}, nil
 }
 
 // (GET /enums)
-func (t *testServer) EnumParams(w http.ResponseWriter, r *http.Request, params EnumParamsParams) {
-	w.WriteHeader(http.StatusNotImplemented)
+func (t *testServer) EnumParams(ctx context.Context, request EnumParamsRequestObject) (EnumParamsResponseObject, error) {
+	return EnumParams204Response{}, nil
 }
 
 func TestParameterBinding(t *testing.T) {
 	var ts testServer
-	e := Handler(&ts)
+	e := Handler(NewStrictHandler(&ts, nil))
 
 	expectedObject := Object{
 		FirstName: "Alex",

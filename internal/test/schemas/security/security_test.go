@@ -1,13 +1,13 @@
 package schemassecurity
 
 import (
-	"net/http"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// stubServer satisfies ServerInterface and lets the test prove the generated
+// stubServer satisfies StrictServerInterface and lets the test prove the generated
 // package compiles end-to-end. The bug in issue 2367 emitted a constant
 // referencing a context-key type that was never declared (because the spec's
 // `security:` named a scheme not present under components/securitySchemes),
@@ -15,12 +15,14 @@ import (
 // would not be reachable if that regression returned.
 type stubServer struct{}
 
-func (stubServer) GetHello(w http.ResponseWriter, r *http.Request) {}
+func (stubServer) GetHello(ctx context.Context, request GetHelloRequestObject) (GetHelloResponseObject, error) {
+	return GetHello200Response{}, nil
+}
 
 // issue #2367: code generated from a spec whose global security block names
 // a scheme absent from components/securitySchemes must compile and the
-// ServerInterface must be satisfiable.
+// StrictServerInterface must be satisfiable.
 func TestGeneratedServerCompilesWithUndefinedSecurityScheme(t *testing.T) {
-	var iface ServerInterface = stubServer{}
+	var iface StrictServerInterface = stubServer{}
 	assert.NotNil(t, iface)
 }

@@ -3,7 +3,7 @@
 package serversroutersdashed
 
 import (
-	"fmt"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,14 +15,14 @@ type testServer struct {
 	receivedParam string
 }
 
-func (s *testServer) GetResource(w http.ResponseWriter, r *http.Request, addressingIdentifier string) {
-	s.receivedParam = addressingIdentifier
-	_, _ = fmt.Fprint(w, addressingIdentifier)
+func (s *testServer) GetResource(ctx context.Context, request GetResourceRequestObject) (GetResourceResponseObject, error) {
+	s.receivedParam = request.AddressingIdentifier
+	return GetResource200TextResponse(request.AddressingIdentifier), nil
 }
 
 func TestDashedPathParam(t *testing.T) {
 	server := &testServer{}
-	handler := Handler(server)
+	handler := Handler(NewStrictHandler(server, nil))
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/my-value", nil)
 	rec := httptest.NewRecorder()

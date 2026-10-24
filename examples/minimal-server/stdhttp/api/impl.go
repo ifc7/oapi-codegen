@@ -1,12 +1,11 @@
 package api
 
 import (
-	"encoding/json"
-	"net/http"
+	"context"
 )
 
-// ensure that we've conformed to the `ServerInterface` with a compile-time check
-var _ ServerInterface = (*Server)(nil)
+// ensure that we've conformed to the `StrictServerInterface` with a compile-time check
+var _ StrictServerInterface = (*Server)(nil)
 
 type Server struct{}
 
@@ -15,11 +14,8 @@ func NewServer() Server {
 }
 
 // (GET /ping)
-func (Server) GetPing(w http.ResponseWriter, r *http.Request) {
-	resp := Pong{
+func (Server) GetPing(ctx context.Context, request GetPingRequestObject) (GetPingResponseObject, error) {
+	return GetPing200JSONResponse{
 		Ping: "pong",
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(resp)
+	}, nil
 }

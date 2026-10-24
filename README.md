@@ -187,7 +187,7 @@ At a high level, `oapi-codegen` supports:
 
 ## What does it look like?
 
-Below we can see a trimmed down example taken from the OpenAPI Petstore [example](examples/petstore-expanded/stdhttp/api/petstore.gen.go):
+Below we can see a trimmed down example taken from the OpenAPI Petstore [example](examples/petstore-expanded/api/petstore-server.gen.go):
 
 ```go
 // generated code

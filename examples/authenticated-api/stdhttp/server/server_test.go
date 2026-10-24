@@ -20,7 +20,7 @@ func TestAPI(t *testing.T) {
 	mw, err := CreateMiddleware(fa)
 	require.NoError(t, err)
 
-	h := api.HandlerFromMux(s, r)
+	h := api.HandlerFromMux(api.NewStrictHandler(s, nil), r)
 	// wrap the existing handler with our global middleware
 	h = mw(h)
 

@@ -16,7 +16,7 @@ import (
 
 func TestStdHttpParameterRoundTrip(t *testing.T) {
 	var s stdhttpparams.Server
-	handler := stdhttpgen.Handler(&s)
+	handler := stdhttpgen.Handler(stdhttpgen.NewStrictHandler(&s, nil))
 	testImpl(t, handler)
 }
 

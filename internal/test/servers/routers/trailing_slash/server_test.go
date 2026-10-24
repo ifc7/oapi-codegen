@@ -1,6 +1,7 @@
 package serversrouterstrailingslash
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,14 +15,14 @@ type server struct {
 	lastID string
 }
 
-func (s *server) Test1(w http.ResponseWriter, r *http.Request, id string) {
-	s.lastOp, s.lastID = "test1", id
-	w.WriteHeader(http.StatusOK)
+func (s *server) Test1(ctx context.Context, request Test1RequestObject) (Test1ResponseObject, error) {
+	s.lastOp, s.lastID = "test1", request.Id
+	return Test1200Response{}, nil
 }
 
-func (s *server) Test2(w http.ResponseWriter, r *http.Request) {
+func (s *server) Test2(ctx context.Context, request Test2RequestObject) (Test2ResponseObject, error) {
 	s.lastOp = "test2"
-	w.WriteHeader(http.StatusOK)
+	return Test2200Response{}, nil
 }
 
 // TestTrailingSlashRoutes covers issue #2065: the two spec paths overlap
@@ -34,7 +35,7 @@ func TestTrailingSlashRoutes(t *testing.T) {
 	// Registration itself was the panic in the issue.
 	var h http.Handler
 	require.NotPanics(t, func() {
-		h = Handler(s)
+		h = Handler(NewStrictHandler(s, nil))
 	})
 
 	do := func(path string) (*server, *httptest.ResponseRecorder) {

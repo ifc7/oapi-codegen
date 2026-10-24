@@ -1,38 +1,31 @@
 # Petstore Expanded Example
 
-This example demonstrates [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen) generating server stubs for several different Go HTTP frameworks from a single [OpenAPI 3.0 spec](petstore-expanded.yaml).
-
-Each server variant is fully self-contained, in that it has its own generated types, its own
-copy of the trivial in-memory database (a Go map), and its own handler implementation.
-The backend is simple enough that copying it into each variant keeps every example 
-readable on its own. A single shared test client (`common/client`) can exercise any of the variants over real HTTP.
+This example demonstrates [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen) generating a `net/http` server from an [OpenAPI 3.0 spec](petstore-expanded.yaml), backed by a trivial in-memory database (a Go map). A test client (`common/client`) exercises the server over real HTTP.
 
 ## Directory Structure
 
 ```
 petstore-expanded/
-├── petstore-expanded.yaml          # Shared OpenAPI spec
-├── common/
-│   └── client/                     # Single test client, works against any variant
-│       ├── main.go                 # CLI test client
-│       ├── testclient/
-│       │   └── testclient.go       # Reusable CRUD test sequence
-│       └── openapi/
-│           ├── generate.go         # go:generate for the client
-│           ├── client.cfg.yaml     # Codegen config: client + models
-│           └── client.gen.go       # Generated HTTP client (+ model types)
-├── stdhttp/                        # net/http server
-└── strict/                         # Strict server (typed request/response objects)
+├── petstore-expanded.yaml          # OpenAPI spec
+├── petstore.go                     # main() wiring (thin wrapper around server/setup.go)
+├── api/
+│   ├── server.cfg.yaml             # Codegen config: server, models and embedded spec
+│   ├── generate.go                 # go:generate for the server
+│   └── petstore-server.gen.go      # Generated server and model types
+├── server/
+│   ├── store.go                    # In-memory CRUD store
+│   ├── server.go                   # Hand-written StrictServerInterface implementation
+│   └── setup.go                    # Builds the configured *http.Server
+└── common/
+    └── client/                     # Test client
+        ├── main.go                 # CLI test client
+        ├── testclient/
+        │   └── testclient.go       # Reusable CRUD test sequence
+        └── openapi/
+            ├── generate.go         # go:generate for the client
+            ├── client.cfg.yaml     # Codegen config: client + models
+            └── client.gen.go       # Generated HTTP client (+ model types)
 ```
-
-Each server variant follows the same self-contained pattern:
-- `api/server.cfg.yaml` — codegen config generating the server interface, model types, and embedded spec
-- `api/generate.go` — `//go:generate` directive for the server code
-- `api/petstore-server.gen.go` — generated server boilerplate and model types
-- `server/store.go` — the in-memory CRUD store (copied into each variant)
-- `server/server.go` — hand-written `ServerInterface` implementation backed by the local store
-- `server/setup.go` — factory function that creates a fully configured server/app
-- `petstore.go` — `main()` wiring (thin wrapper around `setup.go`)
 
 ## Generating Code
 
@@ -40,30 +33,28 @@ From the repository root, `make generate` regenerates everything. To regenerate 
 single piece from the `examples/` directory:
 
 ```sh
-# Generate a specific server variant (server + models)
-cd examples/petstore-expanded/stdhttp/api && go generate ./...
+# Generate the server (server + models)
+cd examples/petstore-expanded/api && go generate ./...
 
-# Generate the shared test client
+# Generate the test client
 cd examples/petstore-expanded/common/client/openapi && go generate ./...
 ```
 
-## Running a Server
+## Running the Server
 
 ```sh
-cd examples/petstore-expanded/stdhttp
+cd examples/petstore-expanded
 go run . --port 8080
 ```
 
-Replace `stdhttp` with `strict` to run the strict server.
-
 ## Test Client
 
-A single client executable verifies the behavior of any variant over real HTTP.
-Start a server in one terminal, then point the client at it from another:
+The client executable verifies the server's behavior over real HTTP.
+Start the server in one terminal, then point the client at it from another:
 
 ```sh
-# Terminal 1: start any server variant
-cd examples/petstore-expanded/stdhttp && go run . --port 8080
+# Terminal 1: start the server
+cd examples/petstore-expanded && go run . --port 8080
 
 # Terminal 2: run the test client against it
 cd examples && go run ./petstore-expanded/common/client/ --port 8080

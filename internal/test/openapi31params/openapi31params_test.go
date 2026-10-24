@@ -20,13 +20,14 @@ type captureServer struct {
 	body   any
 }
 
-func (s *captureServer) UpdateThing(w http.ResponseWriter, r *http.Request, id any, params UpdateThingParams) {
-	s.id = id
-	s.params = params
+func (s *captureServer) UpdateThing(ctx context.Context, request UpdateThingRequestObject) (UpdateThingResponseObject, error) {
+	s.id = request.Id
+	s.params = request.Params
 	s.body = nil
-	_ = json.NewDecoder(r.Body).Decode(&s.body)
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"id": id})
+	if request.Body != nil {
+		s.body = *request.Body
+	}
+	return UpdateThing200JSONResponse{Id: request.Id}, nil
 }
 
 // A union parameter binds to the first member that parses, in specificity
@@ -34,7 +35,7 @@ func (s *captureServer) UpdateThing(w http.ResponseWriter, r *http.Request, id a
 // binds: path, query, and header.
 func TestUnionParamMemberSelection(t *testing.T) {
 	capture := &captureServer{}
-	srv := httptest.NewServer(Handler(capture))
+	srv := httptest.NewServer(Handler(NewStrictHandler(capture, nil)))
 	defer srv.Close()
 
 	post := func(t *testing.T, path string, header map[string]string) {
@@ -79,7 +80,7 @@ func TestUnionParamMemberSelection(t *testing.T) {
 // wire back into the same dynamic types on the server.
 func TestUnionParamClientRoundTrip(t *testing.T) {
 	capture := &captureServer{}
-	srv := httptest.NewServer(Handler(capture))
+	srv := httptest.NewServer(Handler(NewStrictHandler(capture, nil)))
 	defer srv.Close()
 
 	client, err := NewClient(srv.URL)
