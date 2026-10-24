@@ -24,10 +24,6 @@
         "models": {
           "type": "boolean",
           "description": "Models specifies whether to generate type definitions"
-        },
-        "server-urls": {
-          "type": "boolean",
-          "description": "Generate types for the `Server` definitions' URLs, instead of needing to provide your own values"
         }
       }
     },

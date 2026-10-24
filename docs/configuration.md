@@ -31,7 +31,6 @@ generate:
   server: false
   client: false
   models: false
-  server-urls: false
 
 # Output modification options
 # See <a href="https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#OutputOptions">OutputOptions</a>
