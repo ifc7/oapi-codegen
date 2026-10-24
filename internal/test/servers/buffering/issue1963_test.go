@@ -1,4 +1,4 @@
-package serversstrictbuffering
+package serversbuffering
 
 import (
 	"bytes"
@@ -21,7 +21,7 @@ import (
 
 // These tests are regression tests for https://github.com/oapi-codegen/oapi-codegen/issues/1963.
 //
-// The issue: in generated strict server Visit*Response functions, WriteHeader
+// The issue: in generated server Visit*Response functions, WriteHeader
 // was called before marshalling the response body. If JSON encoding failed,
 // ResponseErrorHandlerFunc could not set a different status code because 200
 // was already written.

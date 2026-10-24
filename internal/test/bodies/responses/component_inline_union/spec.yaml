@@ -28,7 +28,7 @@ paths:
 components:
   responses:
     # A shared (components/responses) response whose inline schema is a oneOf.
-    # Issue #2539: referenced from an operation via $ref, the strict-server
+    # Issue #2539: referenced from an operation via $ref, the server
     # envelope aliased an undeclared <Name>JSONResponseBody type and the
     # Visit method dereferenced response.union on it.
     BadRequest:
@@ -39,7 +39,7 @@ components:
             oneOf:
               - $ref: '#/components/schemas/Error'
               - $ref: '#/components/schemas/ValidationError'
-    # Same shape but with response headers, so the strict envelope is a struct
+    # Same shape but with response headers, so the response envelope is a struct
     # with a Body field rather than an alias.
     ServiceError:
       description: Service error

@@ -1,4 +1,4 @@
-package serversstrictresponsebody
+package serversresponsebody
 
 import (
 	"context"
@@ -9,35 +9,35 @@ import (
 	"testing"
 )
 
-type responseBodyStrictServer struct {
+type responseBodyServer struct {
 	body any
 }
 
-func (s responseBodyStrictServer) GetUnion(context.Context, GetUnionRequestObject) (GetUnionResponseObject, error) {
+func (s responseBodyServer) GetUnion(context.Context, GetUnionRequestObject) (GetUnionResponseObject, error) {
 	return GetUnion200JSONResponse{Body: s.body}, nil
 }
 
-func (s responseBodyStrictServer) GetNull(context.Context, GetNullRequestObject) (GetNullResponseObject, error) {
+func (s responseBodyServer) GetNull(context.Context, GetNullRequestObject) (GetNullResponseObject, error) {
 	return GetNull200JSONResponse{Body: s.body}, nil
 }
 
-func (s responseBodyStrictServer) GetNullableRef(context.Context, GetNullableRefRequestObject) (GetNullableRefResponseObject, error) {
+func (s responseBodyServer) GetNullableRef(context.Context, GetNullableRefRequestObject) (GetNullableRefResponseObject, error) {
 	return GetNullableRef200JSONResponse{Body: s.body}, nil
 }
 
-func (s responseBodyStrictServer) GetText(context.Context, GetTextRequestObject) (GetTextResponseObject, error) {
+func (s responseBodyServer) GetText(context.Context, GetTextRequestObject) (GetTextResponseObject, error) {
 	return GetText200TextResponse{Body: s.body}, nil
 }
 
-func (s responseBodyStrictServer) GetTextRef(context.Context, GetTextRefRequestObject) (GetTextRefResponseObject, error) {
+func (s responseBodyServer) GetTextRef(context.Context, GetTextRefRequestObject) (GetTextRefResponseObject, error) {
 	return GetTextRef200TextResponse{Body: s.body}, nil
 }
 
-func (s responseBodyStrictServer) GetForm(context.Context, GetFormRequestObject) (GetFormResponseObject, error) {
+func (s responseBodyServer) GetForm(context.Context, GetFormRequestObject) (GetFormResponseObject, error) {
 	return GetForm200FormdataResponse{Body: s.body}, nil
 }
 
-func TestOpenAPI31StrictResponseBody(t *testing.T) {
+func TestOpenAPI31ResponseBody(t *testing.T) {
 	tests := []struct {
 		name string
 		path string
@@ -53,7 +53,7 @@ func TestOpenAPI31StrictResponseBody(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := Handler(responseBodyStrictServer{body: tt.body})
+			handler := Handler(responseBodyServer{body: tt.body})
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, tt.path, nil))
 
@@ -94,7 +94,7 @@ func TestUntypedTextAndFormResponseBody(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := Handler(responseBodyStrictServer{body: tt.body})
+			handler := Handler(responseBodyServer{body: tt.body})
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, tt.path, nil))
 

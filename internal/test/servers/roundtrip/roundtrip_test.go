@@ -1,4 +1,4 @@
-package serversstrict
+package serversroundtrip
 
 import (
 	"bytes"
@@ -13,14 +13,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	clientAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/client"
-	stdhttpAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/strict/stdhttp"
+	clientAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/roundtrip/client"
+	stdhttpAPI "github.com/oapi-codegen/oapi-codegen/v2/internal/test/servers/roundtrip/stdhttp"
 
 	"github.com/oapi-codegen/testutil"
 )
 
 func TestStdHTTPServer(t *testing.T) {
-	server := stdhttpAPI.StrictServer{}
+	server := stdhttpAPI.Server{}
 	testImpl(t, stdhttpAPI.Handler(server))
 }
 

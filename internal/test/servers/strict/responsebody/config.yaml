@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=../../../../../configuration-schema.json
-package: serversstrictresponsebody
-output: responsebody.gen.go
-generate:
-  server: true
-  models: true

@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../../../configuration-schema.json
 package: aggregatesoneof
 output: union.gen.go
-# issue #970: union (oneOf) response marshaling under a strict server.
+# issue #970: union (oneOf) response marshaling in a server response.
 # issue #2549: allOf-composed union and additionalProperties response marshaling.
 generate:
   server: true

@@ -1,10 +1,10 @@
 openapi: "3.0.0"
 info:
   version: 1.0.0
-  title: Strict server examples
-  description: Contains different content types supported by strict server
+  title: Server examples
+  description: Contains different content types supported by server
 servers:
-  - url: http://strict.swagger.io/api
+  - url: http://roundtrip.swagger.io/api
 paths:
   /json:
     post:

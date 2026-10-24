@@ -75,7 +75,7 @@ func TestContentTypesShortName(t *testing.T) {
 	assert.Contains(t, code, "V1200 *Pet")
 	assert.Contains(t, code, "response.V1200 = &dest")
 	assert.Contains(t, code, "json.Unmarshal(bodyBytes, &dest)")
-	// Strict server envelope uses the short name.
+	// Server response envelope uses the short name.
 	assert.Contains(t, code, "type AddPet200V1Response Pet")
 }
 

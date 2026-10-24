@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Strict response bodies lowered to any
+  title: Response bodies lowered to any
   version: "1.0.0"
 paths:
   /union:

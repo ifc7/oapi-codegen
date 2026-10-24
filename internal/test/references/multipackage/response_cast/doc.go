@@ -5,7 +5,7 @@
 //
 // The base spec defines reusable responses with concrete, untyped, pointer,
 // and header-bearing JSON bodies. The "other" specs reference those responses
-// via external $refs. With strict-server enabled in both packages, the imported
+// via external $refs. With the server generated in both packages, the imported
 // response envelope must remain embedded so cross-package response casts compile.
 package responsecast
 

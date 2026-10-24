@@ -12,7 +12,7 @@ import (
 // TestUnionResponseMarshalsUnderlying is a regression test for
 // https://github.com/oapi-codegen/oapi-codegen/issues/970.
 //
-// The strict-server response type for a content schema that is a $ref to a
+// The server response type for a content schema that is a $ref to a
 // oneOf/anyOf union must encode as the union's JSON, not {}. Named defined
 // types do not inherit methods, so we generate a delegating MarshalJSON.
 func TestUnionResponseMarshalsUnderlying(t *testing.T) {
@@ -30,7 +30,7 @@ func TestUnionResponseMarshalsUnderlying(t *testing.T) {
 		"union response must marshal via delegating MarshalJSON, not as {}")
 }
 
-// TestUnionResponseVisitWritesBody verifies the end-to-end strict-server Visit
+// TestUnionResponseVisitWritesBody verifies the end-to-end server Visit
 // path — the HTTP response body must contain the union's JSON.
 func TestUnionResponseVisitWritesBody(t *testing.T) {
 	var ev Event
@@ -67,7 +67,7 @@ func TestUnionResponseRoundtrip(t *testing.T) {
 // https://github.com/oapi-codegen/oapi-codegen/issues/2549.
 //
 // Thing is an allOf whose second member is a oneOf, so the model stores the
-// union in an unexported field and needs its own MarshalJSON. The strict
+// union in an unexported field and needs its own MarshalJSON. The server
 // response type must delegate to it, or the union branch is silently dropped.
 func TestAllOfUnionResponseVisitWritesBody(t *testing.T) {
 	thing := Thing{Id: "abc"}

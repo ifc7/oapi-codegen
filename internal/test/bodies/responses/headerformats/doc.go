@@ -1,4 +1,4 @@
-// Package responseheaderformats verifies that strict-server response headers
+// Package responseheaderformats verifies that server response headers
 // are serialized through the runtime styling helpers rather than fmt.Sprint, so
 // that format-carrying types (date-time, uuid) go on the wire in the
 // representation the OpenAPI spec requires.

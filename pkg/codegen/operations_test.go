@@ -954,7 +954,7 @@ func TestGenerateServerInterface(t *testing.T) {
 	assert.Equal(t, 1, strings.Count(out, "type ServerInterface interface"))
 }
 
-func TestStrictServerResponseReceiverCompatibility(t *testing.T) {
+func TestServerResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.0.3"
 info: {title: t, version: "1"}
@@ -1096,7 +1096,7 @@ components:
 	}
 }
 
-func TestStrictServerResolvedExternalResponseReceiverCompatibility(t *testing.T) {
+func TestServerResolvedExternalResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.0.3"
 info: {title: t, version: "1"}
@@ -1225,7 +1225,7 @@ func TestGoTypeNeedsBodyWrapper(t *testing.T) {
 // operation that reaches it through $ref. Embedding an interface compiles, so
 // an untyped or interface envelope keeps its direct type; only a pointer,
 // which cannot be embedded, is wrapped.
-func TestStrictServerReusableResponseEnvelopeCompatibility(t *testing.T) {
+func TestServerReusableResponseEnvelopeCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.1.0"
 info: {title: t, version: "1"}
@@ -1308,7 +1308,7 @@ components:
 
 // A composition lowered to an untyped member's type is wrapped. The member is
 // identified by the type the generator emitted.
-func TestStrictServerComposedResponseReceiverCompatibility(t *testing.T) {
+func TestServerComposedResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.1.0"
 info: {title: t, version: "1"}
@@ -1421,7 +1421,7 @@ func TestResponseContentUsesSchemaReceiver(t *testing.T) {
 // bodies are, so an untyped one needs a Body field too. A reusable text
 // envelope is redeclared as the receiver of each operation that reaches it
 // through $ref, while a form envelope is embedded like a JSON one.
-func TestStrictServerTextAndFormResponseReceiverCompatibility(t *testing.T) {
+func TestServerTextAndFormResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.0.3"
 info: {title: t, version: "1"}
@@ -1529,7 +1529,7 @@ components:
 	}
 }
 
-// visitorOf returns the source of the strict response visitor declared on
+// visitorOf returns the source of the server response visitor declared on
 // receiver.
 func visitorOf(t *testing.T, code, receiver string) string {
 	t.Helper()

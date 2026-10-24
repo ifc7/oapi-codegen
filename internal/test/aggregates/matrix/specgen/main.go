@@ -38,8 +38,8 @@ var allPositions = []string{
 	"body-inline",           // request and response body: the subject schema inline
 	"body-component",        // components/requestBodies and components/responses wrapping $ref Subject
 	"body-component-inline", // components/requestBodies and components/responses wrapping the inline subject
-	"body-default",          // a `default:` response, so the strict envelope is a struct with Body and StatusCode
-	"body-headers",          // a response with a header, so the strict envelope is a struct with Body and Headers
+	"body-default",          // a `default:` response, so the response envelope is a struct with Body and StatusCode
+	"body-headers",          // a response with a header, so the response envelope is a struct with Body and Headers
 }
 
 type shape struct {
@@ -75,7 +75,7 @@ func (s shape) Has(position string) bool {
 func (s shape) HasHolder() bool { return s.Has("holder") || s.Has("holder-inline") }
 
 // HasOperations reports whether the spec has any operation, and so a client
-// and a strict server.
+// and a server.
 func (s shape) HasOperations() bool {
 	for _, p := range allPositions {
 		if p != "subject" && s.Has(p) {

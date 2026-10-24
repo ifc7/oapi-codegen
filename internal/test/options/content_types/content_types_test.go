@@ -52,9 +52,9 @@ func TestClientKeepsCSVMappedResponseRaw(t *testing.T) {
 	assert.Equal(t, []byte("a,b,c\n"), parsed.GetBody())
 }
 
-// The strict envelope for the CSV-mapped response streams the body with the
+// The response envelope for the CSV-mapped response streams the body with the
 // original media type.
-func TestStrictCSVResponseVisit(t *testing.T) {
+func TestCSVResponseVisit(t *testing.T) {
 	w := httptest.NewRecorder()
 	response := UploadReport200CSVResponse{Body: strings.NewReader("a,b,c\n")}
 	require.NoError(t, response.VisitUploadReportResponse(w))

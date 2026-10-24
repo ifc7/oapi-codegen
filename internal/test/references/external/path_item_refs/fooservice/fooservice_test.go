@@ -10,8 +10,8 @@ import (
 )
 
 // TestExternalRefUnionResponseSerialization locks in the fix for the
-// case where a strict-server response envelope wraps an external union
-// type. Because the strict envelope is a defined type (`type X
+// case where a server response envelope wraps an external union
+// type. Because the response envelope is a defined type (`type X
 // externalRef0.Y`), methods on Y don't transfer; without an explicit
 // MarshalJSON delegator the encode falls back to struct-field
 // serialization on the unexported `union` field and produces `{}`.

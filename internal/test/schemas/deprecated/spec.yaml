@@ -9,7 +9,7 @@
 #   - deprecation/ (comprehensive)   (deprecated operations/params/bodies/headers/objects)
 #
 # Compile-only (a regression would fail to generate/build). Generated with
-# client + strict + std-http servers so deprecation is exercised on every
+# client + server so deprecation is exercised on every
 # surface; client-type-name is APIClient because a schema is named `Client`.
 # ==========================================================================
 openapi: "3.0.0"

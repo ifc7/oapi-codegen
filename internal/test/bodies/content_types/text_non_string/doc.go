@@ -1,4 +1,4 @@
-// Package textnonstring verifies strict-server codegen for text/plain
+// Package textnonstring verifies server codegen for text/plain
 // responses whose schema is a non-string primitive (integer, boolean).
 // The generated Visit* method must compile and write the value's decimal /
 // literal text form. Before the fix, the generated code did

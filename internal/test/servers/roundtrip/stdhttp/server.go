@@ -1,7 +1,7 @@
 //go:build go1.22
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=server.cfg.yaml ../strict-schema.yaml
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=types.cfg.yaml ../strict-schema.yaml
+//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=server.cfg.yaml ../spec.yaml
+//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=types.cfg.yaml ../spec.yaml
 
 package api
 
@@ -12,14 +12,14 @@ import (
 	"mime/multipart"
 )
 
-type StrictServer struct {
+type Server struct {
 }
 
-func (s StrictServer) JSONExample(ctx context.Context, request JSONExampleRequestObject) (JSONExampleResponseObject, error) {
+func (s Server) JSONExample(ctx context.Context, request JSONExampleRequestObject) (JSONExampleResponseObject, error) {
 	return JSONExample200JSONResponse(*request.Body), nil
 }
 
-func (s StrictServer) MultipartExample(ctx context.Context, request MultipartExampleRequestObject) (MultipartExampleResponseObject, error) {
+func (s Server) MultipartExample(ctx context.Context, request MultipartExampleRequestObject) (MultipartExampleResponseObject, error) {
 	return MultipartExample200MultipartResponse(func(writer *multipart.Writer) error {
 		for {
 			part, err := request.Body.NextPart()
@@ -43,7 +43,7 @@ func (s StrictServer) MultipartExample(ctx context.Context, request MultipartExa
 	}), nil
 }
 
-func (s StrictServer) MultipartRelatedExample(ctx context.Context, request MultipartRelatedExampleRequestObject) (MultipartRelatedExampleResponseObject, error) {
+func (s Server) MultipartRelatedExample(ctx context.Context, request MultipartRelatedExampleRequestObject) (MultipartRelatedExampleResponseObject, error) {
 	return MultipartRelatedExample200MultipartResponse(func(writer *multipart.Writer) error {
 		for {
 			part, err := request.Body.NextPart()
@@ -67,7 +67,7 @@ func (s StrictServer) MultipartRelatedExample(ctx context.Context, request Multi
 	}), nil
 }
 
-func (s StrictServer) MultipleRequestAndResponseTypes(ctx context.Context, request MultipleRequestAndResponseTypesRequestObject) (MultipleRequestAndResponseTypesResponseObject, error) {
+func (s Server) MultipleRequestAndResponseTypes(ctx context.Context, request MultipleRequestAndResponseTypesRequestObject) (MultipleRequestAndResponseTypesResponseObject, error) {
 	switch {
 	case request.Body != nil:
 		return MultipleRequestAndResponseTypes200ImagepngResponse{Body: request.Body}, nil
@@ -104,51 +104,51 @@ func (s StrictServer) MultipleRequestAndResponseTypes(ctx context.Context, reque
 	}
 }
 
-func (s StrictServer) TextExample(ctx context.Context, request TextExampleRequestObject) (TextExampleResponseObject, error) {
+func (s Server) TextExample(ctx context.Context, request TextExampleRequestObject) (TextExampleResponseObject, error) {
 	return TextExample200TextResponse(*request.Body), nil
 }
 
-func (s StrictServer) UnknownExample(ctx context.Context, request UnknownExampleRequestObject) (UnknownExampleResponseObject, error) {
+func (s Server) UnknownExample(ctx context.Context, request UnknownExampleRequestObject) (UnknownExampleResponseObject, error) {
 	return UnknownExample200Videomp4Response{Body: request.Body}, nil
 }
 
-func (s StrictServer) UnspecifiedContentType(ctx context.Context, request UnspecifiedContentTypeRequestObject) (UnspecifiedContentTypeResponseObject, error) {
+func (s Server) UnspecifiedContentType(ctx context.Context, request UnspecifiedContentTypeRequestObject) (UnspecifiedContentTypeResponseObject, error) {
 	return UnspecifiedContentType200VideoResponse{Body: request.Body, ContentType: request.ContentType}, nil
 }
 
-func (s StrictServer) URLEncodedExample(ctx context.Context, request URLEncodedExampleRequestObject) (URLEncodedExampleResponseObject, error) {
+func (s Server) URLEncodedExample(ctx context.Context, request URLEncodedExampleRequestObject) (URLEncodedExampleResponseObject, error) {
 	return URLEncodedExample200FormdataResponse(*request.Body), nil
 }
 
-func (s StrictServer) HeadersExample(ctx context.Context, request HeadersExampleRequestObject) (HeadersExampleResponseObject, error) {
+func (s Server) HeadersExample(ctx context.Context, request HeadersExampleRequestObject) (HeadersExampleResponseObject, error) {
 	return HeadersExample200JSONResponse{Body: *request.Body, Headers: HeadersExample200ResponseHeaders{Header1: request.Params.Header1, Header2: *request.Params.Header2}}, nil
 }
 
-func (s StrictServer) NoContentHeaders(ctx context.Context, request NoContentHeadersRequestObject) (NoContentHeadersResponseObject, error) {
+func (s Server) NoContentHeaders(ctx context.Context, request NoContentHeadersRequestObject) (NoContentHeadersResponseObject, error) {
 	return NoContentHeaders204Response{}, nil
 }
 
-func (s StrictServer) ReusableResponses(ctx context.Context, request ReusableResponsesRequestObject) (ReusableResponsesResponseObject, error) {
+func (s Server) ReusableResponses(ctx context.Context, request ReusableResponsesRequestObject) (ReusableResponsesResponseObject, error) {
 	return ReusableResponses200JSONResponse{ReusableresponseJSONResponse: ReusableresponseJSONResponse{Body: *request.Body}}, nil
 }
 
-func (s StrictServer) ReusableURLEncodedResponse(ctx context.Context, request ReusableURLEncodedResponseRequestObject) (ReusableURLEncodedResponseResponseObject, error) {
+func (s Server) ReusableURLEncodedResponse(ctx context.Context, request ReusableURLEncodedResponseRequestObject) (ReusableURLEncodedResponseResponseObject, error) {
 	return ReusableURLEncodedResponse200FormdataResponse{ReusableurlencodedresponseFormdataResponse: ReusableurlencodedresponseFormdataResponse(*request.Body)}, nil
 }
 
-func (s StrictServer) RequiredJSONBody(ctx context.Context, request RequiredJSONBodyRequestObject) (RequiredJSONBodyResponseObject, error) {
+func (s Server) RequiredJSONBody(ctx context.Context, request RequiredJSONBodyRequestObject) (RequiredJSONBodyResponseObject, error) {
 	return RequiredJSONBody200JSONResponse(*request.Body), nil
 }
 
-func (s StrictServer) RequiredTextBody(ctx context.Context, request RequiredTextBodyRequestObject) (RequiredTextBodyResponseObject, error) {
+func (s Server) RequiredTextBody(ctx context.Context, request RequiredTextBodyRequestObject) (RequiredTextBodyResponseObject, error) {
 	return RequiredTextBody200TextResponse(*request.Body), nil
 }
 
-func (s StrictServer) ReservedGoKeywordParameters(ctx context.Context, request ReservedGoKeywordParametersRequestObject) (ReservedGoKeywordParametersResponseObject, error) {
+func (s Server) ReservedGoKeywordParameters(ctx context.Context, request ReservedGoKeywordParametersRequestObject) (ReservedGoKeywordParametersResponseObject, error) {
 	return ReservedGoKeywordParameters200TextResponse(""), nil
 }
 
-func (s StrictServer) UnionExample(ctx context.Context, request UnionExampleRequestObject) (UnionExampleResponseObject, error) {
+func (s Server) UnionExample(ctx context.Context, request UnionExampleRequestObject) (UnionExampleResponseObject, error) {
 	union, err := json.Marshal(*request.Body)
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (s StrictServer) UnionExample(ctx context.Context, request UnionExampleRequ
 	}, nil
 }
 
-func (s StrictServer) SameNameParamAndBodyProperty(ctx context.Context, request SameNameParamAndBodyPropertyRequestObject) (SameNameParamAndBodyPropertyResponseObject, error) {
+func (s Server) SameNameParamAndBodyProperty(ctx context.Context, request SameNameParamAndBodyPropertyRequestObject) (SameNameParamAndBodyPropertyResponseObject, error) {
 	if request.Body == nil {
 		return SameNameParamAndBodyProperty200JSONResponse{}, nil
 	}

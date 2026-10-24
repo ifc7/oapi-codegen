@@ -39,7 +39,7 @@ func newServer(t *testing.T) *httptest.Server {
 	return s
 }
 
-// Before issue #2512 the strict server wrote every response header with
+// Before issue #2512 the server wrote every response header with
 // fmt.Sprint, so a time.Time landed on the wire in Go's default layout
 // ("2026-08-07 11:00:43 +0200 CEST") instead of RFC 3339. Headers must be
 // styled through the runtime helpers, honouring the schema's format.
@@ -57,7 +57,7 @@ func TestResponseHeadersUseSchemaFormat(t *testing.T) {
 }
 
 // The client generated from the same spec parses response headers with
-// runtime.BindStyledParameterWithOptions, so a strict server that wrote them
+// runtime.BindStyledParameterWithOptions, so a server that wrote them
 // with fmt.Sprint produced output its own client could not read.
 func TestGeneratedClientParsesGeneratedServerHeaders(t *testing.T) {
 	s := newServer(t)

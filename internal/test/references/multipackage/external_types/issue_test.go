@@ -24,9 +24,9 @@ var (
 	_ = api.UpdateThingParams{Limit: new(int)}
 )
 
-type strictServer struct{}
+type testServer struct{}
 
-func (strictServer) UpdateThing(_ context.Context, request api.UpdateThingRequestObject) (api.UpdateThingResponseObject, error) {
+func (testServer) UpdateThing(_ context.Context, request api.UpdateThingRequestObject) (api.UpdateThingResponseObject, error) {
 	if request.Params.Limit != nil && *request.Params.Limit == 0 {
 		return api.UpdateThingdefaultJSONResponse{Body: map[string]any{"error": "limit"}, StatusCode: http.StatusBadRequest}, nil
 	}
@@ -36,23 +36,23 @@ func (strictServer) UpdateThing(_ context.Context, request api.UpdateThingReques
 	}, nil
 }
 
-func (strictServer) GetUntyped(context.Context, api.GetUntypedRequestObject) (api.GetUntypedResponseObject, error) {
+func (testServer) GetUntyped(context.Context, api.GetUntypedRequestObject) (api.GetUntypedResponseObject, error) {
 	return api.GetUntypeddefaultJSONResponse{Body: []any{"untyped"}, StatusCode: http.StatusTeapot}, nil
 }
 
-func (strictServer) GetPointer(context.Context, api.GetPointerRequestObject) (api.GetPointerResponseObject, error) {
+func (testServer) GetPointer(context.Context, api.GetPointerRequestObject) (api.GetPointerResponseObject, error) {
 	body := "pointer"
 	return api.GetPointerdefaultJSONResponse{Body: &body, StatusCode: http.StatusAccepted}, nil
 }
 
-func (strictServer) ListThings(context.Context, api.ListThingsRequestObject) (api.ListThingsResponseObject, error) {
+func (testServer) ListThings(context.Context, api.ListThingsRequestObject) (api.ListThingsResponseObject, error) {
 	return api.ListThingsdefaultJSONResponse{Body: []common.Thing{{Id: "a"}, {Id: "b"}}, StatusCode: http.StatusOK}, nil
 }
 
-// TestExternalTypesRoundTrip sends each response through the generated strict
+// TestExternalTypesRoundTrip sends each response through the generated
 // server and decodes it with the generated client.
 func TestExternalTypesRoundTrip(t *testing.T) {
-	srv := httptest.NewServer(api.Handler(strictServer{}))
+	srv := httptest.NewServer(api.Handler(testServer{}))
 	defer srv.Close()
 
 	client, err := api.NewClientWithResponses(srv.URL)
