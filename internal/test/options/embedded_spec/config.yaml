@@ -1,9 +1,0 @@
-# yaml-language-server: $schema=../../../../configuration-schema.json
-package: optionsembeddedspec
-output: embedded_spec.gen.go
-# embedded-spec: emits GetSpec() used by the test assertions, which check that
-# the embedded spec keeps each operationId as written
-generate:
-  embedded-spec: true
-output-options:
-  skip-prune: false

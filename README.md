@@ -714,7 +714,7 @@ There is no currently planned work to change this behaviour.
 If you're looking to only generate the models for interacting with a remote service, for instance if you need to hand-roll the API client for whatever reason, you can do this as-is.
 
 > [!NOTE]
-> Generated models and clients need Go 1.20+, and the generated server Go 1.22+, for the `net/http` routing patterns. Generated code depends only on the standard library, plus `github.com/google/uuid` when the spec uses the `uuid` format, `github.com/oapi-codegen/nullable` with `nullable-type`, and `github.com/getkin/kin-openapi` with `embedded-spec`.
+> Generated models and clients need Go 1.20+, and the generated server Go 1.22+, for the `net/http` routing patterns. Generated code depends only on the standard library, plus `github.com/google/uuid` when the spec uses the `uuid` format, `github.com/oapi-codegen/nullable` with `nullable-type`.
 
 > [!TIP]
 > Try to define as much as possible within the `#/components/schemas` object, as `oapi-codegen` will generate all the types here.
@@ -1125,7 +1125,6 @@ output: ping.gen.go
 generate:
   models: true
   server: true
-  embedded-spec: true
 output-options:
   overlay:
     path: overlay.yaml

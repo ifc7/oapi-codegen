@@ -3,7 +3,6 @@ package: pkg1
 generate:
   client: true
   models: true
-  embedded-spec: true
   server: true
 output: pkg1.gen.go
 import-mapping:

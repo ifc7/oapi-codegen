@@ -8,9 +8,7 @@ package {{.PackageName}}
 
 import (
 	"bytes"
-	"compress/flate"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -23,14 +21,12 @@ import (
 	"net/http"
 	"net/mail"
 	"net/url"
-	"path"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/oapi-codegen/nullable"
-	"github.com/getkin/kin-openapi/openapi3"
 	{{- range .ExternalImports}}
 	{{ . }}
 	{{- end}}

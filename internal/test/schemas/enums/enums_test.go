@@ -21,10 +21,9 @@ func TestIllegalEnumNames(t *testing.T) {
 	opts := codegen.Configuration{
 		PackageName: "schemasenums",
 		Generate: codegen.GenerateOptions{
-			Server:       true,
-			Client:       true,
-			Models:       true,
-			EmbeddedSpec: true,
+			Server: true,
+			Client: true,
+			Models: true,
 		},
 	}
 

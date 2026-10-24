@@ -109,9 +109,8 @@ func (o Configuration) Warnings() map[string]string {
 func (o Configuration) UpdateDefaults() Configuration {
 	if reflect.ValueOf(o.Generate).IsZero() {
 		o.Generate = GenerateOptions{
-			Server:       true,
-			Models:       true,
-			EmbeddedSpec: true,
+			Server: true,
+			Models: true,
 		}
 	}
 	return o
@@ -125,8 +124,6 @@ type GenerateOptions struct {
 	Client bool `yaml:"client,omitempty"`
 	// Models specifies whether to generate type definitions
 	Models bool `yaml:"models,omitempty"`
-	// EmbeddedSpec indicates whether to embed the swagger spec in the generated code
-	EmbeddedSpec bool `yaml:"embedded-spec,omitempty"`
 	// ServerURLs generates types for the `Server` definitions' URLs, instead of needing to provide your own values
 	ServerURLs bool `yaml:"server-urls,omitempty"`
 }

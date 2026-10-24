@@ -6,4 +6,3 @@ output-options:
 generate:
   models: true
   server: true
-  embedded-spec: true

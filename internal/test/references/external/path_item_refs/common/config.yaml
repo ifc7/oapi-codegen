@@ -2,7 +2,6 @@
 package: common
 generate:
   server: true
-  embedded-spec: true
   models: true
 output-options:
   skip-prune: true

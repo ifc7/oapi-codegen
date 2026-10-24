@@ -2,5 +2,4 @@
 package: stdhttpparamsgen
 generate:
   server: true
-  embedded-spec: true
 output: gen/server.gen.go

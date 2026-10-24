@@ -7,19 +7,15 @@ package extensionsxgotype
 
 import (
 	"bytes"
-	"compress/flate"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	googleuuid "github.com/google/uuid"
 	rate "golang.org/x/time/rate"
 )
@@ -1170,107 +1166,4 @@ type TooManyValuesForParamError struct {
 
 func (e *TooManyValuesForParamError) Error() string {
 	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
-// Stored as a slice of fixed-width chunks rather than one concatenated
-// const string: with thousands of chunks the chained `+` fold is several
-// times slower for the Go compiler than parsing a slice literal.
-var swaggerSpec = []string{
-	"zFZbb9s2FP4rwtneRluOu72oTx2CDcYuAZoVe2gDg5aOZbYiD0MepTYC/feBlCxLsZKmBdb2JWZ4bt+5",
-	"feI95KQtGTTsIbsHn+9Qy3i8pLzWaDicrSOLjhVGiZEawy8fLEIGnp0yJTQCPEuuowqaWkP2FsggCOCP",
-	"FP7uHIb/tlQ7uBEPzAXsZyXNwuWsDdAjWF+3fpumN6LNe8w5xDwqXfexx2DvZFVPoZ3ytbo8VxzgggxK",
-	"orLCulbF/M2b1eUItdKWHJ8KNFAGAVbyLtwp3tWbeU46bcVplAc416RxZRhLdAMYqrt5MpKTjIMYVElT",
-	"zsmV6T5lpTGN8mOMqzbfs0opw2vp10F3XSmtosqPDreQwQ/paU7SbkjSIeBxmYKP+Z/RRyOOjruCfrHT",
-	"05x1DmPlvtjd/9fKRoDD21o5LMIOjNPv0W9UuVaG4WZiEP9BP9GgrcKquAinAn3ulGVFBjJ4lUjn5CGh",
-	"bRL2Lokj70MkRj1ex2hyAaI7Lc/3sBGg5X7VWv7SS2OEIIwgllMgDHrGImmzSD4q3iWyqiiX4TbWUTya",
-	"UBdlQ1ShNOM454s7rG7nozc4K+cEsfx1CAV+jbc1ev47wv4tWPdxXzwvP6r5u0ixaT436ThkB4v/Kt69",
-	"qqqr7QQdxN2SrfDt01u2uoRG3A9i+g/KztoZk9XMUmAxBxm7GpubSe49ornqjNqGnKGS/M0oWjwzPwGS",
-	"16f+fasPyoMhGmKaGKDIqls6n/seTrIll8QD3aFzqkD/MnkINirhntEZWSVW5h9kif7lOzMex6imTKUM",
-	"tpTl0EitTJlIUzxYtKNo6CTJSW+UwaKlmU/0Zf7OgABWXCFkENAZr8j4dL8uaR3sQMAdOt9mfDFfzBeh",
-	"3WTRSKsggxfzi/miq3kcwxT3UtsqPixKjD0KUypD4FURo0T578gQ+uAtGd9O8HKxCD85Ge5eV9LaSuXR",
-	"Nn3vyZweYp/6uvVvtNjAceOu/gi3jeixLp8Bdvk10PbPuScwOyJ+FG+J/DrIQ0Oc1MjofOQoFZzc1ugO",
-	"II5LI4PeCeCWnJYMGRSSccYqcvZ3zSfNzXRPxqULD52kkCyPFWT0j1cwCluCQM+/UnF4ostB+afPa3V8",
-	"wDQdCY2g/3wOvSSKhNU0zX8DAA==",
-}
-
-// decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
-// after base64-decoding and flate-decompressing the embedded blob.
-func decodeSpec() ([]byte, error) {
-	encoded := strings.Join(swaggerSpec, "")
-	compressed, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return nil, fmt.Errorf("error base64 decoding spec: %w", err)
-	}
-	zr := flate.NewReader(bytes.NewReader(compressed))
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(zr); err != nil {
-		return nil, fmt.Errorf("read flate: %w", err)
-	}
-	if err := zr.Close(); err != nil {
-		return nil, fmt.Errorf("close flate reader: %w", err)
-	}
-
-	return buf.Bytes(), nil
-}
-
-var rawSpec = decodeSpecCached()
-
-// a naive cache of the decoded OpenAPI spec
-func decodeSpecCached() func() ([]byte, error) {
-	data, err := decodeSpec()
-	return func() ([]byte, error) {
-		return data, err
-	}
-}
-
-// Constructs a synthetic filesystem for resolving external references when loading openapi specifications.
-func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
-	res := make(map[string]func() ([]byte, error))
-	if len(pathToFile) > 0 {
-		res[pathToFile] = rawSpec
-	}
-
-	return res
-}
-
-// GetSpec returns the OpenAPI specification corresponding to the generated
-// code in this file. External references in the spec are resolved through
-// PathToRawSpec; externally-referenced files must be embedded in their
-// corresponding Go packages (via the import-mapping feature). URL-based
-// external refs are not supported.
-func GetSpec() (swagger *openapi3.T, err error) {
-	resolvePath := PathToRawSpec("")
-
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	loader.ReadFromURIFunc = func(loader *openapi3.Loader, url *url.URL) ([]byte, error) {
-		pathToFile := url.String()
-		pathToFile = path.Clean(pathToFile)
-		getSpec, ok := resolvePath[pathToFile]
-		if !ok {
-			err1 := fmt.Errorf("path not found: %s", pathToFile)
-			return nil, err1
-		}
-		return getSpec()
-	}
-	var specData []byte
-	specData, err = rawSpec()
-	if err != nil {
-		return
-	}
-	swagger, err = loader.LoadFromData(specData)
-	if err != nil {
-		return
-	}
-	return
-}
-
-// GetSpecJSON returns the raw JSON bytes of the embedded OpenAPI
-// specification: decompressed but not unmarshaled. External references
-// are not resolved here; the bytes are the spec exactly as embedded by
-// codegen. The result is cached at package init time, so repeated calls
-// are cheap.
-func GetSpecJSON() ([]byte, error) {
-	return rawSpec()
 }
