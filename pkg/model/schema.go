@@ -113,6 +113,56 @@ type Schema struct {
 	ContentSchema    *SchemaRef `json:"contentSchema,omitempty" yaml:"contentSchema,omitempty"`       // OpenAPI >=3.1
 }
 
+// NewSchema builds an empty schema.
+func NewSchema() *Schema {
+	return &Schema{}
+}
+
+// NewStringSchema builds a schema of type string.
+func NewStringSchema() *Schema {
+	return &Schema{Type: &Types{TypeString}}
+}
+
+// NewObjectSchema builds a schema of type object with an empty property map.
+func NewObjectSchema() *Schema {
+	return &Schema{
+		Type:       &Types{TypeObject},
+		Properties: make(Schemas),
+	}
+}
+
+// NewRef builds a SchemaRef whose value is schema.
+func (schema *Schema) NewRef() *SchemaRef {
+	return &SchemaRef{Value: schema}
+}
+
+// WithEnum sets the schema's enum values.
+func (schema *Schema) WithEnum(values ...any) *Schema {
+	schema.Enum = values
+	return schema
+}
+
+// WithMaxLength sets maxLength.
+func (schema *Schema) WithMaxLength(i int64) *Schema {
+	n := uint64(i)
+	schema.MaxLength = &n
+	return schema
+}
+
+// WithProperty sets a property to propertySchema.
+func (schema *Schema) WithProperty(name string, propertySchema *Schema) *Schema {
+	return schema.WithPropertyRef(name, &SchemaRef{Value: propertySchema})
+}
+
+// WithPropertyRef sets a property to ref.
+func (schema *Schema) WithPropertyRef(name string, ref *SchemaRef) *Schema {
+	if schema.Properties == nil {
+		schema.Properties = make(Schemas)
+	}
+	schema.Properties[name] = ref
+	return schema
+}
+
 // WithAnyAdditionalProperties sets additionalProperties to true.
 func (schema *Schema) WithAnyAdditionalProperties() *Schema {
 	has := true

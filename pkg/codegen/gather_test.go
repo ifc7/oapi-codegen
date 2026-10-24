@@ -3,20 +3,21 @@ package codegen
 import (
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 func TestGatherSchemas_ComponentSchemas(t *testing.T) {
-	spec := &openapi3.T{
-		Components: &openapi3.Components{
-			Schemas: openapi3.Schemas{
-				"Pet": &openapi3.SchemaRef{
-					Value: &openapi3.Schema{Type: &openapi3.Types{"object"}},
+	spec := &model.Document{
+		Components: &model.Components{
+			Schemas: model.Schemas{
+				"Pet": &model.SchemaRef{
+					Value: &model.Schema{Type: &model.Types{"object"}},
 				},
-				"Owner": &openapi3.SchemaRef{
-					Value: &openapi3.Schema{Type: &openapi3.Types{"object"}},
+				"Owner": &model.SchemaRef{
+					Value: &model.Schema{Type: &model.Types{"object"}},
 				},
 			},
 		},
@@ -38,15 +39,15 @@ func TestGatherSchemas_ComponentSchemas(t *testing.T) {
 }
 
 func TestGatherSchemas_ComponentParameters(t *testing.T) {
-	spec := &openapi3.T{
-		Components: &openapi3.Components{
-			Parameters: openapi3.ParametersMap{
-				"Limit": &openapi3.ParameterRef{
-					Value: &openapi3.Parameter{
+	spec := &model.Document{
+		Components: &model.Components{
+			Parameters: model.ParametersMap{
+				"Limit": &model.ParameterRef{
+					Value: &model.Parameter{
 						Name: "limit",
 						In:   "query",
-						Schema: &openapi3.SchemaRef{
-							Value: &openapi3.Schema{Type: &openapi3.Types{"integer"}},
+						Schema: &model.SchemaRef{
+							Value: &model.Schema{Type: &model.Types{"integer"}},
 						},
 					},
 				},
@@ -64,15 +65,15 @@ func TestGatherSchemas_ComponentParameters(t *testing.T) {
 }
 
 func TestGatherSchemas_ComponentResponses(t *testing.T) {
-	spec := &openapi3.T{
-		Components: &openapi3.Components{
-			Responses: openapi3.ResponseBodies{
-				"Error": &openapi3.ResponseRef{
-					Value: &openapi3.Response{
-						Content: openapi3.Content{
-							"application/json": &openapi3.MediaType{
-								Schema: &openapi3.SchemaRef{
-									Value: &openapi3.Schema{Type: &openapi3.Types{"object"}},
+	spec := &model.Document{
+		Components: &model.Components{
+			Responses: model.ResponseBodies{
+				"Error": &model.ResponseRef{
+					Value: &model.Response{
+						Content: model.Content{
+							"application/json": &model.MediaType{
+								Schema: &model.SchemaRef{
+									Value: &model.Schema{Type: &model.Types{"object"}},
 								},
 							},
 						},
@@ -93,15 +94,15 @@ func TestGatherSchemas_ComponentResponses(t *testing.T) {
 }
 
 func TestGatherSchemas_ComponentRequestBodies(t *testing.T) {
-	spec := &openapi3.T{
-		Components: &openapi3.Components{
-			RequestBodies: openapi3.RequestBodies{
-				"CreatePet": &openapi3.RequestBodyRef{
-					Value: &openapi3.RequestBody{
-						Content: openapi3.Content{
-							"application/json": &openapi3.MediaType{
-								Schema: &openapi3.SchemaRef{
-									Value: &openapi3.Schema{Type: &openapi3.Types{"object"}},
+	spec := &model.Document{
+		Components: &model.Components{
+			RequestBodies: model.RequestBodies{
+				"CreatePet": &model.RequestBodyRef{
+					Value: &model.RequestBody{
+						Content: model.Content{
+							"application/json": &model.MediaType{
+								Schema: &model.SchemaRef{
+									Value: &model.Schema{Type: &model.Types{"object"}},
 								},
 							},
 						},
@@ -121,14 +122,14 @@ func TestGatherSchemas_ComponentRequestBodies(t *testing.T) {
 }
 
 func TestGatherSchemas_ComponentHeaders(t *testing.T) {
-	spec := &openapi3.T{
-		Components: &openapi3.Components{
-			Headers: openapi3.Headers{
-				"X-Rate-Limit": &openapi3.HeaderRef{
-					Value: &openapi3.Header{
-						Parameter: openapi3.Parameter{
-							Schema: &openapi3.SchemaRef{
-								Value: &openapi3.Schema{Type: &openapi3.Types{"integer"}},
+	spec := &model.Document{
+		Components: &model.Components{
+			Headers: model.Headers{
+				"X-Rate-Limit": &model.HeaderRef{
+					Value: &model.Header{
+						Parameter: model.Parameter{
+							Schema: &model.SchemaRef{
+								Value: &model.Schema{Type: &model.Types{"integer"}},
 							},
 						},
 					},
@@ -146,17 +147,17 @@ func TestGatherSchemas_ComponentHeaders(t *testing.T) {
 }
 
 func TestGatherSchemas_ClientResponseWrappers(t *testing.T) {
-	paths := openapi3.NewPaths()
-	paths.Set("/pets", &openapi3.PathItem{
-		Get: &openapi3.Operation{
+	paths := model.NewPaths()
+	paths.Set("/pets", &model.PathItem{
+		Get: &model.Operation{
 			OperationID: "listPets",
 		},
-		Post: &openapi3.Operation{
+		Post: &model.Operation{
 			OperationID: "createPet",
 		},
 	})
 
-	spec := &openapi3.T{
+	spec := &model.Document{
 		Paths: paths,
 	}
 
@@ -178,12 +179,12 @@ func TestGatherSchemas_ClientResponseWrappers(t *testing.T) {
 }
 
 func TestGatherSchemas_GoNameOverride_Schema(t *testing.T) {
-	spec := &openapi3.T{
-		Components: &openapi3.Components{
-			Schemas: openapi3.Schemas{
-				"Renamer": &openapi3.SchemaRef{
-					Value: &openapi3.Schema{
-						Type:       &openapi3.Types{"object"},
+	spec := &model.Document{
+		Components: &model.Components{
+			Schemas: model.Schemas{
+				"Renamer": &model.SchemaRef{
+					Value: &model.Schema{
+						Type:       &model.Types{"object"},
 						Extensions: map[string]any{"x-go-name": "SpecialName"},
 					},
 				},
@@ -199,16 +200,16 @@ func TestGatherSchemas_GoNameOverride_Schema(t *testing.T) {
 }
 
 func TestGatherSchemas_GoNameOverride_Response(t *testing.T) {
-	spec := &openapi3.T{
-		Components: &openapi3.Components{
-			Responses: openapi3.ResponseBodies{
-				"Outcome": &openapi3.ResponseRef{
-					Value: &openapi3.Response{
+	spec := &model.Document{
+		Components: &model.Components{
+			Responses: model.ResponseBodies{
+				"Outcome": &model.ResponseRef{
+					Value: &model.Response{
 						Extensions: map[string]any{"x-go-name": "OutcomeResult"},
-						Content: openapi3.Content{
-							"application/json": &openapi3.MediaType{
-								Schema: &openapi3.SchemaRef{
-									Value: &openapi3.Schema{Type: &openapi3.Types{"object"}},
+						Content: model.Content{
+							"application/json": &model.MediaType{
+								Schema: &model.SchemaRef{
+									Value: &model.Schema{Type: &model.Types{"object"}},
 								},
 							},
 						},
@@ -226,16 +227,16 @@ func TestGatherSchemas_GoNameOverride_Response(t *testing.T) {
 }
 
 func TestGatherSchemas_GoNameOverride_RequestBody(t *testing.T) {
-	spec := &openapi3.T{
-		Components: &openapi3.Components{
-			RequestBodies: openapi3.RequestBodies{
-				"Payload": &openapi3.RequestBodyRef{
-					Value: &openapi3.RequestBody{
+	spec := &model.Document{
+		Components: &model.Components{
+			RequestBodies: model.RequestBodies{
+				"Payload": &model.RequestBodyRef{
+					Value: &model.RequestBody{
 						Extensions: map[string]any{"x-go-name": "PayloadBody"},
-						Content: openapi3.Content{
-							"application/json": &openapi3.MediaType{
-								Schema: &openapi3.SchemaRef{
-									Value: &openapi3.Schema{Type: &openapi3.Types{"object"}},
+						Content: model.Content{
+							"application/json": &model.MediaType{
+								Schema: &model.SchemaRef{
+									Value: &model.Schema{Type: &model.Types{"object"}},
 								},
 							},
 						},
@@ -253,13 +254,13 @@ func TestGatherSchemas_GoNameOverride_RequestBody(t *testing.T) {
 }
 
 func TestGatherSchemas_GoNameOverride_SkippedForRef(t *testing.T) {
-	spec := &openapi3.T{
-		Components: &openapi3.Components{
-			Schemas: openapi3.Schemas{
-				"AliasedPet": &openapi3.SchemaRef{
+	spec := &model.Document{
+		Components: &model.Components{
+			Schemas: model.Schemas{
+				"AliasedPet": &model.SchemaRef{
 					Ref: "#/components/schemas/Pet",
-					Value: &openapi3.Schema{
-						Type:       &openapi3.Types{"object"},
+					Value: &model.Schema{
+						Type:       &model.Types{"object"},
 						Extensions: map[string]any{"x-go-name": "ShouldBeIgnored"},
 					},
 				},
@@ -277,58 +278,58 @@ func TestGatherSchemas_GoNameOverride_SkippedForRef(t *testing.T) {
 func TestGatherSchemas_AllSections(t *testing.T) {
 	// Spec with "Bar" in schemas, parameters, responses, requestBodies, headers
 	// This is the issue #200 scenario (cross-section collision)
-	paths := openapi3.NewPaths()
-	spec := &openapi3.T{
+	paths := model.NewPaths()
+	spec := &model.Document{
 		Paths: paths,
-		Components: &openapi3.Components{
-			Schemas: openapi3.Schemas{
-				"Bar": &openapi3.SchemaRef{
-					Value: &openapi3.Schema{Type: &openapi3.Types{"object"}},
+		Components: &model.Components{
+			Schemas: model.Schemas{
+				"Bar": &model.SchemaRef{
+					Value: &model.Schema{Type: &model.Types{"object"}},
 				},
 			},
-			Parameters: openapi3.ParametersMap{
-				"Bar": &openapi3.ParameterRef{
-					Value: &openapi3.Parameter{
+			Parameters: model.ParametersMap{
+				"Bar": &model.ParameterRef{
+					Value: &model.Parameter{
 						Name: "Bar",
 						In:   "query",
-						Schema: &openapi3.SchemaRef{
-							Value: &openapi3.Schema{Type: &openapi3.Types{"string"}},
+						Schema: &model.SchemaRef{
+							Value: &model.Schema{Type: &model.Types{"string"}},
 						},
 					},
 				},
 			},
-			Responses: openapi3.ResponseBodies{
-				"Bar": &openapi3.ResponseRef{
-					Value: &openapi3.Response{
-						Content: openapi3.Content{
-							"application/json": &openapi3.MediaType{
-								Schema: &openapi3.SchemaRef{
-									Value: &openapi3.Schema{Type: &openapi3.Types{"object"}},
+			Responses: model.ResponseBodies{
+				"Bar": &model.ResponseRef{
+					Value: &model.Response{
+						Content: model.Content{
+							"application/json": &model.MediaType{
+								Schema: &model.SchemaRef{
+									Value: &model.Schema{Type: &model.Types{"object"}},
 								},
 							},
 						},
 					},
 				},
 			},
-			RequestBodies: openapi3.RequestBodies{
-				"Bar": &openapi3.RequestBodyRef{
-					Value: &openapi3.RequestBody{
-						Content: openapi3.Content{
-							"application/json": &openapi3.MediaType{
-								Schema: &openapi3.SchemaRef{
-									Value: &openapi3.Schema{Type: &openapi3.Types{"object"}},
+			RequestBodies: model.RequestBodies{
+				"Bar": &model.RequestBodyRef{
+					Value: &model.RequestBody{
+						Content: model.Content{
+							"application/json": &model.MediaType{
+								Schema: &model.SchemaRef{
+									Value: &model.Schema{Type: &model.Types{"object"}},
 								},
 							},
 						},
 					},
 				},
 			},
-			Headers: openapi3.Headers{
-				"Bar": &openapi3.HeaderRef{
-					Value: &openapi3.Header{
-						Parameter: openapi3.Parameter{
-							Schema: &openapi3.SchemaRef{
-								Value: &openapi3.Schema{Type: &openapi3.Types{"boolean"}},
+			Headers: model.Headers{
+				"Bar": &model.HeaderRef{
+					Value: &model.Header{
+						Parameter: model.Parameter{
+							Schema: &model.SchemaRef{
+								Value: &model.Schema{Type: &model.Types{"boolean"}},
 							},
 						},
 					},

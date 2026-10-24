@@ -6,8 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3"
-
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
 )
 
@@ -90,14 +89,14 @@ func (sc SchemaContext) Suffix() string {
 type GatheredSchema struct {
 	Path           SchemaPath
 	Context        SchemaContext
-	Ref            string           // $ref string if this is a reference
-	Schema         *openapi3.Schema // The resolved schema value
-	OperationID    string           // Enclosing operation's ID, if any
-	ContentType    string           // Media type, if from request/response body
-	StatusCode     string           // HTTP status code, if from a response
-	ParamIndex     int              // Parameter index within an operation
-	ComponentName  string           // The component name (e.g., "Bar" for components/schemas/Bar)
-	GoNameOverride string           // x-go-name override from the component or its parent container
+	Ref            string        // $ref string if this is a reference
+	Schema         *model.Schema // The resolved schema value
+	OperationID    string        // Enclosing operation's ID, if any
+	ContentType    string        // Media type, if from request/response body
+	StatusCode     string        // HTTP status code, if from a response
+	ParamIndex     int           // Parameter index within an operation
+	ComponentName  string        // The component name (e.g., "Bar" for components/schemas/Bar)
+	GoNameOverride string        // x-go-name override from the component or its parent container
 }
 
 // IsComponentSchema returns true if this schema came from components/schemas.
@@ -107,7 +106,7 @@ func (gs *GatheredSchema) IsComponentSchema() bool {
 
 // GatherSchemas walks the entire OpenAPI spec and collects all schemas that
 // will need Go type names. This is the first pass of the multi-pass resolution.
-func GatherSchemas(spec *openapi3.T, opts Configuration) []*GatheredSchema {
+func GatherSchemas(spec *model.Document, opts Configuration) []*GatheredSchema {
 	var schemas []*GatheredSchema
 
 	if spec.Components != nil {
@@ -130,7 +129,7 @@ func GatherSchemas(spec *openapi3.T, opts Configuration) []*GatheredSchema {
 	return schemas
 }
 
-func gatherComponentSchemas(components *openapi3.Components) []*GatheredSchema {
+func gatherComponentSchemas(components *model.Components) []*GatheredSchema {
 	var result []*GatheredSchema
 	for _, name := range SortedSchemaKeys(components.Schemas) {
 		schemaRef := components.Schemas[name]
@@ -153,7 +152,7 @@ func gatherComponentSchemas(components *openapi3.Components) []*GatheredSchema {
 	return result
 }
 
-func gatherComponentParameters(components *openapi3.Components) []*GatheredSchema {
+func gatherComponentParameters(components *model.Components) []*GatheredSchema {
 	var result []*GatheredSchema
 	for _, name := range SortedMapKeys(components.Parameters) {
 		paramRef := components.Parameters[name]
@@ -179,7 +178,7 @@ func gatherComponentParameters(components *openapi3.Components) []*GatheredSchem
 	return result
 }
 
-func gatherComponentResponses(components *openapi3.Components) []*GatheredSchema {
+func gatherComponentResponses(components *model.Components) []*GatheredSchema {
 	var result []*GatheredSchema
 	for _, name := range SortedMapKeys(components.Responses) {
 		responseRef := components.Responses[name]
@@ -212,7 +211,7 @@ func gatherComponentResponses(components *openapi3.Components) []*GatheredSchema
 	return result
 }
 
-func gatherComponentRequestBodies(components *openapi3.Components) []*GatheredSchema {
+func gatherComponentRequestBodies(components *model.Components) []*GatheredSchema {
 	var result []*GatheredSchema
 	for _, name := range SortedMapKeys(components.RequestBodies) {
 		bodyRef := components.RequestBodies[name]
@@ -245,7 +244,7 @@ func gatherComponentRequestBodies(components *openapi3.Components) []*GatheredSc
 	return result
 }
 
-func gatherComponentHeaders(components *openapi3.Components) []*GatheredSchema {
+func gatherComponentHeaders(components *model.Components) []*GatheredSchema {
 	var result []*GatheredSchema
 	for _, name := range SortedMapKeys(components.Headers) {
 		headerRef := components.Headers[name]
@@ -275,7 +274,7 @@ func gatherComponentHeaders(components *openapi3.Components) []*GatheredSchema {
 // operation that would generate a client response wrapper type like
 // `<OperationId>Response`. These don't correspond to a real schema in the
 // spec but they need names that don't collide with real types.
-func gatherClientResponseWrappers(spec *openapi3.T) []*GatheredSchema {
+func gatherClientResponseWrappers(spec *model.Document) []*GatheredSchema {
 	if spec.Paths == nil {
 		return nil
 	}
@@ -284,7 +283,7 @@ func gatherClientResponseWrappers(spec *openapi3.T) []*GatheredSchema {
 	type opEntry struct {
 		path   string
 		method string
-		op     *openapi3.Operation
+		op     *model.Operation
 	}
 	var ops []opEntry
 

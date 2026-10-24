@@ -6,6 +6,9 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 // testSpecOption adjusts the kin-openapi loader the test helpers use.
@@ -63,16 +66,23 @@ func newTestLoader(opts ...testSpecOption) (*openapi3.Loader, testSpecConfig) {
 
 // loadTestSpecData loads an OpenAPI document from data. Callers that want a
 // load failure as a returned error, rather than a failed test, use this.
-func loadTestSpecData(data []byte, opts ...testSpecOption) (*openapi3.T, error) {
+func loadTestSpecData(data []byte, opts ...testSpecOption) (*model.Document, error) {
 	loader, cfg := newTestLoader(opts...)
+	var spec *openapi3.T
+	var err error
 	if cfg.path != "" || cfg.hasExternal {
-		return loader.LoadFromDataWithPath(data, &url.URL{Path: cfg.path})
+		spec, err = loader.LoadFromDataWithPath(data, &url.URL{Path: cfg.path})
+	} else {
+		spec, err = loader.LoadFromData(data)
 	}
-	return loader.LoadFromData(data)
+	if err != nil {
+		return nil, err
+	}
+	return kin.Convert(spec), nil
 }
 
 // loadTestSpec loads an OpenAPI document from data. A load error fails t.
-func loadTestSpec(t *testing.T, data []byte, opts ...testSpecOption) *openapi3.T {
+func loadTestSpec(t *testing.T, data []byte, opts ...testSpecOption) *model.Document {
 	t.Helper()
 	spec, err := loadTestSpecData(data, opts...)
 	require.NoError(t, err)
@@ -81,11 +91,11 @@ func loadTestSpec(t *testing.T, data []byte, opts ...testSpecOption) *openapi3.T
 
 // loadTestSpecFile loads an OpenAPI document from path, following file
 // references.
-func loadTestSpecFile(t *testing.T, path string) *openapi3.T {
+func loadTestSpecFile(t *testing.T, path string) *model.Document {
 	t.Helper()
 	loader := openapi3.NewLoader()
 	loader.IsExternalRefsAllowed = true
 	spec, err := loader.LoadFromFile(path)
 	require.NoError(t, err)
-	return spec
+	return kin.Convert(spec)
 }

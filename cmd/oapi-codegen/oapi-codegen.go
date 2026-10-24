@@ -28,7 +28,8 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
 )
 
 func errExit(format string, args ...any) {
@@ -174,17 +175,16 @@ func main() {
 		return
 	}
 
-	overlayOpts := util.LoadSwaggerWithOverlayOpts{
-		Path: opts.OutputOptions.Overlay.Path,
-		// default to strict, but can be overridden
-		Strict: true,
-	}
-
+	// default to strict, but can be overridden
+	strict := true
 	if opts.OutputOptions.Overlay.Strict != nil {
-		overlayOpts.Strict = *opts.OutputOptions.Overlay.Strict
+		strict = *opts.OutputOptions.Overlay.Strict
 	}
 
-	swagger, err := util.LoadSwaggerWithOverlay(flag.Arg(0), overlayOpts)
+	swagger, err := kin.Engine{}.Load(flag.Arg(0), engine.LoadOptions{
+		OverlayPath:   opts.OutputOptions.Overlay.Path,
+		OverlayStrict: strict,
+	})
 	if err != nil {
 		errExit("error loading swagger spec in %s\n: %s\n", flag.Arg(0), err)
 	}

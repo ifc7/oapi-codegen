@@ -4,11 +4,11 @@ package codegen
 // from, when a schema's type is not its own but one it refers to: whether a
 // server response body can be its own type (operations.go) needs it.
 
-import "github.com/getkin/kin-openapi/openapi3"
+import "github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 
 // subschemaLists returns a schema's allOf, anyOf and oneOf.
-func subschemaLists(s *openapi3.Schema) []openapi3.SchemaRefs {
-	return []openapi3.SchemaRefs{s.AllOf, s.AnyOf, s.OneOf}
+func subschemaLists(s *model.Schema) []model.SchemaRefs {
+	return []model.SchemaRefs{s.AllOf, s.AnyOf, s.OneOf}
 }
 
 // namedTypeDef returns the type definition x-go-type-name declared beside
@@ -32,7 +32,7 @@ func (s Schema) namedTypeDef() (TypeDefinition, bool) {
 // compared rather than the shape of the schema: a composition that
 // became a struct or union type of its own matches no member. A $ref
 // generates as its name without being followed, so generate is cheap here.
-func loweredToMember(schema *openapi3.Schema, decl string, generate func(*openapi3.SchemaRef) (Schema, error)) (*openapi3.SchemaRef, Schema, error) {
+func loweredToMember(schema *model.Schema, decl string, generate func(*model.SchemaRef) (Schema, error)) (*model.SchemaRef, Schema, error) {
 	for _, members := range subschemaLists(schema) {
 		for _, member := range members {
 			if member == nil || !IsGoTypeReference(member.Ref) {

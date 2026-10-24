@@ -5,9 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 func TestProperty_GoTypeDef(t *testing.T) {
@@ -358,45 +359,45 @@ func TestProperty_GoTypeDef_nullable(t *testing.T) {
 }
 
 func TestProperty_ZeroValueIsNil(t *testing.T) {
-	newType := func(typ string) *openapi3.Types {
-		return &openapi3.Types{typ}
+	newType := func(typ string) *model.Types {
+		return &model.Types{typ}
 	}
 
 	tests := []struct {
 		name        string
-		oapiSchema  *openapi3.Schema
+		oapiSchema  *model.Schema
 		goType      string
 		expectIsNil bool
 	}{
 		{
 			name:        "when an array, returns true",
-			oapiSchema:  &openapi3.Schema{Type: newType("array")},
+			oapiSchema:  &model.Schema{Type: newType("array")},
 			expectIsNil: true,
 		},
 		{
 			name:        "when an object, returns false",
-			oapiSchema:  &openapi3.Schema{Type: newType("object")},
+			oapiSchema:  &model.Schema{Type: newType("object")},
 			expectIsNil: false,
 		},
 		{
 			name:        "when an object rendered as a map, returns true",
-			oapiSchema:  &openapi3.Schema{Type: newType("object")},
+			oapiSchema:  &model.Schema{Type: newType("object")},
 			goType:      "map[string]string",
 			expectIsNil: true,
 		},
 		{
 			name:        "when a string, returns false",
-			oapiSchema:  &openapi3.Schema{Type: newType("string")},
+			oapiSchema:  &model.Schema{Type: newType("string")},
 			expectIsNil: false,
 		},
 		{
 			name:        "when an integer, returns false",
-			oapiSchema:  &openapi3.Schema{Type: newType("integer")},
+			oapiSchema:  &model.Schema{Type: newType("integer")},
 			expectIsNil: false,
 		},
 		{
 			name:        "when a number, returns false",
-			oapiSchema:  &openapi3.Schema{Type: newType("number")},
+			oapiSchema:  &model.Schema{Type: newType("number")},
 			expectIsNil: false,
 		},
 		{
@@ -406,7 +407,7 @@ func TestProperty_ZeroValueIsNil(t *testing.T) {
 		},
 		{
 			name:        "when OAPISchema is zero value, returns false",
-			oapiSchema:  &openapi3.Schema{},
+			oapiSchema:  &model.Schema{},
 			expectIsNil: false,
 		},
 	}
@@ -432,7 +433,7 @@ func TestProperty_ZeroValueIsNil(t *testing.T) {
 // value null. Go has no such type, so it maps to `any`, with the optional
 // pointer skipped (nil is already `any`'s zero value). Issue #2430.
 func TestOapiSchemaToGoType_NullType(t *testing.T) {
-	schema := &openapi3.Schema{Type: &openapi3.Types{"null"}}
+	schema := &model.Schema{Type: &model.Types{"null"}}
 	var out Schema
 	require.NoError(t, oapiSchemaToGoType(newGenContext(nil), schema, []string{"Challenger"}, &out))
 	assert.Equal(t, "any", out.GoType)
@@ -445,7 +446,7 @@ func TestDescribeWithExamples(t *testing.T) {
 		name        string
 		is31        bool
 		description string
-		schema      *openapi3.Schema
+		schema      *model.Schema
 		want        string
 	}{
 		{
@@ -455,50 +456,50 @@ func TestDescribeWithExamples(t *testing.T) {
 		{
 			name:        "3.0 singular example",
 			description: "The widget name.",
-			schema:      &openapi3.Schema{Example: "hammer"},
+			schema:      &model.Schema{Example: "hammer"},
 			want:        "The widget name.\n\nExample: hammer",
 		},
 		{
 			name:   "3.0 singular example with no description",
-			schema: &openapi3.Schema{Example: "hammer"},
+			schema: &model.Schema{Example: "hammer"},
 			want:   "Example: hammer",
 		},
 		{
 			name:        "3.0 ignores plural examples",
 			description: "The widget name.",
-			schema:      &openapi3.Schema{Examples: []any{"hammer"}},
+			schema:      &model.Schema{Examples: []any{"hammer"}},
 			want:        "The widget name.",
 		},
 		{
 			name:        "3.1 plural examples",
 			is31:        true,
 			description: "The widget name.",
-			schema:      &openapi3.Schema{Examples: []any{"hammer", "wrench"}},
+			schema:      &model.Schema{Examples: []any{"hammer", "wrench"}},
 			want:        "The widget name.\n\nExamples: hammer, wrench",
 		},
 		{
 			name:        "3.1 falls back to singular example",
 			is31:        true,
 			description: "The widget name.",
-			schema:      &openapi3.Schema{Example: "hammer"},
+			schema:      &model.Schema{Example: "hammer"},
 			want:        "The widget name.\n\nExample: hammer",
 		},
 		{
 			name:   "3.1 prefers plural examples over singular",
 			is31:   true,
-			schema: &openapi3.Schema{Example: "ignored", Examples: []any{"hammer"}},
+			schema: &model.Schema{Example: "ignored", Examples: []any{"hammer"}},
 			want:   "Examples: hammer",
 		},
 		{
 			name:        "3.1 with neither keeps description",
 			is31:        true,
 			description: "The widget name.",
-			schema:      &openapi3.Schema{},
+			schema:      &model.Schema{},
 			want:        "The widget name.",
 		},
 		{
 			name:   "structured example is JSON encoded",
-			schema: &openapi3.Schema{Example: map[string]any{"k": "v"}},
+			schema: &model.Schema{Example: map[string]any{"k": "v"}},
 			want:   `Example: {"k":"v"}`,
 		},
 	} {
@@ -567,17 +568,17 @@ func TestConstScalarFamily(t *testing.T) {
 // 2^53, so a value sitting on the boundary cannot be traced back to one
 // integer.
 func TestCheckIntegerConstsExact(t *testing.T) {
-	refs := func(consts ...any) openapi3.SchemaRefs {
-		out := make(openapi3.SchemaRefs, 0, len(consts))
+	refs := func(consts ...any) model.SchemaRefs {
+		out := make(model.SchemaRefs, 0, len(consts))
 		for _, c := range consts {
-			out = append(out, &openapi3.SchemaRef{Value: &openapi3.Schema{Title: "T", Const: c}})
+			out = append(out, &model.SchemaRef{Value: &model.Schema{Title: "T", Const: c}})
 		}
 		return out
 	}
 
 	for _, tc := range []struct {
 		name    string
-		in      openapi3.SchemaRefs
+		in      model.SchemaRefs
 		wantErr bool
 	}{
 		{name: "small values", in: refs(float64(0), float64(-1), float64(8080))},
@@ -585,7 +586,7 @@ func TestCheckIntegerConstsExact(t *testing.T) {
 		{name: "smallest unambiguous", in: refs(-float64(1<<53) + 1)},
 		{name: "past int32 but exact", in: refs(float64(5_000_000_000))},
 		{name: "strings are not this check's business", in: refs("available", "sold")},
-		{name: "a nil branch is someone else's problem", in: openapi3.SchemaRefs{nil}},
+		{name: "a nil branch is someone else's problem", in: model.SchemaRefs{nil}},
 
 		{name: "2^53 is ambiguous with 2^53+1", in: refs(float64(1 << 53)), wantErr: true},
 		{name: "2^53+1 arrives already rounded", in: refs(float64(9007199254740993)), wantErr: true},
@@ -608,37 +609,37 @@ func TestCheckIntegerConstsExact(t *testing.T) {
 // inferEnumViaOneOfType folds the per-branch families into the one type the
 // whole enum takes, and widens the integer format to fit the largest value.
 func TestInferEnumViaOneOfType(t *testing.T) {
-	refs := func(consts ...any) openapi3.SchemaRefs {
-		out := make(openapi3.SchemaRefs, 0, len(consts))
+	refs := func(consts ...any) model.SchemaRefs {
+		out := make(model.SchemaRefs, 0, len(consts))
 		for _, c := range consts {
-			out = append(out, &openapi3.SchemaRef{Value: &openapi3.Schema{Const: c}})
+			out = append(out, &model.SchemaRef{Value: &model.Schema{Const: c}})
 		}
 		return out
 	}
 
 	for _, tc := range []struct {
 		name       string
-		in         openapi3.SchemaRefs
-		wantType   *openapi3.Types
+		in         model.SchemaRefs
+		wantType   *model.Types
 		wantFormat string
 		ok         bool
 	}{
 		{
 			name:     "all strings",
 			in:       refs("available", "pending", "sold"),
-			wantType: &openapi3.Types{"string"},
+			wantType: &model.Types{"string"},
 			ok:       true,
 		},
 		{
 			name:     "small integers keep the natural int",
 			in:       refs(float64(8080), float64(9090)),
-			wantType: &openapi3.Types{"integer"},
+			wantType: &model.Types{"integer"},
 			ok:       true,
 		},
 		{
 			name:       "one large value widens the whole enum",
 			in:         refs(float64(1), float64(5_000_000_000)),
-			wantType:   &openapi3.Types{"integer"},
+			wantType:   &model.Types{"integer"},
 			wantFormat: "int64",
 			ok:         true,
 		},
@@ -656,7 +657,7 @@ func TestInferEnumViaOneOfType(t *testing.T) {
 			// Reported honestly; the caller's scalar gate is what rejects it.
 			name:     "all booleans",
 			in:       refs(true, false),
-			wantType: &openapi3.Types{"boolean"},
+			wantType: &model.Types{"boolean"},
 			ok:       true,
 		},
 		{
@@ -690,38 +691,38 @@ func TestInferEnumViaOneOfType(t *testing.T) {
 func TestOapiSchemaToGoType_MultiTypeUnion(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
-		types    openapi3.Types
+		types    model.Types
 		wantErr  bool
 		wantType string
 		wantSkip bool
 	}{
 		{
 			name:     "three scalar types",
-			types:    openapi3.Types{"string", "number", "boolean"},
+			types:    model.Types{"string", "number", "boolean"},
 			wantType: "any",
 			wantSkip: true,
 		},
 		{
 			name:     "array in a union does not take the array branch",
-			types:    openapi3.Types{"array", "string"},
+			types:    model.Types{"array", "string"},
 			wantType: "any",
 			wantSkip: true,
 		},
 		{
 			name:     "union alongside null",
-			types:    openapi3.Types{"string", "number", "null"},
+			types:    model.Types{"string", "number", "null"},
 			wantType: "any",
 			wantSkip: true,
 		},
 		{
 			name:     "single type alongside null is not a union",
-			types:    openapi3.Types{"string", "null"},
+			types:    model.Types{"string", "null"},
 			wantType: "string",
 			wantSkip: false,
 		},
 		{
 			name:    "misspelled type name is still an error",
-			types:   openapi3.Types{"strng", "number"},
+			types:   model.Types{"strng", "number"},
 			wantErr: true,
 		},
 	} {
@@ -732,7 +733,7 @@ func TestOapiSchemaToGoType_MultiTypeUnion(t *testing.T) {
 			globalState.typeMapping = DefaultTypeMapping
 
 			var out Schema
-			err := oapiSchemaToGoType(newGenContext(nil), &openapi3.Schema{Type: &tc.types}, []string{"Value"}, &out)
+			err := oapiSchemaToGoType(newGenContext(nil), &model.Schema{Type: &tc.types}, []string{"Value"}, &out)
 			if tc.wantErr {
 				assert.ErrorContains(t, err, "unhandled Schema type")
 				return
@@ -754,10 +755,10 @@ func TestDetectEnumViaOneOfInfersTypeWithoutMutating(t *testing.T) {
 	globalState.is31 = true
 	globalState.options.OutputOptions.SkipEnumViaOneOf = false
 
-	schema := &openapi3.Schema{
-		OneOf: openapi3.SchemaRefs{
-			{Value: &openapi3.Schema{Title: "Http", Const: float64(8080)}},
-			{Value: &openapi3.Schema{Title: "Ephemeral", Const: float64(5_000_000_000)}},
+	schema := &model.Schema{
+		OneOf: model.SchemaRefs{
+			{Value: &model.Schema{Title: "Http", Const: float64(8080)}},
+			{Value: &model.Schema{Title: "Ephemeral", Const: float64(5_000_000_000)}},
 		},
 	}
 
@@ -769,7 +770,7 @@ func TestDetectEnumViaOneOfInfersTypeWithoutMutating(t *testing.T) {
 	}, items)
 
 	assert.NotSame(t, schema, typeSource, "the inferred type belongs on a copy")
-	assert.Equal(t, &openapi3.Types{"integer"}, typeSource.Type)
+	assert.Equal(t, &model.Types{"integer"}, typeSource.Type)
 	assert.Equal(t, "int64", typeSource.Format, "5e9 does not fit a 32-bit int")
 	assert.Nil(t, schema.Type, "the caller's schema must be left alone")
 	assert.Empty(t, schema.Format)
@@ -783,10 +784,10 @@ func TestDetectEnumViaOneOfInfersTypeWithoutMutating(t *testing.T) {
 func TestEnumViaOneOfInexactIntegerErrors(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
-		types *openapi3.Types
+		types *model.Types
 	}{
 		{name: "type inferred from consts", types: nil},
-		{name: "type declared by the schema", types: &openapi3.Types{"integer"}},
+		{name: "type declared by the schema", types: &model.Types{"integer"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			prev := globalState
@@ -794,13 +795,13 @@ func TestEnumViaOneOfInexactIntegerErrors(t *testing.T) {
 			globalState.is31 = true
 			globalState.options.OutputOptions.SkipEnumViaOneOf = false
 
-			schema := &openapi3.Schema{
+			schema := &model.Schema{
 				Type: tc.types,
-				OneOf: openapi3.SchemaRefs{
-					{Value: &openapi3.Schema{Title: "Fine", Const: float64(1)}},
+				OneOf: model.SchemaRefs{
+					{Value: &model.Schema{Title: "Fine", Const: float64(1)}},
 					// 2^53+1 is the case that matters: it is not representable,
 					// so the parser rounded it to 2^53 before we saw it.
-					{Value: &openapi3.Schema{Title: "Enormous", Const: float64(9007199254740993)}},
+					{Value: &model.Schema{Title: "Enormous", Const: float64(9007199254740993)}},
 				},
 			}
 
@@ -822,9 +823,9 @@ func TestEnumViaOneOfInexactIntegerSkipped(t *testing.T) {
 	globalState.is31 = true
 	globalState.options.OutputOptions.SkipEnumViaOneOf = true
 
-	schema := &openapi3.Schema{
-		OneOf: openapi3.SchemaRefs{
-			{Value: &openapi3.Schema{Title: "Enormous", Const: float64(9007199254740993)}},
+	schema := &model.Schema{
+		OneOf: model.SchemaRefs{
+			{Value: &model.Schema{Title: "Enormous", Const: float64(9007199254740993)}},
 		},
 	}
 
@@ -838,37 +839,37 @@ func TestEnumViaOneOfInexactIntegerSkipped(t *testing.T) {
 func TestEnumViaOneOfNonEnumsStillFallThrough(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		refs openapi3.SchemaRefs
+		refs model.SchemaRefs
 	}{
 		{
 			// Boolean is a scalar family, but not an enumerable one.
 			name: "boolean consts",
-			refs: openapi3.SchemaRefs{
-				{Value: &openapi3.Schema{Title: "Yes", Const: true}},
-				{Value: &openapi3.Schema{Title: "No", Const: false}},
+			refs: model.SchemaRefs{
+				{Value: &model.Schema{Title: "Yes", Const: true}},
+				{Value: &model.Schema{Title: "No", Const: false}},
 			},
 		},
 		{
 			name: "families disagree",
-			refs: openapi3.SchemaRefs{
-				{Value: &openapi3.Schema{Title: "Word", Const: "one"}},
-				{Value: &openapi3.Schema{Title: "Number", Const: float64(1)}},
+			refs: model.SchemaRefs{
+				{Value: &model.Schema{Title: "Word", Const: "one"}},
+				{Value: &model.Schema{Title: "Number", Const: float64(1)}},
 			},
 		},
 		{
 			// Even alongside an unrepresentable number: the shape is not an
 			// enum, so there is nothing to fail about.
 			name: "non-scalar const beside a huge one",
-			refs: openapi3.SchemaRefs{
-				{Value: &openapi3.Schema{Title: "Obj", Const: map[string]any{"a": 1}}},
-				{Value: &openapi3.Schema{Title: "Enormous", Const: float64(9007199254740993)}},
+			refs: model.SchemaRefs{
+				{Value: &model.Schema{Title: "Obj", Const: map[string]any{"a": 1}}},
+				{Value: &model.Schema{Title: "Enormous", Const: float64(9007199254740993)}},
 			},
 		},
 		{
 			name: "a branch without a title",
-			refs: openapi3.SchemaRefs{
-				{Value: &openapi3.Schema{Title: "Fine", Const: float64(1)}},
-				{Value: &openapi3.Schema{Const: float64(9007199254740993)}},
+			refs: model.SchemaRefs{
+				{Value: &model.Schema{Title: "Fine", Const: float64(1)}},
+				{Value: &model.Schema{Const: float64(9007199254740993)}},
 			},
 		},
 	} {
@@ -878,7 +879,7 @@ func TestEnumViaOneOfNonEnumsStillFallThrough(t *testing.T) {
 			globalState.is31 = true
 			globalState.options.OutputOptions.SkipEnumViaOneOf = false
 
-			items, _, err := detectEnumViaOneOf(&openapi3.Schema{OneOf: tc.refs})
+			items, _, err := detectEnumViaOneOf(&model.Schema{OneOf: tc.refs})
 			require.NoError(t, err, "a non-enum oneOf belongs to the union generator")
 			assert.Nil(t, items)
 		})
@@ -895,7 +896,7 @@ func TestOapiSchemaToGoType_MultiTypeUnionRequires31(t *testing.T) {
 	globalState.typeMapping = DefaultTypeMapping
 
 	var out Schema
-	err := oapiSchemaToGoType(newGenContext(nil), &openapi3.Schema{Type: &openapi3.Types{"string", "number"}}, []string{"Value"}, &out)
+	err := oapiSchemaToGoType(newGenContext(nil), &model.Schema{Type: &model.Types{"string", "number"}}, []string{"Value"}, &out)
 	assert.ErrorContains(t, err, "unhandled Schema type")
 }
 
@@ -907,31 +908,31 @@ func TestSchemaUnionTypes(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		is31 bool
-		in   *openapi3.Types
+		in   *model.Types
 		want []string
 	}{
 		{
 			name: "union",
 			is31: true,
-			in:   &openapi3.Types{"string", "integer"},
+			in:   &model.Types{"string", "integer"},
 			want: []string{"string", "integer"},
 		},
 		{
 			name: "nullable union strips the null marker",
 			is31: true,
-			in:   &openapi3.Types{"integer", "string", "null"},
+			in:   &model.Types{"integer", "string", "null"},
 			want: []string{"integer", "string"},
 		},
 		{
 			name: "nullable single type is not a union",
 			is31: true,
-			in:   &openapi3.Types{"string", "null"},
+			in:   &model.Types{"string", "null"},
 			want: nil,
 		},
 		{
 			name: "single type is not a union",
 			is31: true,
-			in:   &openapi3.Types{"string"},
+			in:   &model.Types{"string"},
 			want: nil,
 		},
 		{
@@ -943,7 +944,7 @@ func TestSchemaUnionTypes(t *testing.T) {
 		{
 			name: "3.0 documents never produce a union",
 			is31: false,
-			in:   &openapi3.Types{"string", "integer"},
+			in:   &model.Types{"string", "integer"},
 			want: nil,
 		},
 	} {

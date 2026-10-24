@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 // This file generates the code that binds request parameters on the server,
@@ -102,7 +102,7 @@ type ScalarCodec struct {
 
 // newScalarCodec returns the codec for a scalar value of the generated
 // schema s, whose OpenAPI schema is spec, or nil when it isn't a scalar.
-func newScalarCodec(s Schema, spec *openapi3.Schema) *ScalarCodec {
+func newScalarCodec(s Schema, spec *model.Schema) *ScalarCodec {
 	goType := s.TypeDecl()
 	if spec == nil {
 		return nil
@@ -161,7 +161,7 @@ func newScalarCodec(s Schema, spec *openapi3.Schema) *ScalarCodec {
 
 // hasAdditionalProperties reports whether the schema allows properties it
 // doesn't declare.
-func hasAdditionalProperties(spec *openapi3.Schema) bool {
+func hasAdditionalProperties(spec *model.Schema) bool {
 	return spec.AdditionalProperties.Schema != nil || (spec.AdditionalProperties.Has != nil && *spec.AdditionalProperties.Has)
 }
 
@@ -376,7 +376,7 @@ type ParamCodec struct {
 
 // newParamCodec returns the codec for a value of the generated schema s,
 // whose OpenAPI schema is ref.
-func newParamCodec(s Schema, ref *openapi3.SchemaRef) *ParamCodec {
+func newParamCodec(s Schema, ref *model.SchemaRef) *ParamCodec {
 	if ref == nil || ref.Value == nil {
 		return &ParamCodec{Scalar: &ScalarCodec{goType: s.TypeDecl(), kind: kindJSON}, goType: s.TypeDecl()}
 	}
@@ -723,7 +723,7 @@ func (pd ParameterDefinition) Codec() *ParamCodec {
 
 // Codec returns the codec that binds and styles the response header.
 func (h ResponseHeaderDefinition) Codec() *ParamCodec {
-	c := newParamCodec(h.Schema, &openapi3.SchemaRef{Value: h.Schema.OAPISchema})
+	c := newParamCodec(h.Schema, &model.SchemaRef{Value: h.Schema.OAPISchema})
 	c.name, c.in, c.style, c.explode = h.Name, "header", "simple", h.Explode
 	return c
 }
@@ -758,7 +758,7 @@ type objectField struct {
 
 // newObjectCodec returns the codec for an object parameter of the generated
 // schema s, from the OpenAPI schema ref.
-func newObjectCodec(s Schema, ref *openapi3.SchemaRef) *ObjectCodec {
+func newObjectCodec(s Schema, ref *model.SchemaRef) *ObjectCodec {
 	if ref == nil || ref.Value == nil {
 		return nil
 	}
@@ -995,14 +995,14 @@ type deepCodec struct {
 
 // newDeepCodec returns the codec for a deepObject parameter of the
 // generated schema s, from the OpenAPI schema ref.
-func newDeepCodec(s Schema, ref *openapi3.SchemaRef) *deepCodec {
+func newDeepCodec(s Schema, ref *model.SchemaRef) *deepCodec {
 	d := &deepCodec{kinds: map[string]map[string]string{}}
 	d.root = d.kind(s, ref.Value, "$")
 	return d
 }
 
 // componentNamed returns the name of the component schema spec is, or "".
-func componentNamed(spec *openapi3.Schema) string {
+func componentNamed(spec *model.Schema) string {
 	if spec == nil || globalState.spec == nil || globalState.spec.Components == nil {
 		return ""
 	}
@@ -1018,7 +1018,7 @@ func componentNamed(spec *openapi3.Schema) string {
 // OpenAPI schema spec, at the position name, adding the objects it reaches to
 // d.kinds: "string", "int", "float", "bool", "any" (JSON scalars inferred
 // from the text), "object:<name>", "array:<kind>" or "map:<kind>".
-func (d *deepCodec) kind(s Schema, spec *openapi3.Schema, name string) string {
+func (d *deepCodec) kind(s Schema, spec *model.Schema, name string) string {
 	if spec == nil {
 		return "any"
 	}
@@ -1398,7 +1398,7 @@ walk_(%[3]s, tree_)
 // application/x-www-form-urlencoded body, into dst, a value of the generated
 // schema s, and set err when it can't be bound.
 func formBind(s Schema, form, dst string) string {
-	return newDeepCodec(s, &openapi3.SchemaRef{Value: s.OAPISchema}).bindForm(form, dst)
+	return newDeepCodec(s, &model.SchemaRef{Value: s.OAPISchema}).bindForm(form, dst)
 }
 
 // formEncode returns statements that add the properties of v to out, a

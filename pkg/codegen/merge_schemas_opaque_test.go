@@ -9,9 +9,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 const opaqueCommonSpec = `openapi: 3.0.3
@@ -601,25 +602,25 @@ func TestXGoTypeOnComposition(t *testing.T) {
 func TestTypeKeywords(t *testing.T) {
 	maxLen := uint64(3)
 	for name, tc := range map[string]struct {
-		schema openapi3.Schema
+		schema model.Schema
 		want   []string
 	}{
 		"documentation, nullability, validation and extensions": {
-			schema: openapi3.Schema{
+			schema: model.Schema{
 				Title: "t", Description: "d", Default: 1, Example: 2, Deprecated: true,
 				ReadOnly: true, WriteOnly: true, Nullable: true,
 				MinLength: 1, MaxLength: &maxLen, Pattern: "^a", UniqueItems: true,
 				Extensions: map[string]any{"x-go-type-skip-optional-pointer": true},
 			},
 		},
-		"3.1 null type":  {schema: openapi3.Schema{Type: &openapi3.Types{"null"}}},
-		"empty required": {schema: openapi3.Schema{Required: []string{}}},
-		"type":           {schema: openapi3.Schema{Type: &openapi3.Types{"object"}}, want: []string{"type"}},
-		"nullable type":  {schema: openapi3.Schema{Type: &openapi3.Types{"string", "null"}}, want: []string{"type"}},
-		"format":         {schema: openapi3.Schema{Format: "date-time"}, want: []string{"format"}},
-		"enum":           {schema: openapi3.Schema{Enum: []any{"a"}}, want: []string{"enum"}},
+		"3.1 null type":  {schema: model.Schema{Type: &model.Types{"null"}}},
+		"empty required": {schema: model.Schema{Required: []string{}}},
+		"type":           {schema: model.Schema{Type: &model.Types{"object"}}, want: []string{"type"}},
+		"nullable type":  {schema: model.Schema{Type: &model.Types{"string", "null"}}, want: []string{"type"}},
+		"format":         {schema: model.Schema{Format: "date-time"}, want: []string{"format"}},
+		"enum":           {schema: model.Schema{Enum: []any{"a"}}, want: []string{"enum"}},
 		"object": {
-			schema: openapi3.Schema{Required: []string{"a"}, Properties: openapi3.Schemas{"a": nil}},
+			schema: model.Schema{Required: []string{"a"}, Properties: model.Schemas{"a": nil}},
 			want:   []string{"required", "properties"},
 		},
 	} {
@@ -630,13 +631,13 @@ func TestTypeKeywords(t *testing.T) {
 }
 
 func TestAnnotatesOnly(t *testing.T) {
-	assert.True(t, annotatesOnly(&openapi3.SchemaRef{Value: &openapi3.Schema{Nullable: true}}))
-	assert.False(t, annotatesOnly(&openapi3.SchemaRef{Ref: "#/components/schemas/A", Value: &openapi3.Schema{}}),
+	assert.True(t, annotatesOnly(&model.SchemaRef{Value: &model.Schema{Nullable: true}}))
+	assert.False(t, annotatesOnly(&model.SchemaRef{Ref: "#/components/schemas/A", Value: &model.Schema{}}),
 		"a $ref contributes a schema")
-	assert.False(t, annotatesOnly(&openapi3.SchemaRef{Value: &openapi3.Schema{
+	assert.False(t, annotatesOnly(&model.SchemaRef{Value: &model.Schema{
 		Extensions: map[string]any{extPropGoType: "T"},
 	}}), "an x-go-type member is a type")
-	assert.False(t, annotatesOnly(&openapi3.SchemaRef{Value: &openapi3.Schema{Type: &openapi3.Types{"object"}}}))
+	assert.False(t, annotatesOnly(&model.SchemaRef{Value: &model.Schema{Type: &model.Types{"object"}}}))
 }
 
 // TestExternalAllOfMemberRestatedType: a type or format next to a schema in

@@ -34,9 +34,9 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"golang.org/x/tools/imports"
 
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
 )
 
@@ -49,7 +49,7 @@ var templates embed.FS
 // else so that we can easily track it.
 var globalState struct {
 	options Configuration
-	spec    *openapi3.T
+	spec    *model.Document
 	// is31 is true when the loaded spec declares OpenAPI version >=3.1.
 	// All version-aware behavior (e.g. nullable detection, webhook emission)
 	// reads from this field. Do NOT expose this field to templates --
@@ -169,7 +169,7 @@ func constructImportMapping(importMapping map[string]string) importMap {
 // Generate uses the Go templating engine to generate all of our server wrappers from
 // the descriptions we've built up above from the schema objects.
 // opts defines
-func Generate(spec *openapi3.T, opts Configuration) (string, error) {
+func Generate(spec *model.Document, opts Configuration) (string, error) {
 	if err := ValidateOpenAPIVersion(spec); err != nil {
 		return "", err
 	}
@@ -308,7 +308,7 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 	// Webhooks (OpenAPI 3.1+) flow through the same OperationDefinition
 	// shape as paths but render via webhook-specific templates. The
 	// gather walks swagger.Webhooks unconditionally -- the map is only
-	// populated by kin-openapi for 3.1+ documents, so 3.0 specs return
+	// populated for 3.1+ documents, so 3.0 specs return
 	// an empty slice naturally. allOps is used for cross-cutting passes
 	// (type defs, import gathering); ops and webhookOps are passed
 	// separately to path-vs-webhook template generators.
@@ -572,7 +572,7 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 // collectComponentTypes returns the TypeDefinitions collected from
 // components/{schemas,parameters,responses,requestBodies,securitySchemes}.
 // These are the "outer" types gated by Generate.Models.
-func collectComponentTypes(t *template.Template, swagger *openapi3.T, excludeSchemas []string) ([]TypeDefinition, error) {
+func collectComponentTypes(t *template.Template, swagger *model.Document, excludeSchemas []string) ([]TypeDefinition, error) {
 	if swagger.Components == nil {
 		return nil, nil
 	}
@@ -670,7 +670,7 @@ func renderBoilerplate(t *template.Template, allEmitted []TypeDefinition) (enums
 
 // GenerateTypesForSchemas generates type definitions for any custom types defined in the
 // components/schemas section of the Swagger spec.
-func GenerateTypesForSchemas(t *template.Template, schemas map[string]*openapi3.SchemaRef, excludeSchemas []string) ([]TypeDefinition, error) {
+func GenerateTypesForSchemas(t *template.Template, schemas map[string]*model.SchemaRef, excludeSchemas []string) ([]TypeDefinition, error) {
 	excludeSchemasMap := make(map[string]bool)
 	for _, schema := range excludeSchemas {
 		excludeSchemasMap[schema] = true
@@ -710,7 +710,7 @@ func GenerateTypesForSchemas(t *template.Template, schemas map[string]*openapi3.
 
 // GenerateTypesForParameters generates type definitions for any custom types defined in the
 // components/parameters section of the Swagger spec.
-func GenerateTypesForParameters(t *template.Template, params map[string]*openapi3.ParameterRef) ([]TypeDefinition, error) {
+func GenerateTypesForParameters(t *template.Template, params map[string]*model.ParameterRef) ([]TypeDefinition, error) {
 	var types []TypeDefinition
 	for _, paramName := range SortedMapKeys(params) {
 		paramOrRef := params[paramName]
@@ -773,7 +773,7 @@ func GenerateTypesForParameters(t *template.Template, params map[string]*openapi
 // generate-types-for-anonymous-schemas) references the model type declared
 // here instead of a synthetic <Name>JSONResponseBody type that nothing
 // declares (issue #2539).
-func componentResponseTypeName(responseName string, responseOrRef *openapi3.ResponseRef, mediaType string) (string, error) {
+func componentResponseTypeName(responseName string, responseOrRef *model.ResponseRef, mediaType string) (string, error) {
 	goTypeName, err := renameResponse(responseName, responseOrRef)
 	if err != nil {
 		return "", fmt.Errorf("error making name for components/responses/%s: %w", responseName, err)
@@ -823,7 +823,7 @@ func componentResponseRefTypeName(ref string, mediaType string) (string, error) 
 
 // GenerateTypesForResponses generates type definitions for any custom types defined in the
 // components/responses section of the Swagger spec.
-func GenerateTypesForResponses(t *template.Template, responses openapi3.ResponseBodies) ([]TypeDefinition, error) {
+func GenerateTypesForResponses(t *template.Template, responses model.ResponseBodies) ([]TypeDefinition, error) {
 	var types []TypeDefinition
 
 	for _, responseName := range SortedMapKeys(responses) {
@@ -882,7 +882,7 @@ func GenerateTypesForResponses(t *template.Template, responses openapi3.Response
 
 // GenerateTypesForRequestBodies generates type definitions for any custom types defined in the
 // components/requestBodies section of the Swagger spec.
-func GenerateTypesForRequestBodies(t *template.Template, bodies map[string]*openapi3.RequestBodyRef) ([]TypeDefinition, error) {
+func GenerateTypesForRequestBodies(t *template.Template, bodies map[string]*model.RequestBodyRef) ([]TypeDefinition, error) {
 	var types []TypeDefinition
 
 	for _, requestBodyName := range SortedMapKeys(bodies) {
@@ -1394,14 +1394,14 @@ func OperationSchemaImports(s *Schema) (map[string]goImport, error) {
 	res := map[string]goImport{}
 
 	for _, p := range s.Properties {
-		imprts, err := GoSchemaImports(&openapi3.SchemaRef{Value: p.Schema.OAPISchema})
+		imprts, err := GoSchemaImports(&model.SchemaRef{Value: p.Schema.OAPISchema})
 		if err != nil {
 			return nil, err
 		}
 		maps.Copy(res, imprts)
 	}
 
-	imprts, err := GoSchemaImports(&openapi3.SchemaRef{Value: s.OAPISchema})
+	imprts, err := GoSchemaImports(&model.SchemaRef{Value: s.OAPISchema})
 	if err != nil {
 		return nil, err
 	}
@@ -1444,7 +1444,7 @@ func OperationImports(ops []OperationDefinition) (map[string]goImport, error) {
 	return res, nil
 }
 
-func GetTypeDefinitionsImports(swagger *openapi3.T, excludeSchemas []string) (map[string]goImport, error) {
+func GetTypeDefinitionsImports(swagger *model.Document, excludeSchemas []string) (map[string]goImport, error) {
 	res := map[string]goImport{}
 	if swagger.Components == nil {
 		return res, nil
@@ -1476,7 +1476,7 @@ func GetTypeDefinitionsImports(swagger *openapi3.T, excludeSchemas []string) (ma
 	return res, nil
 }
 
-func GoSchemaImports(schemas ...*openapi3.SchemaRef) (map[string]goImport, error) {
+func GoSchemaImports(schemas ...*model.SchemaRef) (map[string]goImport, error) {
 	res := map[string]goImport{}
 	for _, sref := range schemas {
 		if sref == nil {
@@ -1514,7 +1514,7 @@ func GoSchemaImports(schemas ...*openapi3.SchemaRef) (map[string]goImport, error
 	return res, nil
 }
 
-func GetSchemaImports(schemas map[string]*openapi3.SchemaRef, excludeSchemas []string) (map[string]goImport, error) {
+func GetSchemaImports(schemas map[string]*model.SchemaRef, excludeSchemas []string) (map[string]goImport, error) {
 	res := map[string]goImport{}
 	excludeSchemasMap := make(map[string]bool)
 	for _, schema := range excludeSchemas {
@@ -1534,7 +1534,7 @@ func GetSchemaImports(schemas map[string]*openapi3.SchemaRef, excludeSchemas []s
 	return res, nil
 }
 
-func GetRequestBodiesImports(bodies map[string]*openapi3.RequestBodyRef) (map[string]goImport, error) {
+func GetRequestBodiesImports(bodies map[string]*model.RequestBodyRef) (map[string]goImport, error) {
 	res := map[string]goImport{}
 	for _, r := range bodies {
 		response := r.Value
@@ -1553,7 +1553,7 @@ func GetRequestBodiesImports(bodies map[string]*openapi3.RequestBodyRef) (map[st
 	return res, nil
 }
 
-func GetResponsesImports(responses map[string]*openapi3.ResponseRef) (map[string]goImport, error) {
+func GetResponsesImports(responses map[string]*model.ResponseRef) (map[string]goImport, error) {
 	res := map[string]goImport{}
 	for _, r := range responses {
 		response := r.Value
@@ -1572,7 +1572,7 @@ func GetResponsesImports(responses map[string]*openapi3.ResponseRef) (map[string
 	return res, nil
 }
 
-func GetParametersImports(params map[string]*openapi3.ParameterRef) (map[string]goImport, error) {
+func GetParametersImports(params map[string]*model.ParameterRef) (map[string]goImport, error) {
 	res := map[string]goImport{}
 	for _, param := range params {
 		if param.Value == nil {
@@ -1587,6 +1587,6 @@ func GetParametersImports(params map[string]*openapi3.ParameterRef) (map[string]
 	return res, nil
 }
 
-func SetGlobalStateSpec(spec *openapi3.T) {
+func SetGlobalStateSpec(spec *model.Document) {
 	globalState.spec = spec
 }

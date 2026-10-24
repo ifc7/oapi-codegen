@@ -12,7 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 // allOfOptions are what the merge of one allOf needs to know about it, which
@@ -20,13 +20,13 @@ import (
 // where they would reach the generation of the merged result too.
 type allOfOptions struct {
 	// owner is the schema whose allOf is merged (see listsFlattened).
-	owner *openapi3.Schema
+	owner *model.Schema
 	// unionEnums merges the members' enums into their union rather than
 	// their intersection (x-oapi-codegen-enum-merge: union).
 	unionEnums bool
 }
 
-func mergeSchemas(ctx genContext, opts allOfOptions, allOf []*openapi3.SchemaRef, path []string) (Schema, error) {
+func mergeSchemas(ctx genContext, opts allOfOptions, allOf []*model.SchemaRef, path []string) (Schema, error) {
 	n := len(allOf)
 
 	// A child that is only an allOf of the parent that lists it is not the
@@ -77,7 +77,7 @@ func mergeSchemas(ctx genContext, opts allOfOptions, allOf []*openapi3.SchemaRef
 	}
 
 	merged := newAllOfMerge(ctx, opts)
-	merged.composition = &openapi3.Schema{AllOf: allOf}
+	merged.composition = &model.Schema{AllOf: allOf}
 	// The $refs of the members merged so far, so that a nested allOf that
 	// refers back to one is not flattened into itself.
 	seenTopLevel := make(map[string]bool)
@@ -115,7 +115,7 @@ func mergeSchemas(ctx genContext, opts allOfOptions, allOf []*openapi3.SchemaRef
 	if components := merged.components; len(components) > 1 {
 		ctx.composition.unionComponents[&schema] = components
 	}
-	return generateGoSchema(ctx, openapi3.NewSchemaRef("", &schema), path)
+	return generateGoSchema(ctx, model.NewSchemaRef("", &schema), path)
 }
 
 // memberValue returns a copy of an allOf member's schema, with extensions
@@ -126,9 +126,9 @@ func mergeSchemas(ctx genContext, opts allOfOptions, allOf []*openapi3.SchemaRef
 // Reading a schema the merge can't read is an error (see isOpaqueSchema). Every
 // read of a member goes through here, so however deep a merge flattens nested
 // allOfs and array items, it never copies such a schema's body.
-func memberValue(ref *openapi3.SchemaRef) (openapi3.Schema, error) {
+func memberValue(ref *model.SchemaRef) (model.Schema, error) {
 	if isOpaqueSchema(ref) {
-		return openapi3.Schema{}, opaqueMergeError(ref, ref, "other schemas")
+		return model.Schema{}, opaqueMergeError(ref, ref, "other schemas")
 	}
 	schema := *ref.Value
 	schema.Extensions = combinedSchemaExtensions(ref)
@@ -146,7 +146,7 @@ func memberValue(ref *openapi3.SchemaRef) (openapi3.Schema, error) {
 //     see.
 //
 // Such a schema can be annotated, but not merged with other schemas.
-func isOpaqueSchema(ref *openapi3.SchemaRef) bool {
+func isOpaqueSchema(ref *model.SchemaRef) bool {
 	if ref == nil {
 		return false
 	}
@@ -159,7 +159,7 @@ func isOpaqueSchema(ref *openapi3.SchemaRef) bool {
 
 // isRefInExternalDocument reports whether ref points into another document.
 // A local ref does when it names a component schema that is only a $ref into
-// another document, directly or through other such components: kin-openapi
+// another document, directly or through other such components: the loader
 // hands us the other document's schema for it, with nothing to say where it
 // came from.
 //
@@ -188,21 +188,21 @@ func isRefInExternalDocument(ref string) bool {
 
 // opaqueSchemaFor returns the opaque schema (see isOpaqueSchema) an allOf member
 // stands for, or nil (see standsFor).
-func opaqueSchemaFor(ref *openapi3.SchemaRef) *openapi3.SchemaRef {
+func opaqueSchemaFor(ref *model.SchemaRef) *model.SchemaRef {
 	return standsFor(ref, nil, isOpaqueSchema)
 }
 
 // refSchemaFor returns the $ref an allOf member stands for, or nil (see
 // standsFor).
-func refSchemaFor(ref *openapi3.SchemaRef) *openapi3.SchemaRef {
-	return standsFor(ref, nil, func(r *openapi3.SchemaRef) bool { return r.Ref != "" })
+func refSchemaFor(ref *model.SchemaRef) *model.SchemaRef {
+	return standsFor(ref, nil, func(r *model.SchemaRef) bool { return r.Ref != "" })
 }
 
 // standsFor returns the schema an allOf member stands for, when is reports
 // true for it, or nil. That is the member itself, or else, when the member is
 // a composition, the member of that composition that its other members only
 // annotate (see annotates): such a member generates as that schema's type.
-func standsFor(ref *openapi3.SchemaRef, seen map[*openapi3.Schema]bool, is func(*openapi3.SchemaRef) bool) *openapi3.SchemaRef {
+func standsFor(ref *model.SchemaRef, seen map[*model.Schema]bool, is func(*model.SchemaRef) bool) *model.SchemaRef {
 	if ref == nil {
 		return nil
 	}
@@ -214,10 +214,10 @@ func standsFor(ref *openapi3.SchemaRef, seen map[*openapi3.Schema]bool, is func(
 		return nil
 	}
 	if seen == nil {
-		seen = make(map[*openapi3.Schema]bool)
+		seen = make(map[*model.Schema]bool)
 	}
 	seen[s] = true
-	m, target, offender := annotatedMember(compositionMembers(s), func(m *openapi3.SchemaRef) *openapi3.SchemaRef {
+	m, target, offender := annotatedMember(compositionMembers(s), func(m *model.SchemaRef) *model.SchemaRef {
 		return standsFor(m, seen, is)
 	})
 	if m == nil || offender != nil {
@@ -229,7 +229,7 @@ func standsFor(ref *openapi3.SchemaRef, seen map[*openapi3.Schema]bool, is func(
 // annotatedMember returns the first of members that target maps to a schema,
 // that schema, and the first other member that doesn't only annotate it (see
 // annotates), or nil when they all do. m is nil when target maps no member.
-func annotatedMember(members []*openapi3.SchemaRef, target func(*openapi3.SchemaRef) *openapi3.SchemaRef) (m, t, offender *openapi3.SchemaRef) {
+func annotatedMember(members []*model.SchemaRef, target func(*model.SchemaRef) *model.SchemaRef) (m, t, offender *model.SchemaRef) {
 	for _, m := range members {
 		t := target(m)
 		if t == nil {
@@ -254,7 +254,7 @@ func annotatedMember(members []*openapi3.SchemaRef, target func(*openapi3.Schema
 // anyOf whose branches only add constraints (see isConstraintOnlyUnion). A
 // restated type is merged, and only annotates the $ref it restates, so
 // `{type: object, allOf: [$ref X]}` stays X too.
-func compositionMembers(s *openapi3.Schema) []*openapi3.SchemaRef {
+func compositionMembers(s *model.Schema) []*model.SchemaRef {
 	// The schema's own oneOf or anyOf may only add constraints to what its
 	// allOf members declare, so judge them against the whole schema.
 	shaping := *withoutConstraintOnlyUnions(s, s)
@@ -264,9 +264,9 @@ func compositionMembers(s *openapi3.Schema) []*openapi3.SchemaRef {
 	}
 	own := *s
 	own.AllOf = nil
-	members := make([]*openapi3.SchemaRef, 0, len(s.AllOf)+1)
+	members := make([]*model.SchemaRef, 0, len(s.AllOf)+1)
 	members = append(members, s.AllOf...)
-	return append(members, &openapi3.SchemaRef{Value: &own})
+	return append(members, &model.SchemaRef{Value: &own})
 }
 
 // annotatedRefMember returns the member of allOf that stands for a $ref (see
@@ -277,7 +277,7 @@ func compositionMembers(s *openapi3.Schema) []*openapi3.SchemaRef {
 // an alias of the $ref. When the $ref leads back to the component, through
 // compositions that are aliases in turn, that alias would be an alias of
 // itself, which Go rejects, so such a composition is merged instead.
-func annotatedRefMember(ctx genContext, owner *openapi3.Schema, allOf []*openapi3.SchemaRef) *openapi3.SchemaRef {
+func annotatedRefMember(ctx genContext, owner *model.Schema, allOf []*model.SchemaRef) *model.SchemaRef {
 	m, target, offender := annotatedMember(allOf, refSchemaFor)
 	if m == nil || offender != nil || (ctx.rootPosition && aliasesBack(ctx, target)) || listsComposition(owner, target) {
 		return nil
@@ -288,7 +288,7 @@ func annotatedRefMember(ctx genContext, owner *openapi3.Schema, allOf []*openapi
 // listsComposition reports whether target's oneOf or anyOf lists the
 // composition being merged: target is the parent of a child that is an allOf
 // of it (see listsFlattened), so the child isn't target's type.
-func listsComposition(owner *openapi3.Schema, target *openapi3.SchemaRef) bool {
+func listsComposition(owner *model.Schema, target *model.SchemaRef) bool {
 	if target == nil || target.Value == nil || owner == nil {
 		return false
 	}
@@ -303,13 +303,13 @@ func listsComposition(owner *openapi3.Schema, target *openapi3.SchemaRef) bool {
 // annotates reports whether an allOf member only annotates target, the member
 // the composition stands for: it only annotates (see annotatesOnly), it
 // restates target's type (see restatesType), or it is the same $ref again.
-func annotates(member, target *openapi3.SchemaRef) bool {
+func annotates(member, target *model.SchemaRef) bool {
 	// A oneOf or anyOf in the member may only add constraints to the target,
 	// such as `oneOf: [{type: object, required: [email]}, ...]` next to an
 	// object; the member's own lack of a type doesn't make them types.
 	if member != nil && member.Ref == "" && member.Value != nil && target.Value != nil {
 		if v := withoutConstraintOnlyUnions(member.Value, target.Value); v != member.Value {
-			member = &openapi3.SchemaRef{Value: v}
+			member = &model.SchemaRef{Value: v}
 		}
 	}
 	if annotatesOnly(member) || restatesType(member, target) {
@@ -328,7 +328,7 @@ func annotates(member, target *openapi3.SchemaRef) bool {
 // check the restatement; its body never is. When it doesn't say what it is at
 // the top, as an allOf of its own doesn't, a restated type is taken at its
 // word.
-func restatesType(member, target *openapi3.SchemaRef) bool {
+func restatesType(member, target *model.SchemaRef) bool {
 	if !inlineWithoutOwnType(member) {
 		return false
 	}
@@ -357,17 +357,17 @@ func restatesType(member, target *openapi3.SchemaRef) bool {
 // type, or object when it has properties or additionalProperties, narrowed by
 // the types its allOf members declare, the way the merge intersects them. It
 // returns nil when the schema doesn't say, or says no value is allowed.
-func declaredTypes(s *openapi3.Schema) []string {
-	seen := make(map[*openapi3.Schema]bool)
-	var declared func(s *openapi3.Schema) []string
-	declared = func(s *openapi3.Schema) []string {
+func declaredTypes(s *model.Schema) []string {
+	seen := make(map[*model.Schema]bool)
+	var declared func(s *model.Schema) []string
+	declared = func(s *model.Schema) []string {
 		if s == nil || seen[s] {
 			return nil
 		}
 		seen[s] = true
 		types := nonNullTypes(s.Type)
 		if len(types) == 0 && (len(s.Properties) > 0 || s.AdditionalProperties.Schema != nil || s.AdditionalProperties.Has != nil) {
-			types = []string{openapi3.TypeObject}
+			types = []string{model.TypeObject}
 		}
 		for _, m := range s.AllOf {
 			if m == nil {
@@ -397,7 +397,7 @@ func sameTypes(a, b []string) bool {
 // that stands for a $ref (see refSchemaFor). It follows up to 100 such
 // aliases, far more than any spec chains, and treats a longer chain as a
 // cycle, so the composition is merged rather than looping.
-func aliasesBack(ctx genContext, target *openapi3.SchemaRef) bool {
+func aliasesBack(ctx genContext, target *model.SchemaRef) bool {
 	for range 100 {
 		s := target.Value
 		if s == nil {
@@ -409,7 +409,7 @@ func aliasesBack(ctx genContext, target *openapi3.SchemaRef) bool {
 		if len(s.AllOf) == 0 {
 			return false
 		}
-		next := refSchemaFor(&openapi3.SchemaRef{Value: s})
+		next := refSchemaFor(&model.SchemaRef{Value: s})
 		if next == nil {
 			return false
 		}
@@ -422,11 +422,11 @@ func aliasesBack(ctx genContext, target *openapi3.SchemaRef) bool {
 // the order the merge flattens them: each before the members of its own allOf.
 // A schema reached again is yielded again but not descended into again, so a
 // cycle ends. A ref with no schema is skipped. Break to stop early.
-func allOfTree(ref *openapi3.SchemaRef) iter.Seq[*openapi3.SchemaRef] {
-	return func(yield func(*openapi3.SchemaRef) bool) {
-		seen := make(map[*openapi3.Schema]bool)
-		var walk func(r *openapi3.SchemaRef) bool
-		walk = func(r *openapi3.SchemaRef) bool {
+func allOfTree(ref *model.SchemaRef) iter.Seq[*model.SchemaRef] {
+	return func(yield func(*model.SchemaRef) bool) {
+		seen := make(map[*model.Schema]bool)
+		var walk func(r *model.SchemaRef) bool
+		walk = func(r *model.SchemaRef) bool {
 			if r == nil || r.Value == nil {
 				return true
 			}
@@ -451,7 +451,7 @@ func allOfTree(ref *openapi3.SchemaRef) iter.Seq[*openapi3.SchemaRef] {
 // opaqueSchemaWithin returns an opaque schema (see isOpaqueSchema) that
 // merging ref would have to read, or nil: ref itself, or an opaque member of
 // an allOf that the merge flattens out of ref, however deep.
-func opaqueSchemaWithin(ref *openapi3.SchemaRef) *openapi3.SchemaRef {
+func opaqueSchemaWithin(ref *model.SchemaRef) *model.SchemaRef {
 	for r := range allOfTree(ref) {
 		if isOpaqueSchema(r) {
 			return r
@@ -466,7 +466,7 @@ func opaqueSchemaWithin(ref *openapi3.SchemaRef) *openapi3.SchemaRef {
 // composition's type. Any other combination would need fields the merge can't
 // read, so it is an error, as is a member whose own allOf includes an opaque
 // schema that merging it would flatten.
-func opaqueMember(allOf []*openapi3.SchemaRef) (*openapi3.SchemaRef, error) {
+func opaqueMember(allOf []*model.SchemaRef) (*model.SchemaRef, error) {
 	m, target, offender := annotatedMember(allOf, opaqueSchemaFor)
 	if offender != nil {
 		return nil, opaqueMergeError(m, target, describeAllOfMember(offender))
@@ -490,7 +490,7 @@ func opaqueMember(allOf []*openapi3.SchemaRef) (*openapi3.SchemaRef, error) {
 // members that only annotate it: the member's type. Nullability needs nothing
 // here, since schemaIsNullable finds a nullable member wherever the type is
 // used. An annotating member's description describes the result.
-func generateAnnotated(ctx genContext, member *openapi3.SchemaRef, allOf []*openapi3.SchemaRef, path []string) (Schema, error) {
+func generateAnnotated(ctx genContext, member *model.SchemaRef, allOf []*model.SchemaRef, path []string) (Schema, error) {
 	out, err := generateGoSchema(ctx, member, path)
 	if err != nil {
 		return Schema{}, err
@@ -543,7 +543,7 @@ func generateAnnotated(ctx genContext, member *openapi3.SchemaRef, allOf []*open
 // annotatesOnly reports whether an allOf member only annotates the others: it
 // is inline, asks for no Go type of its own (see inlineWithoutOwnType), and
 // has no keyword that shapes a Go type (see typeKeywords).
-func annotatesOnly(ref *openapi3.SchemaRef) bool {
+func annotatesOnly(ref *model.SchemaRef) bool {
 	return inlineWithoutOwnType(ref) && len(typeKeywords(*ref.Value)) == 0
 }
 
@@ -557,7 +557,7 @@ var ownTypeExtensions = []string{extPropGoType, extEnumVarNames, extEnumNames}
 
 // inlineWithoutOwnType reports whether ref is an inline schema that asks for
 // no Go type of its own (see ownTypeExtensions).
-func inlineWithoutOwnType(ref *openapi3.SchemaRef) bool {
+func inlineWithoutOwnType(ref *model.SchemaRef) bool {
 	if ref == nil || ref.Ref != "" || ref.Value == nil {
 		return false
 	}
@@ -572,7 +572,7 @@ func inlineWithoutOwnType(ref *openapi3.SchemaRef) bool {
 // typeKeywords lists the keywords of a schema that shape a Go type, by their
 // JSON names (see shallowTypeKeywords), leaving out a oneOf or anyOf whose
 // branches only add constraints (see isConstraintOnlyUnion).
-func typeKeywords(s openapi3.Schema) []string {
+func typeKeywords(s model.Schema) []string {
 	return shallowTypeKeywords(*withoutConstraintOnlyUnions(&s, nil))
 }
 
@@ -581,8 +581,8 @@ func typeKeywords(s openapi3.Schema) []string {
 // are all of them but documentation, nullability, validation constraints
 // oapi-codegen doesn't turn into Go types (minLength, pattern, maxItems, ...)
 // and extensions. It clears those and lists what's left, so a keyword
-// kin-openapi adds later counts as shaping the type until it's added here.
-func shallowTypeKeywords(s openapi3.Schema) []string {
+// added to the model later counts as shaping the type until it's added here.
+func shallowTypeKeywords(s model.Schema) []string {
 	// Documentation.
 	s.Title, s.Description, s.Comment = "", "", ""
 	s.Default, s.Example, s.Examples = nil, nil, nil
@@ -595,12 +595,12 @@ func shallowTypeKeywords(s openapi3.Schema) []string {
 	}
 	// Validation.
 	s.Min, s.Max, s.MultipleOf = nil, nil, nil
-	s.ExclusiveMin, s.ExclusiveMax = openapi3.ExclusiveBound{}, openapi3.ExclusiveBound{}
+	s.ExclusiveMin, s.ExclusiveMax = model.ExclusiveBound{}, model.ExclusiveBound{}
 	s.MinLength, s.MaxLength, s.Pattern = 0, nil, ""
 	s.MinItems, s.MaxItems, s.UniqueItems = 0, nil, false
 	s.MinProps, s.MaxProps = 0, nil
 	s.Not = nil
-	// Extensions, and kin-openapi's source locations.
+	// Extensions and source locations.
 	s.Extensions, s.Origin = nil, nil
 
 	var keywords []string
@@ -618,7 +618,7 @@ func shallowTypeKeywords(s openapi3.Schema) []string {
 
 // opaqueMergeError reports an allOf that would merge member, which is or
 // includes the opaque schema target, with what with describes.
-func opaqueMergeError(member, target *openapi3.SchemaRef, with string) error {
+func opaqueMergeError(member, target *model.SchemaRef, with string) error {
 	what := describeAllOfMember(member)
 	if member != target {
 		what += " (whose allOf includes " + describeAllOfMember(target) + ")"
@@ -646,7 +646,7 @@ func opaqueMergeError(member, target *openapi3.SchemaRef, with string) error {
 
 // describeAllOfMember names an allOf member for an error message: its $ref,
 // or what an inline member declares.
-func describeAllOfMember(ref *openapi3.SchemaRef) string {
+func describeAllOfMember(ref *model.SchemaRef) string {
 	if ref.Ref != "" {
 		if ref.Ref[0] == '#' && isRefInExternalDocument(ref.Ref) {
 			return ref.Ref + " (a $ref to another document)"
@@ -678,7 +678,7 @@ func describeAllOfMember(ref *openapi3.SchemaRef) string {
 // allOfMemberLabel names an allOf member for error messages: the label the
 // generator gave a member it made up, the member's $ref, or its place in the
 // allOf of the member labeled parent ("" for the composition itself).
-func allOfMemberLabel(ctx genContext, parent string, member *openapi3.SchemaRef, i int) string {
+func allOfMemberLabel(ctx genContext, parent string, member *model.SchemaRef, i int) string {
 	if label, ok := ctx.composition.memberLabels[member]; ok {
 		return label
 	}
@@ -722,7 +722,7 @@ func allOfMemberLabel(ctx genContext, parent string, member *openapi3.SchemaRef,
 type allOfMerge struct {
 	ctx genContext
 	allOfOptions
-	schema openapi3.Schema
+	schema model.Schema
 	// properties, items and additional collect each member's schema for
 	// those positions, merged by result.
 	properties    map[string][]labeledSchema
@@ -741,10 +741,10 @@ type allOfMerge struct {
 	nullInType bool
 	// composition is the allOf being merged. A member's oneOf or anyOf may
 	// restate the type another member declares (see isConstraintOnlyUnion).
-	composition *openapi3.Schema
+	composition *model.Schema
 	// flattening holds the members' schemas the merge has reached, directly
 	// or in a nested allOf (see listsFlattened).
-	flattening map[*openapi3.Schema]bool
+	flattening map[*model.Schema]bool
 	// components are the oneOfs and anyOfs the members bring, each a union of
 	// its own.
 	components []unionComponent
@@ -758,12 +758,12 @@ type allOfMerge struct {
 // variant replaces only the keys its own union owns (see
 // Schema.UnionOwnedKeys).
 type unionComponent struct {
-	branches      openapi3.SchemaRefs
+	branches      model.SchemaRefs
 	anyOf         bool
-	discriminator *openapi3.Discriminator
+	discriminator *model.Discriminator
 	// ref is the member when it is a $ref to a schema that is only this
 	// union, which then gets As* and From* of its own.
-	ref *openapi3.SchemaRef
+	ref *model.SchemaRef
 	// label names the member the union comes from, for errors.
 	label string
 }
@@ -792,7 +792,7 @@ func (m *allOfMerge) addComponent(c unionComponent) {
 // whose variants its mapping names or, without a mapping, the one whose
 // variants all have the property. A value has one discriminator, so it is an
 // error for it to fit several unions, or none.
-func (m *allOfMerge) placeDiscriminator(d *openapi3.Discriminator) error {
+func (m *allOfMerge) placeDiscriminator(d *model.Discriminator) error {
 	var carriers, labels []string
 	var candidates []int
 	for i, c := range m.components {
@@ -821,7 +821,7 @@ func (m *allOfMerge) placeDiscriminator(d *openapi3.Discriminator) error {
 // unionFits reports whether the discriminator d can tell the union's branches
 // apart: its mapping names one of them, or, without a mapping, every branch
 // but a null one declares its property.
-func unionFits(branches openapi3.SchemaRefs, d *openapi3.Discriminator) bool {
+func unionFits(branches model.SchemaRefs, d *model.Discriminator) bool {
 	if len(d.Mapping) > 0 {
 		for _, b := range branches {
 			for _, target := range d.Mapping {
@@ -846,8 +846,8 @@ func unionFits(branches openapi3.SchemaRefs, d *openapi3.Discriminator) bool {
 }
 
 // sameBranches reports whether two lists of union branches are the same.
-func sameBranches(a, b openapi3.SchemaRefs) bool {
-	return slices.EqualFunc(a, b, func(x, y *openapi3.SchemaRef) bool {
+func sameBranches(a, b model.SchemaRefs) bool {
+	return slices.EqualFunc(a, b, func(x, y *model.SchemaRef) bool {
 		return x == y || (x != nil && y != nil && sameSchema(x, y))
 	})
 }
@@ -855,14 +855,14 @@ func sameBranches(a, b openapi3.SchemaRefs) bool {
 // isUnionOnly reports whether a schema is only a oneOf or anyOf: a union type
 // with nothing else that shapes a Go type but its discriminator and a
 // restated `type: object`.
-func isUnionOnly(v openapi3.Schema) bool {
+func isUnionOnly(v model.Schema) bool {
 	if (len(v.OneOf) == 0) == (len(v.AnyOf) == 0) {
 		return false
 	}
 	own := v
 	own.OneOf, own.AnyOf, own.Discriminator, own.Required = nil, nil, nil, nil
 	for _, keyword := range shallowTypeKeywords(own) {
-		if keyword != "type" || !sameTypes(nonNullTypes(own.Type), []string{openapi3.TypeObject}) {
+		if keyword != "type" || !sameTypes(nonNullTypes(own.Type), []string{model.TypeObject}) {
 			return false
 		}
 	}
@@ -872,7 +872,7 @@ func isUnionOnly(v openapi3.Schema) bool {
 // markFlattening records member, and the members of its allOf, all the way
 // down, as schemas the merge flattens (see listsFlattened), before any is
 // merged, so which unions are left out doesn't depend on the members' order.
-func (m *allOfMerge) markFlattening(member *openapi3.SchemaRef) {
+func (m *allOfMerge) markFlattening(member *model.SchemaRef) {
 	for r := range allOfTree(member) {
 		m.flattening[r.Value] = true
 	}
@@ -885,7 +885,7 @@ func (m *allOfMerge) markFlattening(member *openapi3.SchemaRef) {
 // `Cat: {allOf: [$ref Pet, {...}]}`. Merging Pet into Cat would make every
 // child a union of all of them, with Cat.AsDog(); but a Cat already is the Cat
 // branch, so the list says nothing more about it and is left out.
-func (m *allOfMerge) listsFlattened(branches openapi3.SchemaRefs) bool {
+func (m *allOfMerge) listsFlattened(branches model.SchemaRefs) bool {
 	for _, b := range branches {
 		if b == nil || b.Value == nil {
 			continue
@@ -899,7 +899,7 @@ func (m *allOfMerge) listsFlattened(branches openapi3.SchemaRefs) bool {
 
 // labeledSchema is a member's schema for a position, with its label.
 type labeledSchema struct {
-	ref   *openapi3.SchemaRef
+	ref   *model.SchemaRef
 	label string
 }
 
@@ -907,10 +907,10 @@ func newAllOfMerge(ctx genContext, opts allOfOptions) *allOfMerge {
 	return &allOfMerge{
 		ctx:          ctx,
 		allOfOptions: opts,
-		schema:       openapi3.Schema{Extensions: map[string]any{}},
+		schema:       model.Schema{Extensions: map[string]any{}},
 		from:         map[string]string{},
 		properties:   map[string][]labeledSchema{},
-		flattening:   map[*openapi3.Schema]bool{},
+		flattening:   map[*model.Schema]bool{},
 	}
 }
 
@@ -919,7 +919,7 @@ func newAllOfMerge(ctx genContext, opts allOfOptions) *allOfMerge {
 // is a $ref to a union gets As* and From* of its own. A member that is an
 // allOf itself contributes its members, then its own keywords. seen holds the
 // $refs being flattened, so that a cycle back into one is skipped.
-func (m *allOfMerge) add(member *openapi3.SchemaRef, v openapi3.Schema, label string, seen map[string]bool) error {
+func (m *allOfMerge) add(member *model.SchemaRef, v model.Schema, label string, seen map[string]bool) error {
 	// A member that is an allOf is merged its own way first when that differs
 	// from this composition's, so it has the values it has on its own:
 	// decorating a composition that adds values to an enum doesn't take them
@@ -976,7 +976,7 @@ func (m *allOfMerge) add(member *openapi3.SchemaRef, v openapi3.Schema, label st
 	// schema this merge is part of (see listsFlattened). A list constrains the
 	// member, or, when the member declares no type, the composition, whose
 	// other members may declare the type its branches restate.
-	var unionRef *openapi3.SchemaRef
+	var unionRef *model.SchemaRef
 	if member != nil && member.Ref != "" && isUnionOnly(v) {
 		unionRef = member
 	}
@@ -1077,7 +1077,7 @@ func (m *allOfMerge) add(member *openapi3.SchemaRef, v openapi3.Schema, label st
 // The same schemas always make the same allOf. A schema that refers back to
 // the composition merges the same schemas again, and generating the same allOf
 // again is what genContext.inProgress recognises as recursion.
-func (m *allOfMerge) subschema(schemas []labeledSchema) *openapi3.SchemaRef {
+func (m *allOfMerge) subschema(schemas []labeledSchema) *model.SchemaRef {
 	switch len(schemas) {
 	case 0:
 		return nil
@@ -1110,7 +1110,7 @@ func (m *allOfMerge) subschema(schemas []labeledSchema) *openapi3.SchemaRef {
 				ext = make(map[string]any, len(s.ref.Extensions))
 			}
 			maps.Copy(ext, s.ref.Extensions)
-			distinct[i].ref = &openapi3.SchemaRef{Ref: s.ref.Ref, Value: s.ref.Value, Extensions: ext}
+			distinct[i].ref = &model.SchemaRef{Ref: s.ref.Ref, Value: s.ref.Value, Extensions: ext}
 		}
 	}
 	if len(distinct) == 1 {
@@ -1118,10 +1118,10 @@ func (m *allOfMerge) subschema(schemas []labeledSchema) *openapi3.SchemaRef {
 		return distinct[0].ref
 	}
 
-	merged := &openapi3.Schema{Extensions: map[string]any{}}
+	merged := &model.Schema{Extensions: map[string]any{}}
 	for _, d := range distinct {
 		// A copy of the member, so that its label belongs to this allOf.
-		member := &openapi3.SchemaRef{Ref: d.ref.Ref, Value: d.ref.Value, Extensions: d.ref.Extensions}
+		member := &model.SchemaRef{Ref: d.ref.Ref, Value: d.ref.Value, Extensions: d.ref.Extensions}
 		m.ctx.composition.memberLabels[member] = d.label
 		merged.AllOf = append(merged.AllOf, member)
 
@@ -1152,15 +1152,15 @@ func (m *allOfMerge) subschema(schemas []labeledSchema) *openapi3.SchemaRef {
 			}
 		}
 	}
-	ref := &openapi3.SchemaRef{Value: merged}
+	ref := &model.SchemaRef{Value: merged}
 	m.ctx.composition.subschemas[key] = ref
 	m.ctx.composition.madeUp[merged] = true
 	return ref
 }
 
 // addType intersects the member's types with those merged so far.
-func (m *allOfMerge) addType(v openapi3.Schema, label string) error {
-	if slices.Contains(v.Type.Slice(), openapi3.TypeNull) {
+func (m *allOfMerge) addType(v model.Schema, label string) error {
+	if slices.Contains(v.Type.Slice(), model.TypeNull) {
 		m.nullInType = true
 	}
 	types := nonNullTypes(v.Type)
@@ -1169,7 +1169,7 @@ func (m *allOfMerge) addType(v openapi3.Schema, label string) error {
 	}
 	merged := m.schema.Type.Slice()
 	if len(merged) == 0 {
-		m.schema.Type, m.from["type"] = (*openapi3.Types)(&types), label
+		m.schema.Type, m.from["type"] = (*model.Types)(&types), label
 		return nil
 	}
 	both := intersectTypes(merged, types)
@@ -1177,7 +1177,7 @@ func (m *allOfMerge) addType(v openapi3.Schema, label string) error {
 		return mergeConflict(m.from["type"], "type "+strings.Join(merged, ", "), label,
 			"type "+strings.Join(types, ", "), "no value has both types")
 	}
-	m.schema.Type = (*openapi3.Types)(&both)
+	m.schema.Type = (*model.Types)(&both)
 	return nil
 }
 
@@ -1190,9 +1190,9 @@ func intersectTypes(a, b []string) []string {
 	for _, t := range a {
 		switch {
 		case slices.Contains(b, t):
-		case t == openapi3.TypeInteger && slices.Contains(b, openapi3.TypeNumber),
-			t == openapi3.TypeNumber && slices.Contains(b, openapi3.TypeInteger):
-			t = openapi3.TypeInteger
+		case t == model.TypeInteger && slices.Contains(b, model.TypeNumber),
+			t == model.TypeNumber && slices.Contains(b, model.TypeInteger):
+			t = model.TypeInteger
 		default:
 			continue
 		}
@@ -1204,15 +1204,15 @@ func intersectTypes(a, b []string) []string {
 // withoutIntegerUnderNumber drops integer from a type list that also has
 // number, which already allows every integer.
 func withoutIntegerUnderNumber(types []string) []string {
-	if !slices.Contains(types, openapi3.TypeNumber) || !slices.Contains(types, openapi3.TypeInteger) {
+	if !slices.Contains(types, model.TypeNumber) || !slices.Contains(types, model.TypeInteger) {
 		return types
 	}
-	return slices.DeleteFunc(slices.Clone(types), func(t string) bool { return t == openapi3.TypeInteger })
+	return slices.DeleteFunc(slices.Clone(types), func(t string) bool { return t == model.TypeInteger })
 }
 
 // addEnum intersects the member's enum with the values merged so far, keeping
 // each value's name.
-func (m *allOfMerge) addEnum(v openapi3.Schema, label string) error {
+func (m *allOfMerge) addEnum(v model.Schema, label string) error {
 	names := memberEnumNames(v)
 	if len(v.Enum) == 0 {
 		if names != nil {
@@ -1292,7 +1292,7 @@ func (m *allOfMerge) addEnum(v openapi3.Schema, label string) error {
 }
 
 // memberEnumNames returns the names a schema gives its enum values, or nil.
-func memberEnumNames(v openapi3.Schema) []string {
+func memberEnumNames(v model.Schema) []string {
 	for _, key := range enumNameExtensions {
 		if ext, ok := v.Extensions[key]; ok {
 			if names, err := extParseEnumVarNames(ext); err == nil {
@@ -1304,10 +1304,10 @@ func memberEnumNames(v openapi3.Schema) []string {
 }
 
 // result returns the merged schema.
-func (m *allOfMerge) result() (openapi3.Schema, error) {
+func (m *allOfMerge) result() (model.Schema, error) {
 	s := m.schema
 	if len(m.properties) > 0 {
-		s.Properties = make(openapi3.Schemas, len(m.properties))
+		s.Properties = make(model.Schemas, len(m.properties))
 		for name, schemas := range m.properties {
 			s.Properties[name] = m.subschema(schemas)
 		}
@@ -1317,26 +1317,26 @@ func (m *allOfMerge) result() (openapi3.Schema, error) {
 	case m.closed:
 		s.WithoutAdditionalProperties()
 	case len(m.additional) > 0:
-		s.AdditionalProperties = openapi3.AdditionalProperties{Schema: m.subschema(m.additional)}
+		s.AdditionalProperties = model.AdditionalProperties{Schema: m.subschema(m.additional)}
 	case m.anyAdditional:
 		s.WithAnyAdditionalProperties()
 	}
 	if m.nullInType {
-		types := append(slices.Clone(s.Type.Slice()), openapi3.TypeNull)
-		s.Type = (*openapi3.Types)(&types)
+		types := append(slices.Clone(s.Type.Slice()), model.TypeNull)
+		s.Type = (*model.Types)(&types)
 	}
 	// A oneOf or anyOf whose branches restate a type another member declares
 	// only adds constraints too, which only the whole composition shows. One
 	// of only 3.1 null branches says nullable, which is read where the schema
 	// is used.
 	m.components = slices.DeleteFunc(m.components, func(c unionComponent) bool {
-		return isConstraintOnlyUnion(c.branches, &s) || !slices.ContainsFunc(c.branches, func(b *openapi3.SchemaRef) bool {
+		return isConstraintOnlyUnion(c.branches, &s) || !slices.ContainsFunc(c.branches, func(b *model.SchemaRef) bool {
 			return b == nil || b.Value == nil || !isNullTypeSchema(b.Value)
 		})
 	})
 	if len(m.components) > 1 && s.Discriminator != nil {
 		if err := m.placeDiscriminator(s.Discriminator); err != nil {
-			return openapi3.Schema{}, err
+			return model.Schema{}, err
 		}
 	}
 	// A single union is generated as it always was. Several are one union
@@ -1351,7 +1351,7 @@ func (m *allOfMerge) result() (openapi3.Schema, error) {
 	if s.Const != nil && s.Enum != nil {
 		i := slices.IndexFunc(s.Enum, func(value any) bool { return reflect.DeepEqual(value, s.Const) })
 		if i < 0 {
-			return openapi3.Schema{}, mergeConflict(m.from["const"], fmt.Sprintf("const %v", s.Const),
+			return model.Schema{}, mergeConflict(m.from["const"], fmt.Sprintf("const %v", s.Const),
 				m.from["enum"], fmt.Sprintf("enum %v", s.Enum), "the enum doesn't allow the const")
 		}
 		s.Enum = s.Enum[i : i+1]
@@ -1375,7 +1375,7 @@ func (m *allOfMerge) result() (openapi3.Schema, error) {
 
 // sameDiscriminator reports whether two discriminators name the same property
 // with the same mapping.
-func sameDiscriminator(a, b *openapi3.Discriminator) bool {
+func sameDiscriminator(a, b *model.Discriminator) bool {
 	if a == b {
 		return true
 	}
@@ -1428,7 +1428,7 @@ func mergeConflict(labelA, a, labelB, b, why string) error {
 // says the schema is nullable, which is read from the schema where its type
 // is used, so it is passed over; a list of nothing else isn't one of
 // constraints.
-func isConstraintOnlyUnion(branches openapi3.SchemaRefs, owner *openapi3.Schema) bool {
+func isConstraintOnlyUnion(branches model.SchemaRefs, owner *model.Schema) bool {
 	constraints := 0
 	for _, b := range branches {
 		if b == nil || b.Value == nil || isRefInExternalDocument(b.Ref) {
@@ -1469,7 +1469,7 @@ func isConstraintOnlyUnion(branches openapi3.SchemaRefs, owner *openapi3.Schema)
 // withoutConstraintOnlyUnions returns s without a oneOf or anyOf that only
 // adds constraints to owner, which is s when nil (see
 // isConstraintOnlyUnion). No union is generated for such a list.
-func withoutConstraintOnlyUnions(s, owner *openapi3.Schema) *openapi3.Schema {
+func withoutConstraintOnlyUnions(s, owner *model.Schema) *model.Schema {
 	if owner == nil {
 		owner = s
 	}
@@ -1490,7 +1490,7 @@ func withoutConstraintOnlyUnions(s, owner *openapi3.Schema) *openapi3.Schema {
 // generateAllOf lowers a schema with allOf for generateGoSchema: the
 // composition merged into one Go type by merge, with the parent's structural
 // siblings merged in, its description kept, and a recursive composition named.
-func generateAllOf(ctx genContext, schema *openapi3.Schema, path []string, extensions map[string]any, skipOptionalPointer bool) (Schema, error) {
+func generateAllOf(ctx genContext, schema *model.Schema, path []string, extensions map[string]any, skipOptionalPointer bool) (Schema, error) {
 	if alias, ok := ctx.inProgressAllOf(schema, skipOptionalPointer); ok {
 		return alias, nil
 	}

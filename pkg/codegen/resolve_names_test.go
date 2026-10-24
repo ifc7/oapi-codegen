@@ -3,8 +3,9 @@ package codegen
 import (
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 func TestResolveNames_NoCollisions(t *testing.T) {
@@ -12,13 +13,13 @@ func TestResolveNames_NoCollisions(t *testing.T) {
 		{
 			Path:          SchemaPath{"components", "schemas", "Pet"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Pet",
 		},
 		{
 			Path:          SchemaPath{"components", "schemas", "Owner"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Owner",
 		},
 	}
@@ -35,33 +36,33 @@ func TestResolveNames_Issue200_CrossSectionCollisions(t *testing.T) {
 		{
 			Path:          SchemaPath{"components", "schemas", "Bar"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Bar",
 		},
 		{
 			Path:          SchemaPath{"components", "parameters", "Bar"},
 			Context:       ContextComponentParameter,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Bar",
 		},
 		{
 			Path:          SchemaPath{"components", "responses", "Bar", "content", "application/json"},
 			Context:       ContextComponentResponse,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Bar",
 			ContentType:   "application/json",
 		},
 		{
 			Path:          SchemaPath{"components", "requestBodies", "Bar", "content", "application/json"},
 			Context:       ContextComponentRequestBody,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Bar",
 			ContentType:   "application/json",
 		},
 		{
 			Path:          SchemaPath{"components", "headers", "Bar"},
 			Context:       ContextComponentHeader,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Bar",
 		},
 	}
@@ -85,7 +86,7 @@ func TestResolveNames_Issue1474_ClientWrapperCollision(t *testing.T) {
 		{
 			Path:          SchemaPath{"components", "schemas", "CreateChatCompletionResponse"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "CreateChatCompletionResponse",
 		},
 		{
@@ -114,13 +115,13 @@ func TestResolveNames_PrivilegedComponentSchema(t *testing.T) {
 		{
 			Path:          SchemaPath{"components", "schemas", "Foo"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Foo",
 		},
 		{
 			Path:          SchemaPath{"components", "parameters", "Foo"},
 			Context:       ContextComponentParameter,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Foo",
 		},
 	}
@@ -137,13 +138,13 @@ func TestResolveNames_NoComponentSchema_AllGetSuffixes(t *testing.T) {
 		{
 			Path:          SchemaPath{"components", "parameters", "Foo"},
 			Context:       ContextComponentParameter,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Foo",
 		},
 		{
 			Path:          SchemaPath{"components", "responses", "Foo", "content", "application/json"},
 			Context:       ContextComponentResponse,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Foo",
 			ContentType:   "application/json",
 		},
@@ -162,7 +163,7 @@ func TestResolveNames_NumericFallback(t *testing.T) {
 		{
 			Path:          SchemaPath{"components", "schemas", "Foo"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Foo",
 		},
 		{
@@ -170,7 +171,7 @@ func TestResolveNames_NumericFallback(t *testing.T) {
 			// This shouldn't normally happen with real specs, but tests the fallback
 			Path:          SchemaPath{"components", "schemas", "foo"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "foo",
 		},
 	}
@@ -194,27 +195,27 @@ func TestResolveNames_MultipleJsonContentTypes(t *testing.T) {
 		{
 			Path:          SchemaPath{"components", "schemas", "Order"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Order",
 		},
 		{
 			Path:          SchemaPath{"components", "requestBodies", "Order", "content", "application/json"},
 			Context:       ContextComponentRequestBody,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Order",
 			ContentType:   "application/json",
 		},
 		{
 			Path:          SchemaPath{"components", "requestBodies", "Order", "content", "application/merge-patch+json"},
 			Context:       ContextComponentRequestBody,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Order",
 			ContentType:   "application/merge-patch+json",
 		},
 		{
 			Path:          SchemaPath{"components", "requestBodies", "Order", "content", "application/json-patch+json"},
 			Context:       ContextComponentRequestBody,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Order",
 			ContentType:   "application/json-patch+json",
 		},
@@ -253,14 +254,14 @@ func TestResolveNames_XGoNamePinned_Schema(t *testing.T) {
 		{
 			Path:           SchemaPath{"components", "schemas", "Renamer"},
 			Context:        ContextComponentSchema,
-			Schema:         &openapi3.Schema{},
+			Schema:         &model.Schema{},
 			ComponentName:  "Renamer",
 			GoNameOverride: "SpecialName",
 		},
 		{
 			Path:          SchemaPath{"components", "responses", "Renamer", "content", "application/json"},
 			Context:       ContextComponentResponse,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Renamer",
 			ContentType:   "application/json",
 		},
@@ -282,13 +283,13 @@ func TestResolveNames_XGoNamePinned_Response(t *testing.T) {
 		{
 			Path:          SchemaPath{"components", "schemas", "Outcome"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Outcome",
 		},
 		{
 			Path:           SchemaPath{"components", "responses", "Outcome", "content", "application/json"},
 			Context:        ContextComponentResponse,
-			Schema:         &openapi3.Schema{},
+			Schema:         &model.Schema{},
 			ComponentName:  "Outcome",
 			ContentType:    "application/json",
 			GoNameOverride: "OutcomeResult",
@@ -310,13 +311,13 @@ func TestResolveNames_XGoNamePinned_RequestBody(t *testing.T) {
 		{
 			Path:          SchemaPath{"components", "schemas", "Payload"},
 			Context:       ContextComponentSchema,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Payload",
 		},
 		{
 			Path:           SchemaPath{"components", "requestBodies", "Payload", "content", "application/json"},
 			Context:        ContextComponentRequestBody,
-			Schema:         &openapi3.Schema{},
+			Schema:         &model.Schema{},
 			ComponentName:  "Payload",
 			ContentType:    "application/json",
 			GoNameOverride: "PayloadBody",
@@ -337,14 +338,14 @@ func TestResolveNames_PinnedNotModifiedByStrategies(t *testing.T) {
 		{
 			Path:           SchemaPath{"components", "schemas", "Foo"},
 			Context:        ContextComponentSchema,
-			Schema:         &openapi3.Schema{},
+			Schema:         &model.Schema{},
 			ComponentName:  "Foo",
 			GoNameOverride: "Foo",
 		},
 		{
 			Path:          SchemaPath{"components", "parameters", "Foo"},
 			Context:       ContextComponentParameter,
-			Schema:        &openapi3.Schema{},
+			Schema:        &model.Schema{},
 			ComponentName: "Foo",
 		},
 	}

@@ -1,23 +1,17 @@
 package parentchild
 
 import (
-	_ "embed"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/require"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
 )
 
-//go:embed child.api.yaml
-var spec []byte
-
 func TestIssue(t *testing.T) {
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-
-	swagger, err := loader.LoadFromData(spec)
+	swagger, err := kin.Engine{}.Load("child.api.yaml", engine.LoadOptions{})
 	require.NoError(t, err)
 
 	opts := codegen.Configuration{

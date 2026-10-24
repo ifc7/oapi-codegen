@@ -13,14 +13,14 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
 // generateUnions generates the anyOf and oneOf of an object schema into
 // outSchema's union members. A schema that combines several unions, an anyOf
 // and a oneOf or an allOf's merge of several (see unionComponent), generates
 // as generateUnionComponents describes.
-func generateUnions(ctx genContext, outSchema *Schema, schema *openapi3.Schema, path []string) error {
+func generateUnions(ctx genContext, outSchema *Schema, schema *model.Schema, path []string) error {
 	components := ctx.composition.unionComponents[schema]
 	if components == nil && schema.AnyOf != nil && schema.OneOf != nil {
 		components = []unionComponent{
@@ -203,7 +203,7 @@ func placedDiscriminator(c unionComponent, variantKeys []string, opaque bool) bo
 // added already. alone is false when the union is one of several (see
 // generateUnionComponents), which then isn't collapsed into its only
 // non-null branch.
-func generateUnion(ctx genContext, outSchema *Schema, elements openapi3.SchemaRefs, discriminator *openapi3.Discriminator, path []string, alone bool) ([]UnionElement, error) {
+func generateUnion(ctx genContext, outSchema *Schema, elements model.SchemaRefs, discriminator *model.Discriminator, path []string, alone bool) ([]UnionElement, error) {
 	if discriminator != nil {
 		valueType := discriminatorValueType(outSchema, elements, discriminator.PropertyName)
 		if !discriminatorPropertyTyped(outSchema, elements, discriminator.PropertyName) {
@@ -303,7 +303,7 @@ func generateUnion(ctx genContext, outSchema *Schema, elements openapi3.SchemaRe
 	// An integer or number discriminator is compared as a number (see
 	// Discriminator.SwitchType): each value is written as a literal of that
 	// type, and one value can't lead to two variants.
-	if d := outSchema.Discriminator; discriminator != nil && (d.ValueType == openapi3.TypeInteger || d.ValueType == openapi3.TypeNumber) {
+	if d := outSchema.Discriminator; discriminator != nil && (d.ValueType == model.TypeInteger || d.ValueType == model.TypeNumber) {
 		type lead struct{ key, goType string }
 		leads := make(map[string]lead)
 		d.literals = make(map[string]string, len(d.Mapping))
@@ -427,8 +427,8 @@ func closeUnionVariants(ctx genContext, outSchema *Schema, components []unionCom
 // oneOf or anyOf of its own. A oneOf or anyOf that only adds constraints (see
 // isConstraintOnlyUnion) declares nothing, and neither does a parent's that
 // lists the variant or a member (see allOfMerge.listsFlattened).
-func declaredVariantKeys(ctx genContext, ref *openapi3.SchemaRef) (keys []string, closed, ok bool, err error) {
-	nodes := make(map[*openapi3.Schema]bool)
+func declaredVariantKeys(ctx genContext, ref *model.SchemaRef) (keys []string, closed, ok bool, err error) {
+	nodes := make(map[*model.Schema]bool)
 	for r := range allOfTree(ref) {
 		if nodes[r.Value] {
 			continue
@@ -438,7 +438,7 @@ func declaredVariantKeys(ctx genContext, ref *openapi3.SchemaRef) (keys []string
 		}
 		nodes[r.Value] = true
 	}
-	lists := func(b *openapi3.SchemaRef) bool { return b != nil && nodes[b.Value] }
+	lists := func(b *model.SchemaRef) bool { return b != nil && nodes[b.Value] }
 	for n := range nodes {
 		// As in allOfMerge.add, a member without a type of its own constrains
 		// the variant.
@@ -446,7 +446,7 @@ func declaredVariantKeys(ctx genContext, ref *openapi3.SchemaRef) (keys []string
 		if len(declaredTypes(owner)) == 0 {
 			owner = ref.Value
 		}
-		for _, union := range []openapi3.SchemaRefs{n.OneOf, n.AnyOf} {
+		for _, union := range []model.SchemaRefs{n.OneOf, n.AnyOf} {
 			if len(union) > 0 && !isConstraintOnlyUnion(union, owner) && !slices.ContainsFunc(union, lists) {
 				return nil, false, false, nil
 			}
@@ -476,7 +476,7 @@ func declaredVariantKeys(ctx genContext, ref *openapi3.SchemaRef) (keys []string
 // MarshalJSON of its own, a union or one with additional properties, writes
 // each property under its name. An opaque variant, from another document or
 // an x-go-type, declares no keys: its fields aren't ours to read.
-func (ctx genContext) variantKeys(b *openapi3.SchemaRef) ([]string, error) {
+func (ctx genContext) variantKeys(b *model.SchemaRef) ([]string, error) {
 	if b == nil || b.Value == nil || isOpaqueSchema(b) {
 		return nil, nil
 	}
@@ -489,11 +489,11 @@ func (ctx genContext) variantKeys(b *openapi3.SchemaRef) ([]string, error) {
 	// unions of this throwaway generation, and a variant's keys come from
 	// its own fields, which don't depend on them.
 	ctx.composition.variantKeyCache[b.Value] = nil
-	generate := func(s *openapi3.Schema) (Schema, error) {
+	generate := func(s *model.Schema) (Schema, error) {
 		fresh := newGenContext(ctx.nameHint)
 		fresh.run = ctx.run
 		fresh.composition.variantKeyCache = ctx.composition.variantKeyCache
-		return generateGoSchema(fresh, &openapi3.SchemaRef{Value: s}, ctx.nameHint)
+		return generateGoSchema(fresh, &model.SchemaRef{Value: s}, ctx.nameHint)
 	}
 	s, err := generate(b.Value)
 	if err == nil {
@@ -540,9 +540,9 @@ func fieldKey(p Property) (string, bool) {
 // the discriminator property (see pinnedDiscriminatorValue), as the
 // discriminator mapping spells it: a string as it is, a number or a boolean as
 // encoding/json writes it. An integer of magnitude 2^53 or more is an error:
-// kin-openapi reads numbers as float64, so it may already have been rounded,
+// Numbers arrive as float64, so it may already have been rounded,
 // and the value written would differ from the spec's.
-func inlineDiscriminatorValue(s *openapi3.Schema, property string) (string, bool, error) {
+func inlineDiscriminatorValue(s *model.Schema, property string) (string, bool, error) {
 	switch v := pinnedDiscriminatorValue(s, property).(type) {
 	case string:
 		return v, true, nil
@@ -563,8 +563,8 @@ func inlineDiscriminatorValue(s *openapi3.Schema, property string) (string, bool
 // That is on any declaration of the property, in the variant or its allOf
 // members, or in an allOf member of the property's own schema. It returns nil
 // when there is none.
-func pinnedDiscriminatorValue(s *openapi3.Schema, property string) any {
-	for n := range allOfTree(&openapi3.SchemaRef{Value: s}) {
+func pinnedDiscriminatorValue(s *model.Schema, property string) any {
+	for n := range allOfTree(&model.SchemaRef{Value: s}) {
 		p := n.Value.Properties[property]
 		if p == nil {
 			continue
@@ -584,7 +584,7 @@ func pinnedDiscriminatorValue(s *openapi3.Schema, property string) any {
 // discriminatorPropertyTyped reports whether the union itself, or any
 // declaration of the property in its variants or their allOf members, gives
 // the discriminator property a type.
-func discriminatorPropertyTyped(outSchema *Schema, elements openapi3.SchemaRefs, property string) bool {
+func discriminatorPropertyTyped(outSchema *Schema, elements model.SchemaRefs, property string) bool {
 	for _, p := range outSchema.Properties {
 		if p.JsonFieldName == property && p.Schema.OAPISchema != nil && len(nonNullTypes(p.Schema.OAPISchema.Type)) > 0 {
 			return true
@@ -605,7 +605,7 @@ func discriminatorPropertyTyped(outSchema *Schema, elements openapi3.SchemaRefs,
 // discriminator property that declares no type, like 3.1's `const: true`:
 // "boolean" or "number", or "" for strings or when nothing is pinned. Values
 // of different types are an error: no one discriminator reads them all.
-func pinnedValueType(elements openapi3.SchemaRefs, property string) (string, error) {
+func pinnedValueType(elements model.SchemaRefs, property string) (string, error) {
 	found := ""
 	for _, e := range elements {
 		if e == nil || e.Value == nil || isNullTypeSchema(e.Value) {
@@ -614,11 +614,11 @@ func pinnedValueType(elements openapi3.SchemaRefs, property string) (string, err
 		var typ string
 		switch pinnedDiscriminatorValue(e.Value, property).(type) {
 		case bool:
-			typ = openapi3.TypeBoolean
+			typ = model.TypeBoolean
 		case float64:
-			typ = openapi3.TypeNumber
+			typ = model.TypeNumber
 		case string:
-			typ = openapi3.TypeString
+			typ = model.TypeString
 		default:
 			continue
 		}
@@ -627,7 +627,7 @@ func pinnedValueType(elements openapi3.SchemaRefs, property string) (string, err
 		}
 		found = typ
 	}
-	if found == openapi3.TypeString {
+	if found == model.TypeString {
 		return "", nil
 	}
 	return found, nil
@@ -642,7 +642,7 @@ func numberLiteral(text, valueType string) (string, error) {
 		(text[0] != '-' && (text[0] < '0' || text[0] > '9')) {
 		return "", errors.New("isn't a JSON number")
 	}
-	if valueType == openapi3.TypeInteger {
+	if valueType == model.TypeInteger {
 		i, err := strconv.ParseInt(text, 10, 64)
 		if err == nil {
 			return strconv.FormatInt(i, 10), nil
