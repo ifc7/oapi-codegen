@@ -71,7 +71,7 @@ func (server) GetItem(_ context.Context, req GetItemRequestObject) (GetItemRespo
 
 func newClient(t *testing.T) *ClientWithResponses {
 	t.Helper()
-	srv := httptest.NewServer(Handler(NewStrictHandler(server{}, nil)))
+	srv := httptest.NewServer(Handler(server{}))
 	t.Cleanup(srv.Close)
 	c, err := NewClientWithResponses(srv.URL)
 	require.NoError(t, err)

@@ -10,26 +10,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type testStrictServerInterface struct {
+type testServer struct {
 	t *testing.T
 }
 
 // (GET /test)
-func (s *testStrictServerInterface) Test(ctx context.Context, request multijson.TestRequestObject) (multijson.TestResponseObject, error) {
+func (s *testServer) Test(ctx context.Context, request multijson.TestRequestObject) (multijson.TestResponseObject, error) {
 	return nil, nil
 }
 
 // (GET /suffix)
-func (s *testStrictServerInterface) SuffixTest(ctx context.Context, request multijson.SuffixTestRequestObject) (multijson.SuffixTestResponseObject, error) {
+func (s *testServer) SuffixTest(ctx context.Context, request multijson.SuffixTestRequestObject) (multijson.SuffixTestResponseObject, error) {
 	assert.Equal(s.t, "test1", request.Body.Field1)
 	assert.Equal(s.t, "test2", request.Body.Field2)
 	return multijson.SuffixTest204Response{}, nil
 }
 
 // From issue-1298: a request body with a custom +json suffix content type must
-// round-trip through the strict server via the generated typed client method.
+// round-trip through the server via the generated typed client method.
 func TestIssue1298(t *testing.T) {
-	h := multijson.Handler(multijson.NewStrictHandler(&testStrictServerInterface{t: t}, nil))
+	h := multijson.Handler(&testServer{t: t})
 	ts := httptest.NewServer(h)
 	defer ts.Close()
 

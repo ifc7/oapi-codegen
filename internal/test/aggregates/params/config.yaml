@@ -4,5 +4,4 @@ output: params.gen.go
 generate:
   models: true
   client: true
-  std-http-server: true
-  strict-server: true
+  server: true

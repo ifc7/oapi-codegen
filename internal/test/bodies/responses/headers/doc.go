@@ -1,5 +1,5 @@
 // Package responseheaders verifies that response headers declared on an
-// operation are emitted as a Headers struct on the strict-server
+// operation are emitted as a Headers struct on the server
 // response object and written by the generated Visit* method.
 // Compile-time assertion only.
 //

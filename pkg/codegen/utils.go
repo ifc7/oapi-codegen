@@ -15,8 +15,8 @@ package codegen
 
 import (
 	"bytes"
-	"errors"
 	"cmp"
+	"errors"
 	"fmt"
 	"go/token"
 	"net/url"
@@ -577,7 +577,7 @@ func ValidateStdHTTPPath(path string) error {
 		}
 		// Wildcard must be the entire segment.
 		if loc[0] != 0 || loc[1] != len(seg) {
-			return fmt.Errorf("path %q: segment %q mixes a path parameter with literal text; net/http ServeMux requires wildcards to occupy an entire path segment (std-http-server)", path, seg)
+			return fmt.Errorf("path %q: segment %q mixes a path parameter with literal text; net/http ServeMux requires wildcards to occupy an entire path segment", path, seg)
 		}
 	}
 	return nil

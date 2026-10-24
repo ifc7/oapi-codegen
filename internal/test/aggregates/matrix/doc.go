@@ -7,7 +7,7 @@
 // array items, additionalProperties value, request and response bodies, inline
 // or referenced, component request bodies and responses, a `default:` response
 // and a response with headers). The
-// generated harness sends every sample through a generated client and strict
+// generated harness sends every sample through a generated client and
 // server and checks that it comes back unchanged, both on the wire and after
 // parsing.
 //

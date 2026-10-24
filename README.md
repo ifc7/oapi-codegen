@@ -28,7 +28,6 @@ With `oapi-codegen`, there are a few [Key Design Decisions](#key-design-decision
 - [What does it look like?](#what-does-it-look-like)
 - [Key design decisions](#key-design-decisions)
 - [Generating server-side boilerplate](#generating-server-side-boilerplate)
-  - [Strict server](#strict-server)
 - [Generating API clients](#generating-api-clients)
   - [With Server URLs](#with-server-urls)
   - [Duplicate types generated for clients's response object types](#duplicate-types-generated-for-clientss-response-object-types)
@@ -187,177 +186,64 @@ At a high level, `oapi-codegen` supports:
 
 ## What does it look like?
 
-Below we can see a trimmed down example taken from the OpenAPI Petstore [example](examples/petstore-expanded/stdhttp/api/petstore.gen.go):
+Below we can see a trimmed down example taken from the OpenAPI Petstore [example](examples/petstore-expanded/api/petstore-server.gen.go). For each operation, `oapi-codegen` generates a request object holding its parameters and body, a response type for each response the spec declares, and a method on the `ServerInterface`:
 
 ```go
 // generated code
 
-type ServerInterface interface {
-	// ...
-	// Returns all pets
-	// (GET /pets)
-	FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams)
-	// ...
+type FindPetsRequestObject struct {
+	Params FindPetsParams
 }
 
-// FindPets operation middleware
-func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Request) {
+type FindPetsResponseObject interface {
+	VisitFindPetsResponse(w http.ResponseWriter) error
+}
 
+// FindPets200JSONResponse is the 200 response, a JSON array of pets.
+type FindPets200JSONResponse []Pet
+
+// FindPetsdefaultJSONResponse is the default response, with any status code.
+type FindPetsdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+type ServerInterface interface {
+	// FindPets Returns all pets
+	// (GET /pets)
+	FindPets(ctx context.Context, request FindPetsRequestObject) (FindPetsResponseObject, error)
+	// ...
+}
+```
+
+It also generates the `net/http` handler that serves each operation: it binds the request's parameters and body into the request object, calls your `ServerInterface`, and writes the response object you return:
+
+```go
+// generated code
+
+// FindPets serves the FindPets operation.
+func (sh *serverHandler) FindPets(w http.ResponseWriter, r *http.Request) {
 	var err error
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params FindPetsParams
-
-	// ------------- Optional query parameter "tags" -------------
-
-	if values_, found_ := r.URL.Query()["tags"]; found_ {
-		var value_ []string
-		value_ = values_
-		params.Tags = &value_
-	}
 
 	// ------------- Optional query parameter "limit" -------------
 
 	if values_, found_ := r.URL.Query()["limit"]; found_ {
 		var value_ int32
-		if len(values_) != 1 {
-			err = errors.New("multiple values for single value parameter 'limit'")
-		} else {
-			if v_, err_ := strconv.ParseInt(values_[0], 10, 32); err_ != nil {
-				err = err_
-			} else {
-				value_ = int32(v_)
-			}
-		}
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-			return
-		}
+		// ... parse the value, or call sh.options.RequestErrorHandlerFunc and return
 		params.Limit = &value_
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FindPets(w, r, params)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc("GET "+options.BaseURL+"/pets", wrapper.FindPets)
-
-	return m
-}
-```
-
-Then, in your own code, you implement the underlying logic for the `FindPets` implementation:
-
-```go
-type PetStore struct {
-	Pets   map[int64]Pet
-	NextId int64
-	Lock   sync.Mutex
-}
-
-// Make sure we conform to ServerInterface
-
-var _ ServerInterface = (*PetStore)(nil)
-
-func NewPetStore() *PetStore {
-	return &PetStore{
-		Pets:   make(map[int64]Pet),
-		NextId: 1000,
-	}
-}
-
-// FindPets implements all the handlers in the ServerInterface
-func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) {
-	p.Lock.Lock()
-	defer p.Lock.Unlock()
-
-	var result []Pet
-
-	for _, pet := range p.Pets {
-		if params.Tags != nil {
-			// If we have tags,  filter pets by tag
-			for _, t := range *params.Tags {
-				if pet.Tag != nil && (*pet.Tag == t) {
-					result = append(result, pet)
-				}
-			}
-		} else {
-			// Add all pets if we're not filtering
-			result = append(result, pet)
-		}
-
-		if params.Limit != nil {
-			l := int(*params.Limit)
-			if len(result) >= l {
-				// We're at the limit
-				break
-			}
-		}
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(result)
-}
-```
-
-As we can see, `oapi-codegen` simplifies some of the boilerplate by taking parameters out of the request and instead allows us to focus on the implementation.
-
-You'll note that there's still a bit more marshaling of request/response data, which is further reduced by using the [Strict server](#strict-server) functionality.
-
-<a name="what-does-it-look-like-strict"></a>
-When using the strict server, you'll have the following generated code:
-
-```go
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
-	// ...
-	// Returns all pets
-	// (GET /pets)
-	FindPets(ctx context.Context, request FindPetsRequestObject) (FindPetsResponseObject, error)
-	// ...
-}
-
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
-}
-
-// FindPets operation middleware
-func (sh *strictHandler) FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) {
 	var request FindPetsRequestObject
 
 	request.Params = params
 
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.FindPets(ctx, request.(FindPetsRequestObject))
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.FindPets(ctx, request.(FindPetsRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "FindPets")
 	}
 
@@ -373,56 +259,43 @@ func (sh *strictHandler) FindPets(w http.ResponseWriter, r *http.Request, params
 		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
 	}
 }
+
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	// ...
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/pets", sh.FindPets)
+	// ...
+	return m
+}
 ```
 
 Then, in your own code, you implement the underlying logic for the `FindPets` implementation:
 
 ```go
-// Make sure we conform to StrictServerInterface
-
-var _ StrictServerInterface = (*PetStore)(nil)
-
-func NewPetStore() *PetStore {
-	return &PetStore{
-		Pets:   make(map[int64]Pet),
-		NextId: 1000,
-	}
+type PetStore struct {
+	Store *Store
 }
 
-// FindPets implements all the handlers in the ServerInterface
-func (p *PetStore) FindPets(ctx context.Context, request FindPetsRequestObject) (FindPetsResponseObject, error) {
-	p.Lock.Lock()
-	defer p.Lock.Unlock()
+// Make sure we conform to ServerInterface
+var _ api.ServerInterface = (*PetStore)(nil)
 
-	var result []Pet
-
-	for _, pet := range p.Pets {
-		if request.Params.Tags != nil {
-			// If we have tags,  filter pets by tag
-			for _, t := range *request.Params.Tags {
-				if pet.Tag != nil && (*pet.Tag == t) {
-					result = append(result, pet)
-				}
-			}
-		} else {
-			// Add all pets if we're not filtering
-			result = append(result, pet)
-		}
-
-		if request.Params.Limit != nil {
-			l := int(*request.Params.Limit)
-			if len(result) >= l {
-				// We're at the limit
-				break
-			}
-		}
-	}
-
-	return FindPets200JSONResponse(result), nil
+func (p *PetStore) FindPets(ctx context.Context, request api.FindPetsRequestObject) (api.FindPetsResponseObject, error) {
+	result := p.Store.FindPets(request.Params.Tags, request.Params.Limit)
+	return api.FindPets200JSONResponse(result), nil
 }
 ```
 
-We can see that this provides the best means to focus on the implementation of the business logic within the endpoint, rather than (un)marshalling types to and from JSON, or wrangling cookies or headers.
+And serve it with the generated `Handler`, an ordinary `http.Handler`:
+
+```go
+h := api.Handler(NewPetStore())
+log.Fatal(http.ListenAndServe(":8080", h))
+```
+
+This lets you focus on the business logic of each endpoint, rather than (un)marshalling types to and from JSON, or wrangling cookies or headers.
 
 ## Key design decisions
 
@@ -444,24 +317,13 @@ We can see that this provides the best means to focus on the implementation of t
 
 `oapi-codegen` shines by making it fairly straightforward (note that this is a purposeful choice of wording here - we want to avoid words like "easy") to generate the server-side boilerplate for a backend API.
 
-The generated server is built on the standard library's [`net/http`](https://pkg.go.dev/net/http): set `std-http-server: true`, and see the [`net/http` documentation](docs/stdhttp-server.md) for how to implement and run it. The generated `Handler` is an ordinary `http.Handler`, so it works with any router or middleware that accepts one. The generated server needs Go 1.22+, for the `net/http` routing patterns.
+The generated server is built on the standard library's [`net/http`](https://pkg.go.dev/net/http), and takes inspiration from server-side code generation for RPC servers: each operation is a method that takes a request object and returns a response object,
 
-To provide you a fully Test Driven Development style test harness to confirm you are following the specification, you could use a tool such as [openapi.tanna.dev/go/validator](https://openapi.tanna.dev/go/validator/), or craft your own.
-
-### Strict server
-
-`oapi-codegen` also supports generating a server that is much more strict with the contract that the implementer requires, and takes inspiration from server-side code generation for RPC servers.
-
-This takes the boilerplate reduction from the non-strict servers and adds additional boilerplate reduction, allowing you to make the following changes to your function signatures:
-
-```diff
--FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams)
-+FindPets(ctx context.Context, request FindPetsRequestObject) (FindPetsResponseObject, error)
+```go
+FindPets(ctx context.Context, request FindPetsRequestObject) (FindPetsResponseObject, error)
 ```
 
-This is the highest level of strictness that `oapi-codegen` supports right now, and it's a good idea to start with this if you want the most guardrails to simplify developing your APIs.
-
-The strict server has support for:
+so the contract the spec describes is the contract the compiler checks. The server supports:
 
 - multiple request/response media types and status codes on a given operation
 - first-class support for `multipart/form-data` and `application/x-www-form-urlencoded` requests
@@ -469,25 +331,25 @@ The strict server has support for:
 - automagic (un)marshalling of request/responses, and setting `content-type` and HTTP status codes on responses
 - binding request values to a struct, a `multipart.Reader` or providing a `io.Reader`
 
-You can see a little more detail of the generated code in the ["What does it look like"](#what-does-it-look-like-strict) section.
-
-> [!NOTE]
-> The strict server wraps the `net/http` server, so enable both:
+To generate it, enable the server:
 
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/v2.8.0/configuration-schema.json
 package: api
 generate:
-  std-http-server: true
-  strict-server: true
+  server: true
 output: server.gen.go
 ```
+
+See the [server documentation](docs/server.md) for how to implement and run it. The generated `Handler` is an ordinary `http.Handler`, so it works with any router or middleware that accepts one. The generated server needs Go 1.22+, for the `net/http` routing patterns.
+
+To provide you a fully Test Driven Development style test harness to confirm you are following the specification, you could use a tool such as [openapi.tanna.dev/go/validator](https://openapi.tanna.dev/go/validator/), or craft your own.
 
 > [!NOTE]
 > This doesn't include [validation of incoming requests](#requestresponse-validation-middleware).
 
 > [!IMPORTANT]
-> When a strict-server spec uses `$ref` to point at a `components/responses/...` (or `components/requestBodies/...`) defined in another spec via `import-mapping`, the destination spec **must also be generated with `strict-server: true`**. The strict envelope embeds the `<Name>JSONResponse` type from the destination package; that type only exists when the destination generates a strict server. Without it the generated code will fail to compile with an "undefined" error. See [issue #2010](https://github.com/oapi-codegen/oapi-codegen/issues/2010).
+> When a spec uses `$ref` to point at a `components/responses/...` (or `components/requestBodies/...`) defined in another spec via `import-mapping`, the destination spec **must also be generated with `server: true`**. The server's response type embeds the `<Name>JSONResponse` type from the destination package; that type only exists when the destination generates a server. Without it the generated code will fail to compile with an "undefined" error. See [issue #2010](https://github.com/oapi-codegen/oapi-codegen/issues/2010).
 
 ## Generating API clients
 
@@ -1082,8 +944,7 @@ package: samepackage
 output: server.gen.go
 generate:
   models: true
-  std-http-server: true
-  strict-server: true
+  server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1130,7 +991,7 @@ package: admin
 output: server.gen.go
 generate:
   models: true
-  std-http-server: true
+  server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1151,7 +1012,7 @@ package: admin
 output: server.gen.go
 generate:
   models: true
-  std-http-server: true
+  server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true
@@ -1263,7 +1124,7 @@ package: api
 output: ping.gen.go
 generate:
   models: true
-  std-http-server: true
+  server: true
   embedded-spec: true
 output-options:
   overlay:
@@ -1350,7 +1211,7 @@ The following extensions are supported:
 
 ## Request/response validation middleware
 
-The generated code that `oapi-codegen` produces has some validation for some incoming data, such as checking for required headers, and when using the [strict server](#strict-server) you get some more validation around the correct usage of the response types.
+The generated code that `oapi-codegen` produces has some validation for some incoming data, such as checking for required headers, and the [generated server](#generating-server-side-boilerplate) checks that a handler returns one of the operation's response types.
 
 However, this leaves a lot of validation that needs to be done, which can be tedious to hand-write this logic, especially for large or complex OpenAPI specifications.
 
@@ -1365,10 +1226,9 @@ If you're using a specification with [Security Schemes](https://spec.openapis.or
 
 ### On the server
 
-> [!NOTE]
-> Out-of-the-box, the server-side code generated by `oapi-codegen` does not provide security validation.
->
-> To perform authentication, you will need to use the [validation middleware](#requestresponse-validation-middleware), which validates each request against the spec's security requirements and calls your `AuthenticationFunc` with the scheme name and required scopes.
+The generated server doesn't authenticate requests itself, but it tells you what each one needs: `SecurityRequirements(ctx)` returns the security requirements of the operation a request is for, with the spec's alternatives (OR), combined schemes (AND) and anonymous (`{}`) alternatives intact. A `MiddlewareFunc`, a `ServerInterface` method or the `RequestErrorHandlerFunc` can use them to authorize the request; see the [server documentation](docs/server.md#security).
+
+Alternatively, the [validation middleware](#requestresponse-validation-middleware) validates each request against the spec's security requirements, and calls your `AuthenticationFunc` with the scheme name and required scopes.
 
 To see how this can work, check out the [authenticated API example](examples/authenticated-api/stdhttp).
 

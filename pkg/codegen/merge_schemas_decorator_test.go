@@ -213,8 +213,7 @@ components:
         - description: A decorated Open.
 `
 	code := generateSpec(t, spec, func(c *Configuration) {
-		c.Generate.Strict = true
-		c.Generate.StdHTTPServer = true
+		c.Generate.Server = true
 	})
 	assert.Contains(t, code, "type Decorated = Open")
 	for _, envelope := range []string{"GetSingle200JSONResponse", "GetDecorated200JSONResponse"} {
@@ -348,8 +347,7 @@ components:
 		fmt.Fprintf(&spec, "    Link%d:\n      allOf:\n        - $ref: '#/components/schemas/Link%d'\n        - description: Link %d.\n", i, i-1, i)
 	}
 	code := generateSpec(t, spec.String(), func(c *Configuration) {
-		c.Generate.Strict = true
-		c.Generate.StdHTTPServer = true
+		c.Generate.Server = true
 	})
 	assert.Contains(t, code, "type Link60 = Link59")
 	assert.Contains(t, code, "type NamedOpen = Open")

@@ -18,8 +18,8 @@ import (
 )
 
 // Cross-package cast that broke in 2.1.0+ when both specs generate
-// strict-server. Compiling this file is the regression check: if the embedded
-// field names diverge between the local and external strict envelopes, the
+// the server. Compiling this file is the regression check: if the embedded
+// field names diverge between the local and external response envelopes, the
 // conversion below fails to compile.
 var _ = func(v base.GetExample400JSONResponse) other.GetOtherExample400JSONResponse {
 	return other.GetOtherExample400JSONResponse(v)
@@ -63,7 +63,7 @@ var (
 )
 
 // External path-item multipart responses keep their callback receiver in each
-// strict-server template family.
+// server package.
 var (
 	_ other.ExternalMultipartResponse200MultipartResponse = func(*multipart.Writer) error { return nil }
 )
@@ -93,19 +93,19 @@ func TestResponseCastAcrossPackages(t *testing.T) {
 	}
 }
 
-type fixedResponseStrictServer struct {
+type fixedResponseServer struct {
 	response other.GetOtherExampleResponseObject
 }
 
-func (s fixedResponseStrictServer) GetOtherExample(context.Context, other.GetOtherExampleRequestObject) (other.GetOtherExampleResponseObject, error) {
+func (s fixedResponseServer) GetOtherExample(context.Context, other.GetOtherExampleRequestObject) (other.GetOtherExampleResponseObject, error) {
 	return s.response, nil
 }
 
-func (fixedResponseStrictServer) ExternalMultipartResponse(context.Context, other.ExternalMultipartResponseRequestObject) (other.ExternalMultipartResponseResponseObject, error) {
+func (fixedResponseServer) ExternalMultipartResponse(context.Context, other.ExternalMultipartResponseRequestObject) (other.ExternalMultipartResponseResponseObject, error) {
 	return nil, nil
 }
 
-func TestStrictResponseCastJSONWire(t *testing.T) {
+func TestResponseCastJSONWire(t *testing.T) {
 	value := "pointer body"
 	tests := []struct {
 		name      string
@@ -158,7 +158,7 @@ func TestStrictResponseCastJSONWire(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := other.Handler(other.NewStrictHandler(fixedResponseStrictServer{response: tt.response}, nil))
+			handler := other.Handler(fixedResponseServer{response: tt.response})
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/example", nil))
 

@@ -257,7 +257,7 @@ paths:
 
 	code, err := Generate(swagger, Configuration{
 		PackageName: "api",
-		Generate:    GenerateOptions{StdHTTPServer: true},
+		Generate:    GenerateOptions{Server: true},
 	})
 	require.NoError(t, err)
 	assert.Contains(t, code, "var pUuid uuid.UUID")

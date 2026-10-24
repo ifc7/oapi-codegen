@@ -244,14 +244,6 @@ type ServerURLDefaultPointer struct {
 // `{name}` placeholder that appears in the URL but isn't in
 // `variables` (#2005). The two groups are sorted together
 // alphabetically so the generated signature is deterministic.
-//
-// Equivalent to calling `genServerURLWithVariablesFunctionParams` for
-// the typed half and concatenating the undeclared half — but exposing
-// it as a method keeps server-urls.tmpl free of that combination
-// logic and means the template helper itself stayed at its
-// pre-existing two-argument shape (so any user-supplied custom
-// `server-urls.tmpl` override that calls the helper directly is
-// unaffected).
 func (s ServerObjectDefinition) NewServerFunctionParams() string {
 	used := s.UsedVariables()
 	undeclared := s.UndeclaredPlaceholders()

@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// strictServer returns the component-response envelopes under test. The
+// testServer returns the component-response envelopes under test. The
 // status to return is selected per request through the X-Status header so a
 // single handler covers every case.
-type strictServer struct{}
+type testServer struct{}
 
-func (strictServer) ListThings(ctx context.Context, request ListThingsRequestObject) (ListThingsResponseObject, error) {
+func (testServer) ListThings(ctx context.Context, request ListThingsRequestObject) (ListThingsResponseObject, error) {
 	ve := ValidationError{
 		Error:   "validation",
 		Message: "field is required",
@@ -78,7 +78,7 @@ func statusFromContext(ctx context.Context) string {
 
 func newTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	handler := Handler(NewStrictHandler(strictServer{}, nil))
+	handler := Handler(testServer{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), statusKey{}, r.Header.Get("X-Status"))
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -100,7 +100,7 @@ func get(t *testing.T, srv *httptest.Server, status string) *http.Response {
 
 const wantValidationError = `{"error":"validation","fields":["name"],"message":"field is required"}`
 
-// The strict envelope for a $ref to a component response with an inline
+// The response envelope for a $ref to a component response with an inline
 // oneOf must serialize the union payload, not an empty object.
 func TestComponentInlineUnionResponseIsSerialized(t *testing.T) {
 	srv := newTestServer(t)

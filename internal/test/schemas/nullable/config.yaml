@@ -4,13 +4,13 @@ output: nullable.gen.go
 # Union of flags needed by the folded sources:
 #   - models    : issue-1039 required/optional x nullable matrix; issue-2185 array of nullable items
 #   - client    : issue-1039 exercises client request code path
-#   - std-http-server: issue-1039 exercises server stub code path
+#   - server    : issue-1039 exercises server stub code path
 #   - nullable-type: issue-1039 main behaviour; issue-2185 Container.MayBeNull uses nullable.Nullable[T]
 #   - skip-prune: issue-2185 Container has no path reference
 generate:
   models: true
   client: true
-  std-http-server: true
+  server: true
 output-options:
   nullable-type: true
   skip-prune: true

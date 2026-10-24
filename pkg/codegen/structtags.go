@@ -170,7 +170,7 @@ func (g *structTagGenerator) generateTagsMap(info StructTagInfo) map[string]stri
 }
 
 // fieldTagGenerator returns the generator used for struct fields, schema
-// properties and strict RequestObject path parameters alike, building it from
+// properties and RequestObject path parameters alike, building it from
 // the current configuration on first use. This lazy path keeps direct callers
 // of GenFieldsFromProperties (tests) working without running Generate;
 // Generate itself constructs the generator eagerly so configuration errors are

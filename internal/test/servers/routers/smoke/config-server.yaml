@@ -1,0 +1,7 @@
+package: stdhttp
+generate:
+  server: true
+  models: true
+output: std-http/out.gen.go
+output-options:
+  skip-prune: true

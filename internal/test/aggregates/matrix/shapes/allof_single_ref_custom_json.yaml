@@ -1,7 +1,7 @@
 description: >-
   allOf over a single $ref to an object with additionalProperties. The
   composition is an alias of the referenced type, and keeps its generated
-  MarshalJSON: at a strict-server response, the envelope has to delegate to
+  MarshalJSON: at a server response, the envelope has to delegate to
   it, or the additional properties are lost.
 subject:
   allOf:

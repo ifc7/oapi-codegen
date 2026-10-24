@@ -6,9 +6,12 @@
 package serversroutersbasic
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/mail"
 	"strconv"
@@ -229,87 +232,417 @@ func (e *OpenAPIEmail) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type ResponseWithReferenceJSONResponse SomeObject
+
+type SimpleResponseJSONResponse struct {
+	Name string `json:"name"`
+}
+
+type GetEveryTypeOptionalRequestObject struct {
+}
+
+type GetEveryTypeOptionalResponseObject interface {
+	VisitGetEveryTypeOptionalResponse(w http.ResponseWriter) error
+}
+
+type GetEveryTypeOptional200JSONResponse EveryTypeOptional
+
+func (response GetEveryTypeOptional200JSONResponse) VisitGetEveryTypeOptionalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSimpleRequestObject struct {
+}
+
+type GetSimpleResponseObject interface {
+	VisitGetSimpleResponse(w http.ResponseWriter) error
+}
+
+type GetSimple200JSONResponse SomeObject
+
+func (response GetSimple200JSONResponse) VisitGetSimpleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWithArgsRequestObject struct {
+	Params GetWithArgsParams
+}
+
+type GetWithArgsResponseObject interface {
+	VisitGetWithArgsResponse(w http.ResponseWriter) error
+}
+
+type GetWithArgs200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response GetWithArgs200JSONResponse) VisitGetWithArgsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWithReferencesRequestObject struct {
+	GlobalArgument int64    `json:"global_argument"`
+	Argument       Argument `json:"argument"`
+}
+
+type GetWithReferencesResponseObject interface {
+	VisitGetWithReferencesResponse(w http.ResponseWriter) error
+}
+
+type GetWithReferences200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response GetWithReferences200JSONResponse) VisitGetWithReferencesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWithContentTypeRequestObject struct {
+	ContentType GetWithContentTypeParamsContentType `json:"content_type"`
+}
+
+type GetWithContentTypeResponseObject interface {
+	VisitGetWithContentTypeResponse(w http.ResponseWriter) error
+}
+
+type GetWithContentType200JSONResponse SomeObject
+
+func (response GetWithContentType200JSONResponse) VisitGetWithContentTypeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWithContentType200TextResponse string
+
+func (response GetWithContentType200TextResponse) VisitGetWithContentTypeResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetReservedKeywordRequestObject struct {
+}
+
+type GetReservedKeywordResponseObject interface {
+	VisitGetReservedKeywordResponse(w http.ResponseWriter) error
+}
+
+type GetReservedKeyword200JSONResponse ReservedKeyword
+
+func (response GetReservedKeyword200JSONResponse) VisitGetReservedKeywordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateResourceRequestObject struct {
+	Argument Argument `json:"argument"`
+	Body     *CreateResourceJSONRequestBody
+}
+
+type CreateResourceResponseObject interface {
+	VisitCreateResourceResponse(w http.ResponseWriter) error
+}
+
+type CreateResource200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response CreateResource200JSONResponse) VisitCreateResourceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateResource2RequestObject struct {
+	InlineArgument int `json:"inline_argument"`
+	Params         CreateResource2Params
+	Body           *CreateResource2JSONRequestBody
+}
+
+type CreateResource2ResponseObject interface {
+	VisitCreateResource2Response(w http.ResponseWriter) error
+}
+
+type CreateResource2200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response CreateResource2200JSONResponse) VisitCreateResource2Response(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateResource3RequestObject struct {
+	Fallthrough int `json:"fallthrough"`
+	Body        *UpdateResource3JSONRequestBody
+}
+
+type UpdateResource3ResponseObject interface {
+	VisitUpdateResource3Response(w http.ResponseWriter) error
+}
+
+type UpdateResource3200JSONResponse struct{ SimpleResponseJSONResponse }
+
+func (response UpdateResource3200JSONResponse) VisitUpdateResource3Response(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.SimpleResponseJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetResponseWithReferenceRequestObject struct {
+}
+
+type GetResponseWithReferenceResponseObject interface {
+	VisitGetResponseWithReferenceResponse(w http.ResponseWriter) error
+}
+
+type GetResponseWithReference200JSONResponse struct {
+	ResponseWithReferenceJSONResponse
+}
+
+func (response GetResponseWithReference200JSONResponse) VisitGetResponseWithReferenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.ResponseWithReferenceJSONResponse); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetEveryTypeOptional get every type optional
 	// (GET /every-type-optional)
-	GetEveryTypeOptional(w http.ResponseWriter, r *http.Request)
+	GetEveryTypeOptional(ctx context.Context, request GetEveryTypeOptionalRequestObject) (GetEveryTypeOptionalResponseObject, error)
 	// GetSimple Get resource via simple path
 	// (GET /get-simple)
-	GetSimple(w http.ResponseWriter, r *http.Request)
+	GetSimple(ctx context.Context, request GetSimpleRequestObject) (GetSimpleResponseObject, error)
 	// GetWithArgs Getter with referenced parameter and referenced response
 	// (GET /get-with-args)
-	GetWithArgs(w http.ResponseWriter, r *http.Request, params GetWithArgsParams)
+	GetWithArgs(ctx context.Context, request GetWithArgsRequestObject) (GetWithArgsResponseObject, error)
 	// GetWithReferences Getter with referenced parameter and referenced response
 	// (GET /get-with-references/{global_argument}/{argument})
-	GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument)
+	GetWithReferences(ctx context.Context, request GetWithReferencesRequestObject) (GetWithReferencesResponseObject, error)
 	// GetWithContentType Get an object by ID
 	// (GET /get-with-type/{content_type})
-	GetWithContentType(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType)
+	GetWithContentType(ctx context.Context, request GetWithContentTypeRequestObject) (GetWithContentTypeResponseObject, error)
 	// GetReservedKeyword get with reserved keyword
 	// (GET /reserved-keyword)
-	GetReservedKeyword(w http.ResponseWriter, r *http.Request)
+	GetReservedKeyword(ctx context.Context, request GetReservedKeywordRequestObject) (GetReservedKeywordResponseObject, error)
 	// CreateResource Create a resource
 	// (POST /resource/{argument})
-	CreateResource(w http.ResponseWriter, r *http.Request, argument Argument)
+	CreateResource(ctx context.Context, request CreateResourceRequestObject) (CreateResourceResponseObject, error)
 	// CreateResource2 Create a resource with inline parameter
 	// (POST /resource2/{inline_argument})
-	CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params)
+	CreateResource2(ctx context.Context, request CreateResource2RequestObject) (CreateResource2ResponseObject, error)
 	// UpdateResource3 Update a resource with inline body. The parameter name is a reserved
 	// keyword, so make sure that gets prefixed to avoid syntax errors
 	// (PUT /resource3/{fallthrough})
-	UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough int)
+	UpdateResource3(ctx context.Context, request UpdateResource3RequestObject) (UpdateResource3ResponseObject, error)
 	// GetResponseWithReference get response with reference
 	// (GET /response-with-reference)
-	GetResponseWithReference(w http.ResponseWriter, r *http.Request)
+	GetResponseWithReference(ctx context.Context, request GetResponseWithReferenceRequestObject) (GetResponseWithReferenceResponseObject, error)
 }
 
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
 }
 
-type MiddlewareFunc func(http.Handler) http.Handler
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
 
-// GetEveryTypeOptional operation middleware
-func (siw *ServerInterfaceWrapper) GetEveryTypeOptional(w http.ResponseWriter, r *http.Request) {
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetEveryTypeOptional(w, r)
-	}))
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
+}
+
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
-	handler.ServeHTTP(w, r)
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/response-with-reference", sh.GetResponseWithReference)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reserved-keyword", sh.GetReservedKeyword)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/every-type-optional", sh.GetEveryTypeOptional)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/get-simple", sh.GetSimple)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/get-with-type/{content_type}", sh.GetWithContentType)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/get-with-references/{global_argument}/{argument}", sh.GetWithReferences)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/get-with-args", sh.GetWithArgs)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/resource/{argument}", sh.CreateResource)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/resource2/{inline_argument}", sh.CreateResource2)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/resource3/{fallthrough}", sh.UpdateResource3)
+
+	return m
 }
 
-// GetSimple operation middleware
-func (siw *ServerInterfaceWrapper) GetSimple(w http.ResponseWriter, r *http.Request) {
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
+}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimple(w, r)
-	}))
+// GetEveryTypeOptional serves the GetEveryTypeOptional operation.
+func (sh *serverHandler) GetEveryTypeOptional(w http.ResponseWriter, r *http.Request) {
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	var request GetEveryTypeOptionalRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetEveryTypeOptional(ctx, request.(GetEveryTypeOptionalRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetEveryTypeOptional")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEveryTypeOptionalResponseObject); ok {
+		if err := validResponse.VisitGetEveryTypeOptionalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetWithArgs operation middleware
-func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Request) {
+// GetSimple serves the GetSimple operation.
+func (sh *serverHandler) GetSimple(w http.ResponseWriter, r *http.Request) {
+
+	var request GetSimpleRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetSimple(ctx, request.(GetSimpleRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetSimple")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleResponseObject); ok {
+		if err := validResponse.VisitGetSimpleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWithArgs serves the GetWithArgs operation.
+func (sh *serverHandler) GetWithArgs(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params GetWithArgsParams
 
 	// ------------- Optional query parameter "optional_argument" -------------
@@ -326,7 +659,7 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "optional_argument", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "optional_argument", Err: err})
 			return
 		}
 		params.OptionalArgument = &value_
@@ -346,12 +679,12 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "required_argument", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "required_argument", Err: err})
 			return
 		}
 		params.RequiredArgument = value_
 	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "required_argument"})
+		sh.options.RequestErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "required_argument"})
 		return
 	}
 
@@ -362,7 +695,7 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 		var HeaderArgument int32
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "header_argument", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "header_argument", Count: n})
 			return
 		}
 
@@ -372,7 +705,7 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 			HeaderArgument = int32(v_)
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header_argument", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "header_argument", Err: err})
 			return
 		}
 
@@ -380,20 +713,32 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWithArgs(w, r, params)
-	}))
+	var request GetWithArgsRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetWithArgs(ctx, request.(GetWithArgsRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetWithArgs")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWithArgsResponseObject); ok {
+		if err := validResponse.VisitGetWithArgsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetWithReferences operation middleware
-func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *http.Request) {
+// GetWithReferences serves the GetWithReferences operation.
+func (sh *serverHandler) GetWithReferences(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -411,7 +756,7 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "global_argument", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "global_argument", Err: err})
 		return
 	}
 
@@ -424,24 +769,37 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 		argument = Argument(r.PathValue("argument"))
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "argument", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "argument", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWithReferences(w, r, globalArgument, argument)
-	}))
+	var request GetWithReferencesRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.GlobalArgument = globalArgument
+	request.Argument = argument
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetWithReferences(ctx, request.(GetWithReferencesRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetWithReferences")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWithReferencesResponseObject); ok {
+		if err := validResponse.VisitGetWithReferencesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetWithContentType operation middleware
-func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *http.Request) {
+// GetWithContentType serves the GetWithContentType operation.
+func (sh *serverHandler) GetWithContentType(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -455,39 +813,61 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 		contentType = GetWithContentTypeParamsContentType(r.PathValue("content_type"))
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "content_type", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "content_type", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWithContentType(w, r, contentType)
-	}))
+	var request GetWithContentTypeRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.ContentType = contentType
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetWithContentType(ctx, request.(GetWithContentTypeRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetWithContentType")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWithContentTypeResponseObject); ok {
+		if err := validResponse.VisitGetWithContentTypeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetReservedKeyword operation middleware
-func (siw *ServerInterfaceWrapper) GetReservedKeyword(w http.ResponseWriter, r *http.Request) {
+// GetReservedKeyword serves the GetReservedKeyword operation.
+func (sh *serverHandler) GetReservedKeyword(w http.ResponseWriter, r *http.Request) {
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetReservedKeyword(w, r)
-	}))
+	var request GetReservedKeywordRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetReservedKeyword(ctx, request.(GetReservedKeywordRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetReservedKeyword")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetReservedKeywordResponseObject); ok {
+		if err := validResponse.VisitGetReservedKeywordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// CreateResource operation middleware
-func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http.Request) {
+// CreateResource serves the CreateResource operation.
+func (sh *serverHandler) CreateResource(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -501,24 +881,43 @@ func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http
 		argument = Argument(r.PathValue("argument"))
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "argument", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "argument", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateResource(w, r, argument)
-	}))
+	var request CreateResourceRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Argument = argument
+
+	var body CreateResourceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.CreateResource(ctx, request.(CreateResourceRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "CreateResource")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateResourceResponseObject); ok {
+		if err := validResponse.VisitCreateResourceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// CreateResource2 operation middleware
-func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *http.Request) {
+// CreateResource2 serves the CreateResource2 operation.
+func (sh *serverHandler) CreateResource2(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -536,11 +935,11 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "inline_argument", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "inline_argument", Err: err})
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params CreateResource2Params
 
 	// ------------- Optional query parameter "inline_query_argument" -------------
@@ -557,26 +956,49 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "inline_query_argument", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "inline_query_argument", Err: err})
 			return
 		}
 		params.InlineQueryArgument = &value_
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateResource2(w, r, inlineArgument, params)
-	}))
+	var request CreateResource2RequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.InlineArgument = inlineArgument
+	request.Params = params
+
+	var body CreateResource2JSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
 	}
 
-	handler.ServeHTTP(w, r)
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.CreateResource2(ctx, request.(CreateResource2RequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "CreateResource2")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateResource2ResponseObject); ok {
+		if err := validResponse.VisitCreateResource2Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// UpdateResource3 operation middleware
-func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *http.Request) {
+// UpdateResource3 serves the UpdateResource3 operation.
+func (sh *serverHandler) UpdateResource3(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -594,35 +1016,64 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fallthrough", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fallthrough", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateResource3(w, r, pFallthrough)
-	}))
+	var request UpdateResource3RequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Fallthrough = pFallthrough
+
+	var body UpdateResource3JSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.UpdateResource3(ctx, request.(UpdateResource3RequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "UpdateResource3")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateResource3ResponseObject); ok {
+		if err := validResponse.VisitUpdateResource3Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetResponseWithReference operation middleware
-func (siw *ServerInterfaceWrapper) GetResponseWithReference(w http.ResponseWriter, r *http.Request) {
+// GetResponseWithReference serves the GetResponseWithReference operation.
+func (sh *serverHandler) GetResponseWithReference(w http.ResponseWriter, r *http.Request) {
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetResponseWithReference(w, r)
-	}))
+	var request GetResponseWithReferenceRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetResponseWithReference(ctx, request.(GetResponseWithReferenceRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetResponseWithReference")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetResponseWithReferenceResponseObject); ok {
+		if err := validResponse.VisitGetResponseWithReferenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 type UnescapedCookieParamError struct {
@@ -692,69 +1143,4 @@ type TooManyValuesForParamError struct {
 
 func (e *TooManyValuesForParamError) Error() string {
 	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
-}
-
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
-
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/response-with-reference", wrapper.GetResponseWithReference)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reserved-keyword", wrapper.GetReservedKeyword)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/every-type-optional", wrapper.GetEveryTypeOptional)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/get-simple", wrapper.GetSimple)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/get-with-type/{content_type}", wrapper.GetWithContentType)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/get-with-references/{global_argument}/{argument}", wrapper.GetWithReferences)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/get-with-args", wrapper.GetWithArgs)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/resource/{argument}", wrapper.CreateResource)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/resource2/{inline_argument}", wrapper.CreateResource2)
-	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/resource3/{fallthrough}", wrapper.UpdateResource3)
-
-	return m
 }

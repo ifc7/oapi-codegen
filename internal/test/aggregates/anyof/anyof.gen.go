@@ -1542,68 +1542,260 @@ func ParseGetRefPetsResponse(rsp *http.Response) (*GetRefPetsResponse, error) {
 	return response, nil
 }
 
+type GetInlinePetsRequestObject struct {
+}
+
+type GetInlinePetsResponseObject interface {
+	VisitGetInlinePetsResponse(w http.ResponseWriter) error
+}
+
+type GetInlinePets200JSONResponse struct {
+	Data *[]GetInlinePets200JSONResponseBody_Data_Item `json:"data,omitempty"`
+}
+
+func (response GetInlinePets200JSONResponse) VisitGetInlinePetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInlinePets401Response struct {
+}
+
+func (response GetInlinePets401Response) VisitGetInlinePetsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetInlinePets500Response struct {
+}
+
+func (response GetInlinePets500Response) VisitGetInlinePetsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type GetIssue1189TestRequestObject struct {
+}
+
+type GetIssue1189TestResponseObject interface {
+	VisitGetIssue1189TestResponse(w http.ResponseWriter) error
+}
+
+type GetIssue1189Test200JSONResponse Issue1189Test
+
+func (response GetIssue1189Test200JSONResponse) VisitGetIssue1189TestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetParamTestRequestObject struct {
+	Params GetParamTestParams
+}
+
+type GetParamTestResponseObject interface {
+	VisitGetParamTestResponse(w http.ResponseWriter) error
+}
+
+type GetRefPetsRequestObject struct {
+}
+
+type GetRefPetsResponseObject interface {
+	VisitGetRefPetsResponse(w http.ResponseWriter) error
+}
+
+type GetRefPets200JSONResponse GetRefPetsDto
+
+func (response GetRefPets200JSONResponse) VisitGetRefPetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetRefPets401Response struct {
+}
+
+func (response GetRefPets401Response) VisitGetRefPetsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetRefPets500Response struct {
+}
+
+func (response GetRefPets500Response) VisitGetRefPetsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetInlinePets Get a list of pets (inline anyOf)
 	// (GET /inline/pets)
-	GetInlinePets(w http.ResponseWriter, r *http.Request)
+	GetInlinePets(ctx context.Context, request GetInlinePetsRequestObject) (GetInlinePetsResponseObject, error)
 
 	// (GET /issue1189/test)
-	GetIssue1189Test(w http.ResponseWriter, r *http.Request)
+	GetIssue1189Test(ctx context.Context, request GetIssue1189TestRequestObject) (GetIssue1189TestResponseObject, error)
 
 	// (GET /param/test)
-	GetParamTest(w http.ResponseWriter, r *http.Request, params GetParamTestParams)
+	GetParamTest(ctx context.Context, request GetParamTestRequestObject) (GetParamTestResponseObject, error)
 	// GetRefPets Get a list of pets ($ref anyOf)
 	// (GET /ref/pets)
-	GetRefPets(w http.ResponseWriter, r *http.Request)
+	GetRefPets(ctx context.Context, request GetRefPetsRequestObject) (GetRefPetsResponseObject, error)
 }
 
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
 }
 
-type MiddlewareFunc func(http.Handler) http.Handler
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
 
-// GetInlinePets operation middleware
-func (siw *ServerInterfaceWrapper) GetInlinePets(w http.ResponseWriter, r *http.Request) {
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetInlinePets(w, r)
-	}))
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
+}
+
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
-	handler.ServeHTTP(w, r)
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/inline/pets", sh.GetInlinePets)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/ref/pets", sh.GetRefPets)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/issue1189/test", sh.GetIssue1189Test)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/param/test", sh.GetParamTest)
+
+	return m
 }
 
-// GetIssue1189Test operation middleware
-func (siw *ServerInterfaceWrapper) GetIssue1189Test(w http.ResponseWriter, r *http.Request) {
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
+}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetIssue1189Test(w, r)
-	}))
+// GetInlinePets serves the GetInlinePets operation.
+func (sh *serverHandler) GetInlinePets(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity["GetInlinePets"]))
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	var request GetInlinePetsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetInlinePets(ctx, request.(GetInlinePetsRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetInlinePets")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInlinePetsResponseObject); ok {
+		if err := validResponse.VisitGetInlinePetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetParamTest operation middleware
-func (siw *ServerInterfaceWrapper) GetParamTest(w http.ResponseWriter, r *http.Request) {
+// GetIssue1189Test serves the GetIssue1189Test operation.
+func (sh *serverHandler) GetIssue1189Test(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity["GetIssue1189Test"]))
+
+	var request GetIssue1189TestRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetIssue1189Test(ctx, request.(GetIssue1189TestRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetIssue1189Test")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetIssue1189TestResponseObject); ok {
+		if err := validResponse.VisitGetIssue1189TestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetParamTest serves the GetParamTest operation.
+func (sh *serverHandler) GetParamTest(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity["GetParamTest"]))
 
 	var err error
 	_ = err
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params GetParamTestParams
 
 	// ------------- Optional query parameter "test" -------------
@@ -1616,7 +1808,7 @@ func (siw *ServerInterfaceWrapper) GetParamTest(w http.ResponseWriter, r *http.R
 		_ = query_
 
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "test", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "test", Err: err})
 			return
 		}
 		if found_ {
@@ -1639,37 +1831,60 @@ func (siw *ServerInterfaceWrapper) GetParamTest(w http.ResponseWriter, r *http.R
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "test2", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "test2", Err: err})
 			return
 		}
 		params.Test2 = &value_
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetParamTest(w, r, params)
-	}))
+	var request GetParamTestRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetParamTest(ctx, request.(GetParamTestRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetParamTest")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetParamTestResponseObject); ok {
+		if err := validResponse.VisitGetParamTestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetRefPets operation middleware
-func (siw *ServerInterfaceWrapper) GetRefPets(w http.ResponseWriter, r *http.Request) {
+// GetRefPets serves the GetRefPets operation.
+func (sh *serverHandler) GetRefPets(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity["GetRefPets"]))
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetRefPets(w, r)
-	}))
+	var request GetRefPetsRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetRefPets(ctx, request.(GetRefPetsRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetRefPets")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRefPetsResponseObject); ok {
+		if err := validResponse.VisitGetRefPetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 type UnescapedCookieParamError struct {
@@ -1741,61 +1956,32 @@ func (e *TooManyValuesForParamError) Error() string {
 	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
 }
 
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
+// SecurityRequirement is one way to satisfy an operation's security: it maps
+// each security scheme the request must satisfy to the scopes it needs of
+// that scheme. An empty SecurityRequirement lets the request through
+// anonymously.
+type SecurityRequirement map[string][]string
+
+// operationSecurity holds the security requirements of each operation that
+// declares any.
+var operationSecurity = map[string][]SecurityRequirement{
+	"GetInlinePets":    {{"ApiKeyAuth": {}}},
+	"GetIssue1189Test": {{"ApiKeyAuth": {}}},
+	"GetParamTest":     {{"ApiKeyAuth": {}}},
+	"GetRefPets":       {{"ApiKeyAuth": {}}},
 }
 
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
+type securityRequirementsKey struct{}
 
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/inline/pets", wrapper.GetInlinePets)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/ref/pets", wrapper.GetRefPets)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/issue1189/test", wrapper.GetIssue1189Test)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/param/test", wrapper.GetParamTest)
-
-	return m
+// SecurityRequirements returns the security requirements of the operation
+// that ctx's request is for: the request is authorized when it satisfies any
+// one of them. It returns nil when the operation declares no security.
+//
+// The server stores them in the request's context before it binds the
+// request, so a MiddlewareFunc, a ServerInterface method and the
+// RequestErrorHandlerFunc can all read them. Every request for the operation
+// shares them, so they must not be modified.
+func SecurityRequirements(ctx context.Context) []SecurityRequirement {
+	requirements, _ := ctx.Value(securityRequirementsKey{}).([]SecurityRequirement)
+	return requirements
 }

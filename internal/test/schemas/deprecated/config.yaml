@@ -4,8 +4,7 @@ output: deprecated.gen.go
 generate:
   models: true
   client: true
-  strict-server: true
-  std-http-server: true
+  server: true
 output-options:
   # keep all types even if unreferenced (deprecated fields/objects)
   skip-prune: true

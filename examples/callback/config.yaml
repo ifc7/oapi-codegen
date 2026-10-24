@@ -3,7 +3,7 @@ package: treefarm
 generate:
   models: true
   client: true
-  std-http-server: true
+  server: true
 output-options:
   skip-prune: true
   # Use ToCamelCaseWithInitialisms so spec fields like `id` and

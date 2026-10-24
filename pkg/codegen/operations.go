@@ -86,7 +86,7 @@ func (pd ParameterDefinition) ZeroValueIsNil() bool {
 }
 
 // JsonTag generates the struct tag annotation for a parameter field on a
-// strict RequestObject struct. If Parameter Foo is marshaled to json as "foo",
+// server RequestObject struct. If Parameter Foo is marshaled to json as "foo",
 // this will create the annotation 'json:"foo"'. Tags configured via
 // output-options.struct-tags are rendered too.
 // It also includes any additional struct tags from x-oapi-codegen-extra-tags
@@ -565,12 +565,69 @@ func sharedParameterTypeDefs(sharedParams []ParameterDefinition) []TypeDefinitio
 	return typeDefs
 }
 
+// SecurityRequirementDefinition is one way to satisfy an operation's security:
+// every scheme it lists, each with the scopes it requires. An empty one lets
+// the operation be called anonymously.
+type SecurityRequirementDefinition []SecuritySchemeScopes
+
+// SecuritySchemeScopes names a security scheme and the scopes a security
+// requirement needs of it.
+type SecuritySchemeScopes struct {
+	Scheme string
+	Scopes []string
+}
+
+// operationSecurity returns an operation's security requirements: its own
+// when it declares any (an empty list declaring that it needs none), and the
+// document's otherwise. Schemes are sorted by name, so the generated code is
+// deterministic.
+func operationSecurity(operation *openapi3.SecurityRequirements, document openapi3.SecurityRequirements) []SecurityRequirementDefinition {
+	requirements := document
+	if operation != nil {
+		requirements = *operation
+	}
+	var out []SecurityRequirementDefinition
+	for _, requirement := range requirements {
+		def := SecurityRequirementDefinition{}
+		for _, scheme := range SortedMapKeys(requirement) {
+			def = append(def, SecuritySchemeScopes{Scheme: scheme, Scopes: requirement[scheme]})
+		}
+		out = append(out, def)
+	}
+	return out
+}
+
+// securityRequirementsLiteral returns requirements as a composite literal of
+// []SecurityRequirement with the type elided, as an element of a map or slice
+// literal of them.
+func securityRequirementsLiteral(requirements []SecurityRequirementDefinition) string {
+	var b strings.Builder
+	b.WriteString("{")
+	for i, requirement := range requirements {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString("{")
+		for j, scheme := range requirement {
+			if j > 0 {
+				b.WriteString(", ")
+			}
+			scopes := make([]string, len(scheme.Scopes))
+			for k, scope := range scheme.Scopes {
+				scopes[k] = StringToGoString(scope)
+			}
+			fmt.Fprintf(&b, "%s: {%s}", StringToGoString(scheme.Scheme), strings.Join(scopes, ", "))
+		}
+		b.WriteString("}")
+	}
+	b.WriteString("}")
+	return b.String()
+}
+
 // OperationDefinition describes an Operation
 type OperationDefinition struct {
 	// OperationId is the `operationId` field from the OpenAPI Specification, after going through a `nameNormalizer`, and will be used to generate function names
 	OperationId string
-	// SpecOperationId is the raw `operationId` value as it appears in the OpenAPI spec, before normalization to a Go identifier. Empty when the spec didn't supply one (in which case the codegen-generated ID is the only available identifier and is exposed via OperationId).
-	SpecOperationId string
 
 	PathParams      []ParameterDefinition // Parameters in the path, eg, /path/:param
 	HeaderParams    []ParameterDefinition // Parameters in HTTP headers
@@ -593,6 +650,10 @@ type OperationDefinition struct {
 	IsAlias     bool   // True when this path is a $ref alias of another path item
 	AliasTarget string // When IsAlias is true, this is the OperationId of the canonical operation (for route registration to reference the correct wrapper)
 	PathItemRef string // The path item's $ref (if any); used to qualify externally-loaded schemas referenced from this operation's responses
+	// SecurityRequirements are the ways a request may satisfy the
+	// operation's security, any one of which is enough. Empty when the
+	// operation declares no security.
+	SecurityRequirements []SecurityRequirementDefinition
 
 	// IsWebhook is true when this OperationDefinition was sourced from
 	// spec.Webhooks (OpenAPI 3.1+). Webhook operations have no path
@@ -613,23 +674,12 @@ type OperationDefinition struct {
 	CallbackName string
 }
 
-// HandlerName returns the OperationId to use when referencing the server-side
-// wrapper function. For alias operations this is the canonical operation's ID,
-// since the alias doesn't generate its own wrapper.
+// HandlerName returns the OperationId of the server-side handler method that
+// serves the operation. For alias operations this is the canonical operation's
+// ID, since the alias doesn't generate its own handler.
 func (o *OperationDefinition) HandlerName() string {
 	if o.IsAlias {
 		return o.AliasTarget
-	}
-	return o.OperationId
-}
-
-// MiddlewareKey returns the identifier to use as the key in per-operation
-// middleware maps. The raw spec OperationId is preferred so map keys mirror
-// the OpenAPI spec verbatim; falls back to the normalized OperationId when
-// the spec didn't supply one.
-func (o *OperationDefinition) MiddlewareKey() string {
-	if o.SpecOperationId != "" {
-		return o.SpecOperationId
 	}
 	return o.OperationId
 }
@@ -721,8 +771,15 @@ func (o *OperationDefinition) AllParams() []ParameterDefinition {
 // If we have parameters other than path parameters, they're bundled into an
 // object. Returns true if we have any of those. This is used from the template
 // engine.
-func (o *OperationDefinition) RequiresParamObject() bool {
+func (o OperationDefinition) RequiresParamObject() bool {
 	return len(o.Params()) > 0
+}
+
+// SecurityRequirementsLiteral returns the operation's security requirements
+// as a []SecurityRequirement composite literal with the type elided. This is
+// used from the template engine.
+func (o OperationDefinition) SecurityRequirementsLiteral() string {
+	return securityRequirementsLiteral(o.SecurityRequirements)
 }
 
 // HasBody is called by the template engine to determine whether to generate body
@@ -943,7 +1000,7 @@ func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefini
 
 					// Use the same body-type name as the server-side
 					// GenerateResponseDefinitions ("Body" suffixed so it
-					// doesn't collide with the strict envelope's struct
+					// doesn't collide with the response envelope's struct
 					// wrapper) as the schema-path root. The canonical
 					// declaration happens server-side; here we just point
 					// RefType at the same name so the JSON<status> field
@@ -1254,13 +1311,13 @@ type ResponseContentDefinition struct {
 	// which case we will produce "Response200JSONContent".
 	NameTag string
 
-	// NeedsBodyWrapper is true when a schema-backed strict response cannot use
+	// NeedsBodyWrapper is true when a schema-backed server response cannot use
 	// its generated Go type directly: as a method receiver, or, for a reusable
 	// response envelope, as an embedded field.
 	NeedsBodyWrapper bool
 }
 
-// responseSchemaNeedsBodyWrapper reports whether the strict response for a
+// responseSchemaNeedsBodyWrapper reports whether the server response for a
 // schema must carry its body in a Body field. embedded is true when the
 // generated type is a reusable response envelope that operations embed in a
 // struct, rather than a type that operations use as a method receiver.
@@ -1318,7 +1375,7 @@ func responseSchemaNeedsBodyWrapperSeen(sref *openapi3.SchemaRef, schema Schema,
 	return false, nil
 }
 
-// goTypeNeedsBodyWrapper reports whether typeDecl cannot carry a strict
+// goTypeNeedsBodyWrapper reports whether typeDecl cannot carry a server
 // response directly. A method receiver cannot be a pointer or an interface
 // type. An embedded field can be an interface, but not a pointer.
 func goTypeNeedsBodyWrapper(typeDecl string, embedded bool) bool {
@@ -1354,13 +1411,13 @@ func (r ResponseContentDefinition) IsSupported() bool {
 	return r.IsJSON() || r.IsFormdata() || r.IsMultipart() || r.IsText()
 }
 
-// usesSchemaReceiver reports whether a strict response derives its receiver
+// usesSchemaReceiver reports whether a server response derives its receiver
 // from the response schema rather than a fixed callback or reader type.
 func (r ResponseContentDefinition) usesSchemaReceiver() bool {
 	return r.IsJSON() || r.IsText() || r.IsFormdata()
 }
 
-// CanUseDirectResponseType reports whether the strict response can use its
+// CanUseDirectResponseType reports whether the server response can use its
 // wire type directly instead of exposing a Body field.
 func (r ResponseContentDefinition) CanUseDirectResponseType() bool {
 	return r.IsSupported() && !r.NeedsBodyWrapper
@@ -1548,10 +1605,6 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 			}
 			// take a copy of operationId, so we don't modify the underlying spec
 			operationId := op.OperationID
-			// Preserve the raw spec value (pre-normalization, pre-prefix, pre-alias-suffix)
-			// so templates that need to mirror the OpenAPI spec verbatim can do so
-			// without seeing the Go-identifier-friendly transformations applied below.
-			specOperationId := op.OperationID
 			// We rely on OperationID to generate function names, it's required
 			if operationId == "" {
 				operationId, err = generateDefaultOperationID(opName, requestPath)
@@ -1619,24 +1672,24 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 			ensureExternalRefsInResponseDefinitions(&responseDefinitions, pathItem.Ref)
 
 			opDef := OperationDefinition{
-				PathParams:      pathParams,
-				HeaderParams:    FilterParameterDefinitionByType(allParams, "header"),
-				QueryParams:     FilterParameterDefinitionByType(allParams, "query"),
-				CookieParams:    FilterParameterDefinitionByType(allParams, "cookie"),
-				OperationId:     nameNormalizer(operationId),
-				SpecOperationId: specOperationId,
+				PathParams:   pathParams,
+				HeaderParams: FilterParameterDefinitionByType(allParams, "header"),
+				QueryParams:  FilterParameterDefinitionByType(allParams, "query"),
+				CookieParams: FilterParameterDefinitionByType(allParams, "cookie"),
+				OperationId:  nameNormalizer(operationId),
 				// Replace newlines in summary.
-				Summary:         op.Summary,
-				Method:          opName,
-				Path:            requestPath,
-				SpecOrder:       pathSpecOrder,
-				Spec:            op,
-				Bodies:          bodyDefinitions,
-				Responses:       responseDefinitions,
-				TypeDefinitions: typeDefinitions,
-				IsAlias:         isAlias,
-				AliasTarget:     aliasTarget,
-				PathItemRef:     pathItem.Ref,
+				Summary:              op.Summary,
+				Method:               opName,
+				Path:                 requestPath,
+				SpecOrder:            pathSpecOrder,
+				Spec:                 op,
+				Bodies:               bodyDefinitions,
+				Responses:            responseDefinitions,
+				TypeDefinitions:      typeDefinitions,
+				IsAlias:              isAlias,
+				AliasTarget:          aliasTarget,
+				PathItemRef:          pathItem.Ref,
+				SecurityRequirements: operationSecurity(op.Security, swagger.Security),
 			}
 
 			if op.RequestBody != nil {
@@ -2107,10 +2160,10 @@ func GenerateResponseDefinitions(operationID string, responses map[string]*opena
 			}
 
 			responseTypeName := operationID + statusCode + tag + "Response"
-			// The strict-server envelope keeps the bare ...Response name
+			// The server response envelope keeps the bare ...Response name
 			// (e.g. "GetPing200JSONResponse"); the hoisted body type is
 			// suffixed so the envelope can reference it without colliding
-			// (the strict envelope is sometimes a struct that wraps the
+			// (the response envelope is sometimes a struct that wraps the
 			// body in a Body field, which would self-reference if the
 			// names matched).
 			responseBodyTypeName := responseTypeName + "Body"
@@ -2125,7 +2178,7 @@ func GenerateResponseDefinitions(operationID string, responses map[string]*opena
 			// via op.TypeDefinitions (collected in
 			// GenerateTypeDefsForOperation) and gets declared once via
 			// typedef.tmpl with full union/additionalProperties methods.
-			// The strict-server template references it as the body type
+			// The server template references it as the body type
 			// from the envelope.
 			//
 			// When the operation came from an externally-ref'd path item,
@@ -2441,31 +2494,40 @@ func sortOperationsBySpecOrder(ops []OperationDefinition) []OperationDefinition 
 	return out
 }
 
-// GenerateStdHTTPServer generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateStdHTTPServer(t *template.Template, operations []OperationDefinition) (string, error) {
+// GenerateServer generates the server: each operation's request and response
+// objects, the ServerInterface, the net/http handler that routes requests to
+// it, and the operations' security requirements.
+func GenerateServer(t *template.Template, operations []OperationDefinition) (string, error) {
 	var buf bytes.Buffer
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-interface.tmpl", "server-middleware.tmpl"}, t, operations); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-interface.tmpl"}, t, operations); err != nil {
 		return "", err
 	}
+	buf.WriteString("\n")
 	// Route registration follows spec-declaration order (issue #1887).
-	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server-handler.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-routes.tmpl"}, t, sortOperationsBySpecOrder(operations)); err != nil {
+		return "", err
+	}
+	buf.WriteString("\n")
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-handler.tmpl"}, t, operations); err != nil {
+		return "", err
+	}
+	var secured []OperationDefinition
+	for _, op := range operations {
+		if len(op.SecurityRequirements) > 0 && !op.IsAlias {
+			secured = append(secured, op)
+		}
+	}
+	buf.WriteString("\n")
+	if err := GenerateTemplatesIntoBuffer(&buf, []string{"server/server-security.tmpl"}, t, secured); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
 }
 
-// GenerateStrictServer generates the strict server interface and the glue
-// that adapts it to the net/http server.
-func GenerateStrictServer(t *template.Template, operations []OperationDefinition, opts Configuration) (string, error) {
-	if !opts.Generate.StdHTTPServer {
-		return "", nil
-	}
-	return GenerateTemplates([]string{"strict/strict-interface.tmpl", "strict/strict-http.tmpl"}, t, operations)
-}
-
-func GenerateStrictResponses(t *template.Template, responses []ResponseDefinition) (string, error) {
-	return GenerateTemplates([]string{"strict/strict-responses.tmpl"}, t, responses)
+// GenerateServerResponses generates the server's response types for the
+// spec's reusable responses.
+func GenerateServerResponses(t *template.Template, responses []ResponseDefinition) (string, error) {
+	return GenerateTemplates([]string{"server/server-responses.tmpl"}, t, responses)
 }
 
 // GenerateClient generates the client for the operations.

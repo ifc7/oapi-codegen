@@ -8,6 +8,7 @@ package stdhttpparamsgen
 import (
 	"bytes"
 	"compress/flate"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -22,105 +23,733 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
+type SimpleResponseTextResponse string
+
+type GetContentObjectRequestObject struct {
+	Param ComplexObject `json:"param"`
+}
+
+type GetContentObjectResponseObject interface {
+	VisitGetContentObjectResponse(w http.ResponseWriter) error
+}
+
+type GetContentObject200TextResponse SimpleResponseTextResponse
+
+func (response GetContentObject200TextResponse) VisitGetContentObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetCookieRequestObject struct {
+	Params GetCookieParams
+}
+
+type GetCookieResponseObject interface {
+	VisitGetCookieResponse(w http.ResponseWriter) error
+}
+
+type GetCookiedefaultTextResponse struct {
+	Body       string
+	StatusCode int
+}
+
+func (response GetCookiedefaultTextResponse) VisitGetCookieResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(response.StatusCode)
+
+	_, err := w.Write([]byte(fmt.Sprint(response.Body)))
+	return err
+}
+
+type EnumParamsRequestObject struct {
+	Params EnumParamsParams
+}
+
+type EnumParamsResponseObject interface {
+	VisitEnumParamsResponse(w http.ResponseWriter) error
+}
+
+type EnumParams204Response struct {
+}
+
+func (response EnumParams204Response) VisitEnumParamsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type GetHeaderRequestObject struct {
+	Params GetHeaderParams
+}
+
+type GetHeaderResponseObject interface {
+	VisitGetHeaderResponse(w http.ResponseWriter) error
+}
+
+type GetHeaderdefaultTextResponse struct {
+	Body       string
+	StatusCode int
+}
+
+func (response GetHeaderdefaultTextResponse) VisitGetHeaderResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(response.StatusCode)
+
+	_, err := w.Write([]byte(fmt.Sprint(response.Body)))
+	return err
+}
+
+type GetLabelExplodeArrayRequestObject struct {
+	Param []int32 `json:"param"`
+}
+
+type GetLabelExplodeArrayResponseObject interface {
+	VisitGetLabelExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetLabelExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelExplodeArray200TextResponse) VisitGetLabelExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelExplodeObjectRequestObject struct {
+	Param Object `json:"param"`
+}
+
+type GetLabelExplodeObjectResponseObject interface {
+	VisitGetLabelExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetLabelExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelExplodeObject200TextResponse) VisitGetLabelExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelExplodePrimitiveRequestObject struct {
+	Param int32 `json:"param"`
+}
+
+type GetLabelExplodePrimitiveResponseObject interface {
+	VisitGetLabelExplodePrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetLabelExplodePrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelExplodePrimitive200TextResponse) VisitGetLabelExplodePrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelNoExplodeArrayRequestObject struct {
+	Param []int32 `json:"param"`
+}
+
+type GetLabelNoExplodeArrayResponseObject interface {
+	VisitGetLabelNoExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetLabelNoExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelNoExplodeArray200TextResponse) VisitGetLabelNoExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelNoExplodeObjectRequestObject struct {
+	Param Object `json:"param"`
+}
+
+type GetLabelNoExplodeObjectResponseObject interface {
+	VisitGetLabelNoExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetLabelNoExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelNoExplodeObject200TextResponse) VisitGetLabelNoExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetLabelPrimitiveRequestObject struct {
+	Param int32 `json:"param"`
+}
+
+type GetLabelPrimitiveResponseObject interface {
+	VisitGetLabelPrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetLabelPrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetLabelPrimitive200TextResponse) VisitGetLabelPrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixExplodeArrayRequestObject struct {
+	Id []int32 `json:"id"`
+}
+
+type GetMatrixExplodeArrayResponseObject interface {
+	VisitGetMatrixExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixExplodeArray200TextResponse) VisitGetMatrixExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixExplodeObjectRequestObject struct {
+	Id Object `json:"id"`
+}
+
+type GetMatrixExplodeObjectResponseObject interface {
+	VisitGetMatrixExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixExplodeObject200TextResponse) VisitGetMatrixExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixExplodePrimitiveRequestObject struct {
+	Id int32 `json:"id"`
+}
+
+type GetMatrixExplodePrimitiveResponseObject interface {
+	VisitGetMatrixExplodePrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixExplodePrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixExplodePrimitive200TextResponse) VisitGetMatrixExplodePrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixNoExplodeArrayRequestObject struct {
+	Id []int32 `json:"id"`
+}
+
+type GetMatrixNoExplodeArrayResponseObject interface {
+	VisitGetMatrixNoExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixNoExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixNoExplodeArray200TextResponse) VisitGetMatrixNoExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixNoExplodeObjectRequestObject struct {
+	Id Object `json:"id"`
+}
+
+type GetMatrixNoExplodeObjectResponseObject interface {
+	VisitGetMatrixNoExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixNoExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixNoExplodeObject200TextResponse) VisitGetMatrixNoExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetMatrixPrimitiveRequestObject struct {
+	Id int32 `json:"id"`
+}
+
+type GetMatrixPrimitiveResponseObject interface {
+	VisitGetMatrixPrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetMatrixPrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetMatrixPrimitive200TextResponse) VisitGetMatrixPrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetPassThroughRequestObject struct {
+	Param string `json:"param"`
+}
+
+type GetPassThroughResponseObject interface {
+	VisitGetPassThroughResponse(w http.ResponseWriter) error
+}
+
+type GetPassThrough200TextResponse SimpleResponseTextResponse
+
+func (response GetPassThrough200TextResponse) VisitGetPassThroughResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetDeepObjectRequestObject struct {
+	Params GetDeepObjectParams
+}
+
+type GetDeepObjectResponseObject interface {
+	VisitGetDeepObjectResponse(w http.ResponseWriter) error
+}
+
+type GetDeepObjectdefaultTextResponse struct {
+	Body       string
+	StatusCode int
+}
+
+func (response GetDeepObjectdefaultTextResponse) VisitGetDeepObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(response.StatusCode)
+
+	_, err := w.Write([]byte(fmt.Sprint(response.Body)))
+	return err
+}
+
+type GetQueryDelimitedRequestObject struct {
+	Params GetQueryDelimitedParams
+}
+
+type GetQueryDelimitedResponseObject interface {
+	VisitGetQueryDelimitedResponse(w http.ResponseWriter) error
+}
+
+type GetQueryDelimited200TextResponse SimpleResponseTextResponse
+
+func (response GetQueryDelimited200TextResponse) VisitGetQueryDelimitedResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetQueryFormRequestObject struct {
+	Params GetQueryFormParams
+}
+
+type GetQueryFormResponseObject interface {
+	VisitGetQueryFormResponse(w http.ResponseWriter) error
+}
+
+type GetQueryForm200TextResponse SimpleResponseTextResponse
+
+func (response GetQueryForm200TextResponse) VisitGetQueryFormResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleExplodeArrayRequestObject struct {
+	Param []int32 `json:"param"`
+}
+
+type GetSimpleExplodeArrayResponseObject interface {
+	VisitGetSimpleExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleExplodeArray200TextResponse) VisitGetSimpleExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleExplodeObjectRequestObject struct {
+	Param Object `json:"param"`
+}
+
+type GetSimpleExplodeObjectResponseObject interface {
+	VisitGetSimpleExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleExplodeObject200TextResponse) VisitGetSimpleExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleExplodePrimitiveRequestObject struct {
+	Param int32 `json:"param"`
+}
+
+type GetSimpleExplodePrimitiveResponseObject interface {
+	VisitGetSimpleExplodePrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleExplodePrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleExplodePrimitive200TextResponse) VisitGetSimpleExplodePrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleNoExplodeArrayRequestObject struct {
+	Param []int32 `json:"param"`
+}
+
+type GetSimpleNoExplodeArrayResponseObject interface {
+	VisitGetSimpleNoExplodeArrayResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleNoExplodeArray200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleNoExplodeArray200TextResponse) VisitGetSimpleNoExplodeArrayResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleNoExplodeObjectRequestObject struct {
+	Param Object `json:"param"`
+}
+
+type GetSimpleNoExplodeObjectResponseObject interface {
+	VisitGetSimpleNoExplodeObjectResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleNoExplodeObject200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleNoExplodeObject200TextResponse) VisitGetSimpleNoExplodeObjectResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimplePrimitiveRequestObject struct {
+	Param int32 `json:"param"`
+}
+
+type GetSimplePrimitiveResponseObject interface {
+	VisitGetSimplePrimitiveResponse(w http.ResponseWriter) error
+}
+
+type GetSimplePrimitive200TextResponse SimpleResponseTextResponse
+
+func (response GetSimplePrimitive200TextResponse) VisitGetSimplePrimitiveResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetSimpleStringRequestObject struct {
+	Param string `json:"param"`
+}
+
+type GetSimpleStringResponseObject interface {
+	VisitGetSimpleStringResponse(w http.ResponseWriter) error
+}
+
+type GetSimpleString200TextResponse SimpleResponseTextResponse
+
+func (response GetSimpleString200TextResponse) VisitGetSimpleStringResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
+type GetStartingWithNumberRequestObject struct {
+	N1param string `json:"1param"`
+}
+
+type GetStartingWithNumberResponseObject interface {
+	VisitGetStartingWithNumberResponse(w http.ResponseWriter) error
+}
+
+type GetStartingWithNumber200TextResponse SimpleResponseTextResponse
+
+func (response GetStartingWithNumber200TextResponse) VisitGetStartingWithNumberResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+
+	_, err := w.Write([]byte(fmt.Sprint(response)))
+	return err
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
 	// (GET /contentObject/{param})
-	GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject)
+	GetContentObject(ctx context.Context, request GetContentObjectRequestObject) (GetContentObjectResponseObject, error)
 
 	// (GET /cookie)
-	GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams)
+	GetCookie(ctx context.Context, request GetCookieRequestObject) (GetCookieResponseObject, error)
 
 	// (GET /enums)
-	EnumParams(w http.ResponseWriter, r *http.Request, params EnumParamsParams)
+	EnumParams(ctx context.Context, request EnumParamsRequestObject) (EnumParamsResponseObject, error)
 
 	// (GET /header)
-	GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams)
+	GetHeader(ctx context.Context, request GetHeaderRequestObject) (GetHeaderResponseObject, error)
 
 	// (GET /labelExplodeArray/{.param*})
-	GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
+	GetLabelExplodeArray(ctx context.Context, request GetLabelExplodeArrayRequestObject) (GetLabelExplodeArrayResponseObject, error)
 
 	// (GET /labelExplodeObject/{.param*})
-	GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
+	GetLabelExplodeObject(ctx context.Context, request GetLabelExplodeObjectRequestObject) (GetLabelExplodeObjectResponseObject, error)
 
 	// (GET /labelExplodePrimitive/{.param*})
-	GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32)
+	GetLabelExplodePrimitive(ctx context.Context, request GetLabelExplodePrimitiveRequestObject) (GetLabelExplodePrimitiveResponseObject, error)
 
 	// (GET /labelNoExplodeArray/{.param})
-	GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
+	GetLabelNoExplodeArray(ctx context.Context, request GetLabelNoExplodeArrayRequestObject) (GetLabelNoExplodeArrayResponseObject, error)
 
 	// (GET /labelNoExplodeObject/{.param})
-	GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
+	GetLabelNoExplodeObject(ctx context.Context, request GetLabelNoExplodeObjectRequestObject) (GetLabelNoExplodeObjectResponseObject, error)
 
 	// (GET /labelPrimitive/{.param})
-	GetLabelPrimitive(w http.ResponseWriter, r *http.Request, param int32)
+	GetLabelPrimitive(ctx context.Context, request GetLabelPrimitiveRequestObject) (GetLabelPrimitiveResponseObject, error)
 
 	// (GET /matrixExplodeArray/{.id*})
-	GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, id []int32)
+	GetMatrixExplodeArray(ctx context.Context, request GetMatrixExplodeArrayRequestObject) (GetMatrixExplodeArrayResponseObject, error)
 
 	// (GET /matrixExplodeObject/{.id*})
-	GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, id Object)
+	GetMatrixExplodeObject(ctx context.Context, request GetMatrixExplodeObjectRequestObject) (GetMatrixExplodeObjectResponseObject, error)
 
 	// (GET /matrixExplodePrimitive/{;id*})
-	GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request, id int32)
+	GetMatrixExplodePrimitive(ctx context.Context, request GetMatrixExplodePrimitiveRequestObject) (GetMatrixExplodePrimitiveResponseObject, error)
 
 	// (GET /matrixNoExplodeArray/{.id})
-	GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, id []int32)
+	GetMatrixNoExplodeArray(ctx context.Context, request GetMatrixNoExplodeArrayRequestObject) (GetMatrixNoExplodeArrayResponseObject, error)
 
 	// (GET /matrixNoExplodeObject/{.id})
-	GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, id Object)
+	GetMatrixNoExplodeObject(ctx context.Context, request GetMatrixNoExplodeObjectRequestObject) (GetMatrixNoExplodeObjectResponseObject, error)
 
 	// (GET /matrixPrimitive/{;id})
-	GetMatrixPrimitive(w http.ResponseWriter, r *http.Request, id int32)
+	GetMatrixPrimitive(ctx context.Context, request GetMatrixPrimitiveRequestObject) (GetMatrixPrimitiveResponseObject, error)
 
 	// (GET /passThrough/{param})
-	GetPassThrough(w http.ResponseWriter, r *http.Request, param string)
+	GetPassThrough(ctx context.Context, request GetPassThroughRequestObject) (GetPassThroughResponseObject, error)
 
 	// (GET /queryDeepObject)
-	GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams)
+	GetDeepObject(ctx context.Context, request GetDeepObjectRequestObject) (GetDeepObjectResponseObject, error)
 
 	// (GET /queryDelimited)
-	GetQueryDelimited(w http.ResponseWriter, r *http.Request, params GetQueryDelimitedParams)
+	GetQueryDelimited(ctx context.Context, request GetQueryDelimitedRequestObject) (GetQueryDelimitedResponseObject, error)
 
 	// (GET /queryForm)
-	GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams)
+	GetQueryForm(ctx context.Context, request GetQueryFormRequestObject) (GetQueryFormResponseObject, error)
 
 	// (GET /simpleExplodeArray/{param*})
-	GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
+	GetSimpleExplodeArray(ctx context.Context, request GetSimpleExplodeArrayRequestObject) (GetSimpleExplodeArrayResponseObject, error)
 
 	// (GET /simpleExplodeObject/{param*})
-	GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
+	GetSimpleExplodeObject(ctx context.Context, request GetSimpleExplodeObjectRequestObject) (GetSimpleExplodeObjectResponseObject, error)
 
 	// (GET /simpleExplodePrimitive/{param})
-	GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request, param int32)
+	GetSimpleExplodePrimitive(ctx context.Context, request GetSimpleExplodePrimitiveRequestObject) (GetSimpleExplodePrimitiveResponseObject, error)
 
 	// (GET /simpleNoExplodeArray/{param})
-	GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
+	GetSimpleNoExplodeArray(ctx context.Context, request GetSimpleNoExplodeArrayRequestObject) (GetSimpleNoExplodeArrayResponseObject, error)
 
 	// (GET /simpleNoExplodeObject/{param})
-	GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
+	GetSimpleNoExplodeObject(ctx context.Context, request GetSimpleNoExplodeObjectRequestObject) (GetSimpleNoExplodeObjectResponseObject, error)
 
 	// (GET /simplePrimitive/{param})
-	GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32)
+	GetSimplePrimitive(ctx context.Context, request GetSimplePrimitiveRequestObject) (GetSimplePrimitiveResponseObject, error)
 
 	// (GET /simpleString/{param})
-	GetSimpleString(w http.ResponseWriter, r *http.Request, param string)
+	GetSimpleString(ctx context.Context, request GetSimpleStringRequestObject) (GetSimpleStringResponseObject, error)
 
 	// (GET /startingWithNumber/{1param})
-	GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string)
+	GetStartingWithNumber(ctx context.Context, request GetStartingWithNumberRequestObject) (GetStartingWithNumberResponseObject, error)
 }
 
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
 }
 
-type MiddlewareFunc func(http.Handler) http.Handler
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
 
-// GetContentObject operation middleware
-func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *http.Request) {
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
+
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
+}
+
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
+	if options.RequestErrorHandlerFunc == nil {
+		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+	if options.ResponseErrorHandlerFunc == nil {
+		options.ResponseErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simplePrimitive/{param}", sh.GetSimplePrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleString/{param}", sh.GetSimpleString)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleNoExplodeArray/{param}", sh.GetSimpleNoExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodeArray/{param}", sh.GetSimpleExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleNoExplodeObject/{param}", sh.GetSimpleNoExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodeObject/{param}", sh.GetSimpleExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelNoExplodeArray/{param}", sh.GetLabelNoExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodeArray/{param}", sh.GetLabelExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelNoExplodeObject/{param}", sh.GetLabelNoExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodeObject/{param}", sh.GetLabelExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixNoExplodeArray/{id}", sh.GetMatrixNoExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodeArray/{id}", sh.GetMatrixExplodeArray)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixNoExplodeObject/{id}", sh.GetMatrixNoExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodeObject/{id}", sh.GetMatrixExplodeObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodePrimitive/{param}", sh.GetSimpleExplodePrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelPrimitive/{param}", sh.GetLabelPrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodePrimitive/{param}", sh.GetLabelExplodePrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixPrimitive/{id}", sh.GetMatrixPrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodePrimitive/{id}", sh.GetMatrixExplodePrimitive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/contentObject/{param}", sh.GetContentObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/passThrough/{param}", sh.GetPassThrough)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/startingWithNumber/{_param}", sh.GetStartingWithNumber)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryForm", sh.GetQueryForm)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryDelimited", sh.GetQueryDelimited)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryDeepObject", sh.GetDeepObject)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/header", sh.GetHeader)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cookie", sh.GetCookie)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/enums", sh.EnumParams)
+
+	return m
+}
+
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
+}
+
+// GetContentObject serves the GetContentObject operation.
+func (sh *serverHandler) GetContentObject(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -130,29 +759,41 @@ func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *ht
 
 	err = json.Unmarshal([]byte(r.PathValue("param")), &param)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetContentObject(w, r, param)
-	}))
+	var request GetContentObjectRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetContentObject(ctx, request.(GetContentObjectRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetContentObject")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetContentObjectResponseObject); ok {
+		if err := validResponse.VisitGetContentObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetCookie operation middleware
-func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Request) {
+// GetCookie serves the GetCookie operation.
+func (sh *serverHandler) GetCookie(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params GetCookieParams
 
 	{
@@ -166,7 +807,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 				value = int32(v_)
 			}
 			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
 				return
 			}
 			params.P = &value
@@ -185,7 +826,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 				value = int32(v_)
 			}
 			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
 				return
 			}
 			params.Ep = &value
@@ -218,7 +859,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 				}
 			}
 			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
 				return
 			}
 			params.Ea = &value
@@ -251,7 +892,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 				}
 			}
 			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
 				return
 			}
 			params.A = &value
@@ -292,7 +933,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 				}
 			}
 			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
 				return
 			}
 			params.Eo = &value
@@ -332,7 +973,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 				}
 			}
 			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
 				return
 			}
 			params.O = &value
@@ -349,13 +990,13 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 			decoded, err := url.QueryUnescape(cookie.Value)
 			if err != nil {
 				err = fmt.Errorf("Error unescaping cookie parameter 'co'")
-				siw.ErrorHandlerFunc(w, r, &UnescapedCookieParamError{ParamName: "co", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &UnescapedCookieParamError{ParamName: "co", Err: err})
 				return
 			}
 
 			err = json.Unmarshal([]byte(decoded), &value)
 			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "co", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "co", Err: err})
 				return
 			}
 
@@ -371,7 +1012,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 			var value string
 			value = cookie.Value
 			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
+				sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
 				return
 			}
 			params.N1s = &value
@@ -379,25 +1020,37 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCookie(w, r, params)
-	}))
+	var request GetCookieRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetCookie(ctx, request.(GetCookieRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetCookie")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCookieResponseObject); ok {
+		if err := validResponse.VisitGetCookieResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// EnumParams operation middleware
-func (siw *ServerInterfaceWrapper) EnumParams(w http.ResponseWriter, r *http.Request) {
+// EnumParams serves the EnumParams operation.
+func (sh *serverHandler) EnumParams(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params EnumParamsParams
 
 	// ------------- Optional query parameter "enumPathParam" -------------
@@ -414,31 +1067,43 @@ func (siw *ServerInterfaceWrapper) EnumParams(w http.ResponseWriter, r *http.Req
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "enumPathParam", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "enumPathParam", Err: err})
 			return
 		}
 		params.EnumPathParam = &value_
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EnumParams(w, r, params)
-	}))
+	var request EnumParamsRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.EnumParams(ctx, request.(EnumParamsRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "EnumParams")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnumParamsResponseObject); ok {
+		if err := validResponse.VisitEnumParamsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetHeader operation middleware
-func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Request) {
+// GetHeader serves the GetHeader operation.
+func (sh *serverHandler) GetHeader(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params GetHeaderParams
 
 	headers := r.Header
@@ -448,7 +1113,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XPrimitive int32
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Primitive", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Primitive", Count: n})
 			return
 		}
 
@@ -458,7 +1123,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			XPrimitive = int32(v_)
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive", Err: err})
 			return
 		}
 
@@ -471,7 +1136,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XPrimitiveExploded int32
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Primitive-Exploded", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Primitive-Exploded", Count: n})
 			return
 		}
 
@@ -481,7 +1146,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			XPrimitiveExploded = int32(v_)
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive-Exploded", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Primitive-Exploded", Err: err})
 			return
 		}
 
@@ -494,7 +1159,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XArrayExploded []int32
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Array-Exploded", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Array-Exploded", Count: n})
 			return
 		}
 
@@ -518,7 +1183,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array-Exploded", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array-Exploded", Err: err})
 			return
 		}
 
@@ -531,7 +1196,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XArray []int32
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Array", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Array", Count: n})
 			return
 		}
 
@@ -555,7 +1220,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Array", Err: err})
 			return
 		}
 
@@ -568,7 +1233,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XObjectExploded Object
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Object-Exploded", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Object-Exploded", Count: n})
 			return
 		}
 
@@ -600,7 +1265,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object-Exploded", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object-Exploded", Err: err})
 			return
 		}
 
@@ -613,7 +1278,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XObject Object
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Object", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Object", Count: n})
 			return
 		}
 
@@ -644,7 +1309,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Object", Err: err})
 			return
 		}
 
@@ -657,13 +1322,13 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XComplexObject ComplexObject
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Complex-Object", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Complex-Object", Count: n})
 			return
 		}
 
 		err = json.Unmarshal([]byte(valueList[0]), &XComplexObject)
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "X-Complex-Object", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "X-Complex-Object", Err: err})
 			return
 		}
 
@@ -676,7 +1341,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XPassThrough string
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Pass-Through", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Pass-Through", Count: n})
 			return
 		}
 
@@ -691,13 +1356,13 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var N1StartingWithNumber string
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "1-Starting-With-Number", Count: n})
+			sh.options.RequestErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "1-Starting-With-Number", Count: n})
 			return
 		}
 
 		N1StartingWithNumber = valueList[0]
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1-Starting-With-Number", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1-Starting-With-Number", Err: err})
 			return
 		}
 
@@ -705,20 +1370,32 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetHeader(w, r, params)
-	}))
+	var request GetHeaderRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetHeader(ctx, request.(GetHeaderRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetHeader")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHeaderResponseObject); ok {
+		if err := validResponse.VisitGetHeaderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetLabelExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request) {
+// GetLabelExplodeArray serves the GetLabelExplodeArray operation.
+func (sh *serverHandler) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -754,24 +1431,36 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeArray(w http.ResponseWriter, r
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelExplodeArray(w, r, param)
-	}))
+	var request GetLabelExplodeArrayRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetLabelExplodeArray(ctx, request.(GetLabelExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetLabelExplodeArray")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetLabelExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetLabelExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request) {
+// GetLabelExplodeObject serves the GetLabelExplodeObject operation.
+func (sh *serverHandler) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -815,24 +1504,36 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, 
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelExplodeObject(w, r, param)
-	}))
+	var request GetLabelExplodeObjectRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetLabelExplodeObject(ctx, request.(GetLabelExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetLabelExplodeObject")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetLabelExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetLabelExplodePrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request) {
+// GetLabelExplodePrimitive serves the GetLabelExplodePrimitive operation.
+func (sh *serverHandler) GetLabelExplodePrimitive(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -863,24 +1564,36 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodePrimitive(w http.ResponseWrite
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelExplodePrimitive(w, r, param)
-	}))
+	var request GetLabelExplodePrimitiveRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetLabelExplodePrimitive(ctx, request.(GetLabelExplodePrimitiveRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetLabelExplodePrimitive")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelExplodePrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetLabelExplodePrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetLabelNoExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request) {
+// GetLabelNoExplodeArray serves the GetLabelNoExplodeArray operation.
+func (sh *serverHandler) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -917,24 +1630,36 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeArray(w http.ResponseWriter,
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelNoExplodeArray(w, r, param)
-	}))
+	var request GetLabelNoExplodeArrayRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetLabelNoExplodeArray(ctx, request.(GetLabelNoExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetLabelNoExplodeArray")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelNoExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetLabelNoExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetLabelNoExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request) {
+// GetLabelNoExplodeObject serves the GetLabelNoExplodeObject operation.
+func (sh *serverHandler) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -978,24 +1703,36 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelNoExplodeObject(w, r, param)
-	}))
+	var request GetLabelNoExplodeObjectRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetLabelNoExplodeObject(ctx, request.(GetLabelNoExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetLabelNoExplodeObject")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelNoExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetLabelNoExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetLabelPrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetLabelPrimitive(w http.ResponseWriter, r *http.Request) {
+// GetLabelPrimitive serves the GetLabelPrimitive operation.
+func (sh *serverHandler) GetLabelPrimitive(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1027,24 +1764,36 @@ func (siw *ServerInterfaceWrapper) GetLabelPrimitive(w http.ResponseWriter, r *h
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelPrimitive(w, r, param)
-	}))
+	var request GetLabelPrimitiveRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetLabelPrimitive(ctx, request.(GetLabelPrimitiveRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetLabelPrimitive")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLabelPrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetLabelPrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetMatrixExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request) {
+// GetMatrixExplodeArray serves the GetMatrixExplodeArray operation.
+func (sh *serverHandler) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1083,24 +1832,36 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeArray(w http.ResponseWriter, 
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodeArray(w, r, id)
-	}))
+	var request GetMatrixExplodeArrayRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetMatrixExplodeArray(ctx, request.(GetMatrixExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetMatrixExplodeArray")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetMatrixExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetMatrixExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request) {
+// GetMatrixExplodeObject serves the GetMatrixExplodeObject operation.
+func (sh *serverHandler) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1144,24 +1905,36 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter,
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodeObject(w, r, id)
-	}))
+	var request GetMatrixExplodeObjectRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetMatrixExplodeObject(ctx, request.(GetMatrixExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetMatrixExplodeObject")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetMatrixExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetMatrixExplodePrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request) {
+// GetMatrixExplodePrimitive serves the GetMatrixExplodePrimitive operation.
+func (sh *serverHandler) GetMatrixExplodePrimitive(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1195,24 +1968,36 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodePrimitive(w http.ResponseWrit
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodePrimitive(w, r, id)
-	}))
+	var request GetMatrixExplodePrimitiveRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetMatrixExplodePrimitive(ctx, request.(GetMatrixExplodePrimitiveRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetMatrixExplodePrimitive")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixExplodePrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetMatrixExplodePrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetMatrixNoExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request) {
+// GetMatrixNoExplodeArray serves the GetMatrixNoExplodeArray operation.
+func (sh *serverHandler) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1249,24 +2034,36 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeArray(w http.ResponseWriter
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixNoExplodeArray(w, r, id)
-	}))
+	var request GetMatrixNoExplodeArrayRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetMatrixNoExplodeArray(ctx, request.(GetMatrixNoExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetMatrixNoExplodeArray")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixNoExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetMatrixNoExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetMatrixNoExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request) {
+// GetMatrixNoExplodeObject serves the GetMatrixNoExplodeObject operation.
+func (sh *serverHandler) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1310,24 +2107,36 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWrite
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixNoExplodeObject(w, r, id)
-	}))
+	var request GetMatrixNoExplodeObjectRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetMatrixNoExplodeObject(ctx, request.(GetMatrixNoExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetMatrixNoExplodeObject")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixNoExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetMatrixNoExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetMatrixPrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetMatrixPrimitive(w http.ResponseWriter, r *http.Request) {
+// GetMatrixPrimitive serves the GetMatrixPrimitive operation.
+func (sh *serverHandler) GetMatrixPrimitive(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1359,24 +2168,36 @@ func (siw *ServerInterfaceWrapper) GetMatrixPrimitive(w http.ResponseWriter, r *
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixPrimitive(w, r, id)
-	}))
+	var request GetMatrixPrimitiveRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetMatrixPrimitive(ctx, request.(GetMatrixPrimitiveRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetMatrixPrimitive")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMatrixPrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetMatrixPrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetPassThrough operation middleware
-func (siw *ServerInterfaceWrapper) GetPassThrough(w http.ResponseWriter, r *http.Request) {
+// GetPassThrough serves the GetPassThrough operation.
+func (sh *serverHandler) GetPassThrough(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1386,25 +2207,37 @@ func (siw *ServerInterfaceWrapper) GetPassThrough(w http.ResponseWriter, r *http
 
 	param = r.PathValue("param")
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPassThrough(w, r, param)
-	}))
+	var request GetPassThroughRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetPassThrough(ctx, request.(GetPassThroughRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetPassThrough")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPassThroughResponseObject); ok {
+		if err := validResponse.VisitGetPassThroughResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetDeepObject operation middleware
-func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.Request) {
+// GetDeepObject serves the GetDeepObject operation.
+func (sh *serverHandler) GetDeepObject(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params GetDeepObjectParams
 
 	// ------------- Required query parameter "deepObj" -------------
@@ -1631,36 +2464,48 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deepObj", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deepObj", Err: err})
 			return
 		}
 		if found_ {
 			params.DeepObj = value_
 		} else {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deepObj"})
+			sh.options.RequestErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "deepObj"})
 			return
 		}
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeepObject(w, r, params)
-	}))
+	var request GetDeepObjectRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetDeepObject(ctx, request.(GetDeepObjectRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetDeepObject")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDeepObjectResponseObject); ok {
+		if err := validResponse.VisitGetDeepObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetQueryDelimited operation middleware
-func (siw *ServerInterfaceWrapper) GetQueryDelimited(w http.ResponseWriter, r *http.Request) {
+// GetQueryDelimited serves the GetQueryDelimited operation.
+func (sh *serverHandler) GetQueryDelimited(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params GetQueryDelimitedParams
 
 	// ------------- Optional query parameter "sa" -------------
@@ -1686,7 +2531,7 @@ func (siw *ServerInterfaceWrapper) GetQueryDelimited(w http.ResponseWriter, r *h
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sa", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sa", Err: err})
 			return
 		}
 		params.Sa = &value_
@@ -1715,31 +2560,43 @@ func (siw *ServerInterfaceWrapper) GetQueryDelimited(w http.ResponseWriter, r *h
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pa", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pa", Err: err})
 			return
 		}
 		params.Pa = &value_
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetQueryDelimited(w, r, params)
-	}))
+	var request GetQueryDelimitedRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetQueryDelimited(ctx, request.(GetQueryDelimitedRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetQueryDelimited")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetQueryDelimitedResponseObject); ok {
+		if err := validResponse.VisitGetQueryDelimitedResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetQueryForm operation middleware
-func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.Request) {
+// GetQueryForm serves the GetQueryForm operation.
+func (sh *serverHandler) GetQueryForm(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
 
-	// Parameter object where we will unmarshal all parameters from the context
+	// Parameter object where we will unmarshal all parameters from the request
 	var params GetQueryFormParams
 
 	// ------------- Optional query parameter "ea" -------------
@@ -1761,7 +2618,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ea", Err: err})
 			return
 		}
 		params.Ea = &value_
@@ -1790,7 +2647,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "a", Err: err})
 			return
 		}
 		params.A = &value_
@@ -1822,7 +2679,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 		}
 
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eo", Err: err})
 			return
 		}
 		if found_ {
@@ -1861,7 +2718,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "o", Err: err})
 			return
 		}
 		params.O = &value_
@@ -1881,7 +2738,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ep", Err: err})
 			return
 		}
 		params.Ep = &value_
@@ -1901,7 +2758,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 			}
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "p", Err: err})
 			return
 		}
 		params.P = &value_
@@ -1917,7 +2774,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 			value_ = values_[0]
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ps", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ps", Err: err})
 			return
 		}
 		params.Ps = &value_
@@ -1930,7 +2787,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 		var value ComplexObject
 		err = json.Unmarshal([]byte(paramValue), &value)
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "co", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &UnmarshalingParamError{ParamName: "co", Err: err})
 			return
 		}
 
@@ -1948,26 +2805,38 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 			value_ = values_[0]
 		}
 		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
+			sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "1s", Err: err})
 			return
 		}
 		params.N1s = &value_
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetQueryForm(w, r, params)
-	}))
+	var request GetQueryFormRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetQueryForm(ctx, request.(GetQueryFormRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetQueryForm")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetQueryFormResponseObject); ok {
+		if err := validResponse.VisitGetQueryFormResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetSimpleExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request) {
+// GetSimpleExplodeArray serves the GetSimpleExplodeArray operation.
+func (sh *serverHandler) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1999,24 +2868,36 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeArray(w http.ResponseWriter, 
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleExplodeArray(w, r, param)
-	}))
+	var request GetSimpleExplodeArrayRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetSimpleExplodeArray(ctx, request.(GetSimpleExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetSimpleExplodeArray")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetSimpleExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetSimpleExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request) {
+// GetSimpleExplodeObject serves the GetSimpleExplodeObject operation.
+func (sh *serverHandler) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -2056,24 +2937,36 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter,
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleExplodeObject(w, r, param)
-	}))
+	var request GetSimpleExplodeObjectRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetSimpleExplodeObject(ctx, request.(GetSimpleExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetSimpleExplodeObject")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetSimpleExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetSimpleExplodePrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request) {
+// GetSimpleExplodePrimitive serves the GetSimpleExplodePrimitive operation.
+func (sh *serverHandler) GetSimpleExplodePrimitive(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -2091,24 +2984,36 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodePrimitive(w http.ResponseWrit
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleExplodePrimitive(w, r, param)
-	}))
+	var request GetSimpleExplodePrimitiveRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetSimpleExplodePrimitive(ctx, request.(GetSimpleExplodePrimitiveRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetSimpleExplodePrimitive")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleExplodePrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetSimpleExplodePrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetSimpleNoExplodeArray operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request) {
+// GetSimpleNoExplodeArray serves the GetSimpleNoExplodeArray operation.
+func (sh *serverHandler) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -2140,24 +3045,36 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeArray(w http.ResponseWriter
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleNoExplodeArray(w, r, param)
-	}))
+	var request GetSimpleNoExplodeArrayRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetSimpleNoExplodeArray(ctx, request.(GetSimpleNoExplodeArrayRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetSimpleNoExplodeArray")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleNoExplodeArrayResponseObject); ok {
+		if err := validResponse.VisitGetSimpleNoExplodeArrayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetSimpleNoExplodeObject operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request) {
+// GetSimpleNoExplodeObject serves the GetSimpleNoExplodeObject operation.
+func (sh *serverHandler) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -2196,24 +3113,36 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWrite
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleNoExplodeObject(w, r, param)
-	}))
+	var request GetSimpleNoExplodeObjectRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetSimpleNoExplodeObject(ctx, request.(GetSimpleNoExplodeObjectRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetSimpleNoExplodeObject")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleNoExplodeObjectResponseObject); ok {
+		if err := validResponse.VisitGetSimpleNoExplodeObjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetSimplePrimitive operation middleware
-func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *http.Request) {
+// GetSimplePrimitive serves the GetSimplePrimitive operation.
+func (sh *serverHandler) GetSimplePrimitive(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -2231,24 +3160,36 @@ func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *
 		}
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimplePrimitive(w, r, param)
-	}))
+	var request GetSimplePrimitiveRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetSimplePrimitive(ctx, request.(GetSimplePrimitiveRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetSimplePrimitive")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimplePrimitiveResponseObject); ok {
+		if err := validResponse.VisitGetSimplePrimitiveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetSimpleString operation middleware
-func (siw *ServerInterfaceWrapper) GetSimpleString(w http.ResponseWriter, r *http.Request) {
+// GetSimpleString serves the GetSimpleString operation.
+func (sh *serverHandler) GetSimpleString(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -2262,24 +3203,36 @@ func (siw *ServerInterfaceWrapper) GetSimpleString(w http.ResponseWriter, r *htt
 		param = r.PathValue("param")
 	}
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
+		sh.options.RequestErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "param", Err: err})
 		return
 	}
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleString(w, r, param)
-	}))
+	var request GetSimpleStringRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.Param = param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetSimpleString(ctx, request.(GetSimpleStringRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetSimpleString")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSimpleStringResponseObject); ok {
+		if err := validResponse.VisitGetSimpleStringResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
-// GetStartingWithNumber operation middleware
-func (siw *ServerInterfaceWrapper) GetStartingWithNumber(w http.ResponseWriter, r *http.Request) {
+// GetStartingWithNumber serves the GetStartingWithNumber operation.
+func (sh *serverHandler) GetStartingWithNumber(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -2289,16 +3242,28 @@ func (siw *ServerInterfaceWrapper) GetStartingWithNumber(w http.ResponseWriter, 
 
 	n1param = r.PathValue("_param")
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetStartingWithNumber(w, r, n1param)
-	}))
+	var request GetStartingWithNumberRequestObject
 
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
+	request.N1param = n1param
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return sh.si.GetStartingWithNumber(ctx, request.(GetStartingWithNumberRequestObject))
+	}
+	for _, middleware := range sh.options.Middlewares {
+		handler = middleware(handler, "GetStartingWithNumber")
 	}
 
-	handler.ServeHTTP(w, r)
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetStartingWithNumberResponseObject); ok {
+		if err := validResponse.VisitGetStartingWithNumberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 type UnescapedCookieParamError struct {
@@ -2368,89 +3333,6 @@ type TooManyValuesForParamError struct {
 
 func (e *TooManyValuesForParamError) Error() string {
 	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
-}
-
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
-
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simplePrimitive/{param}", wrapper.GetSimplePrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleString/{param}", wrapper.GetSimpleString)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleNoExplodeArray/{param}", wrapper.GetSimpleNoExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodeArray/{param}", wrapper.GetSimpleExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleNoExplodeObject/{param}", wrapper.GetSimpleNoExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodeObject/{param}", wrapper.GetSimpleExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelNoExplodeArray/{param}", wrapper.GetLabelNoExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodeArray/{param}", wrapper.GetLabelExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelNoExplodeObject/{param}", wrapper.GetLabelNoExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodeObject/{param}", wrapper.GetLabelExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixNoExplodeArray/{id}", wrapper.GetMatrixNoExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodeArray/{id}", wrapper.GetMatrixExplodeArray)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixNoExplodeObject/{id}", wrapper.GetMatrixNoExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodeObject/{id}", wrapper.GetMatrixExplodeObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/simpleExplodePrimitive/{param}", wrapper.GetSimpleExplodePrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelPrimitive/{param}", wrapper.GetLabelPrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/labelExplodePrimitive/{param}", wrapper.GetLabelExplodePrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixPrimitive/{id}", wrapper.GetMatrixPrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/matrixExplodePrimitive/{id}", wrapper.GetMatrixExplodePrimitive)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/contentObject/{param}", wrapper.GetContentObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/passThrough/{param}", wrapper.GetPassThrough)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/startingWithNumber/{_param}", wrapper.GetStartingWithNumber)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryForm", wrapper.GetQueryForm)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryDelimited", wrapper.GetQueryDelimited)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/queryDeepObject", wrapper.GetDeepObject)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/header", wrapper.GetHeader)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cookie", wrapper.GetCookie)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/enums", wrapper.EnumParams)
-
-	return m
 }
 
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.

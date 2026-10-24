@@ -28,8 +28,7 @@ package: api
 # a net/http server with models and an embedded spec.
 # See <a href="https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#GenerateOptions">GenerateOptions</a>
 generate:
-  std-http-server: false
-  strict-server: false     # used alongside std-http-server
+  server: false
   client: false
   models: false
   embedded-spec: false

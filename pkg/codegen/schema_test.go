@@ -958,10 +958,10 @@ func TestSchemaUnionTypes(t *testing.T) {
 	}
 }
 
-// TestStrictResponseDelegatesCustomMarshalJSON pins which strict-server
+// TestServerResponseDelegatesCustomMarshalJSON pins which server
 // response envelopes get a delegating MarshalJSON/UnmarshalJSON pair.
 // See https://github.com/oapi-codegen/oapi-codegen/issues/2549.
-func TestStrictResponseDelegatesCustomMarshalJSON(t *testing.T) {
+func TestServerResponseDelegatesCustomMarshalJSON(t *testing.T) {
 	spec := `
 openapi: "3.1.0"
 info: {title: t, version: "1"}
@@ -1099,7 +1099,7 @@ components:
 	require.NoError(t, err)
 	out, err := Generate(swagger, Configuration{
 		PackageName: "api",
-		Generate:    GenerateOptions{Models: true, StdHTTPServer: true, Strict: true},
+		Generate:    GenerateOptions{Models: true, Server: true},
 	})
 	require.NoError(t, err)
 
@@ -1122,12 +1122,12 @@ components:
 	}
 }
 
-// TestStrictComponentResponseWithInlineUnion pins the strict envelopes
+// TestComponentResponseWithInlineUnion pins the response envelopes
 // generated for components/responses entries whose inline schema needs
 // hoisting: they must reference the type the model pass declared for the
 // component, not a <Name>JSONResponseBody that nothing declares.
 // See https://github.com/oapi-codegen/oapi-codegen/issues/2539.
-func TestStrictComponentResponseWithInlineUnion(t *testing.T) {
+func TestComponentResponseWithInlineUnion(t *testing.T) {
 	spec := `
 openapi: "3.0.3"
 info: {title: t, version: "1"}
@@ -1191,7 +1191,7 @@ components:
 	require.NoError(t, err)
 	out, err := Generate(swagger, Configuration{
 		PackageName: "api",
-		Generate:    GenerateOptions{Models: true, StdHTTPServer: true, Strict: true},
+		Generate:    GenerateOptions{Models: true, Server: true},
 	})
 	require.NoError(t, err)
 
@@ -1213,7 +1213,7 @@ components:
 // A form response reached through $ref embeds the reusable envelope, and
 // encoding the wrapper would encode that untagged embedded field under an
 // empty name ("[value]=..."), so the visitor marshals the envelope itself.
-func TestStrictReusableFormResponseMarshalsEnvelope(t *testing.T) {
+func TestReusableFormResponseMarshalsEnvelope(t *testing.T) {
 	const spec = `
 openapi: "3.0.3"
 info: {title: t, version: "1"}
@@ -1281,7 +1281,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	} {
 		t.Run(server.name, func(t *testing.T) {
 			loader := openapi3.NewLoader()
@@ -1293,7 +1293,6 @@ components:
 			require.NoError(t, err)
 
 			server.generate.Models = true
-			server.generate.Strict = true
 			code, err := Generate(swagger, Configuration{
 				PackageName:   "api",
 				Generate:      server.generate,

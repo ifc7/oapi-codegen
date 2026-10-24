@@ -8,7 +8,7 @@ import (
 
 // TestToCamelCaseNormalizer verifies that name-normalizer: ToCamelCase produces
 // the same output as unset for this spec: uuid stays Uuid, operationId
-// getHttpPet → GetHttpPet on both the client and the server wrapper, and digit
+// getHttpPet → GetHttpPet on both the client and the server interface, and digit
 // "2" is not a word boundary (OneOf2things).
 //
 // Sources: outputoptions/name-normalizer/to-camel-case
@@ -22,8 +22,7 @@ func TestToCamelCaseNormalizer(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, client.GetHttpPet)
 
-	server := &ServerInterfaceWrapper{}
-	assert.NotNil(t, server.GetHttpPet)
+	assert.NotNil(t, ServerInterface.GetHttpPet)
 
 	oneOf := OneOf2things{}
 	assert.Zero(t, oneOf)

@@ -1,8 +1,0 @@
-# yaml-language-server: $schema=../../../../../configuration-schema.json
-package: api
-generate:
-  models: true
-  std-http-server: true
-  strict-server: true
-  embedded-spec: true
-output: petstore-server.gen.go

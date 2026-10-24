@@ -4,6 +4,5 @@ package: responseheaderformats
 output: headerformats.gen.go
 generate:
   models: true
-  std-http-server: true
-  strict-server: true
+  server: true
   client: true

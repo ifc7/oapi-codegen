@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"log"
 	"math/rand/v2"
@@ -30,27 +29,24 @@ func NewTreeFarm() *TreeFarm {
 	return &TreeFarm{initiator: initiator}
 }
 
-func sendError(w http.ResponseWriter, code int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(treefarm.Error{
-		Code:    int32(code),
-		Message: message,
-	})
+func plantTreeError(code int, message string) treefarm.PlantTreedefaultJSONResponse {
+	return treefarm.PlantTreedefaultJSONResponse{
+		StatusCode: code,
+		Body: treefarm.Error{
+			Code:    int32(code),
+			Message: message,
+		},
+	}
 }
 
-func (tf *TreeFarm) PlantTree(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Received PlantTree request from %s", r.RemoteAddr)
-
-	var req treefarm.TreePlantingRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		sendError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
-		return
+func (tf *TreeFarm) PlantTree(ctx context.Context, request treefarm.PlantTreeRequestObject) (treefarm.PlantTreeResponseObject, error) {
+	if request.Body == nil {
+		return plantTreeError(http.StatusBadRequest, "request body is required"), nil
 	}
+	req := *request.Body
 
 	if req.CallbackURL == "" {
-		sendError(w, http.StatusBadRequest, "callbackUrl is required")
-		return
+		return plantTreeError(http.StatusBadRequest, "callbackUrl is required"), nil
 	}
 
 	id := uuid.New()
@@ -58,15 +54,13 @@ func (tf *TreeFarm) PlantTree(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Accepted tree planting: id=%s kind=%q location=%q callbackUrl=%q",
 		id, req.Kind, req.Location, req.CallbackURL)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusAccepted)
-	_ = json.NewEncoder(w).Encode(treefarm.TreeWithID{
+	go tf.plantAndNotify(id, req)
+
+	return treefarm.PlantTree202JSONResponse{
 		Location: req.Location,
 		Kind:     req.Kind,
 		ID:       id,
-	})
-
-	go tf.plantAndNotify(id, req)
+	}, nil
 }
 
 func (tf *TreeFarm) plantAndNotify(id uuid.UUID, req treefarm.TreePlantingRequest) {
@@ -102,7 +96,7 @@ func main() {
 	farm := NewTreeFarm()
 
 	mux := http.NewServeMux()
-	treefarm.HandlerFromMux(farm, mux)
+	treefarm.HandlerWithOptions(farm, treefarm.ServerOptions{BaseRouter: mux})
 
 	// Wrap with request logging.
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

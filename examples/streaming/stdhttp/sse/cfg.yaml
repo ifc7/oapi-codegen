@@ -2,7 +2,6 @@
 package: sse
 output: streaming.gen.go
 generate:
-  std-http-server: true
-  strict-server: true
+  server: true
   models: true
   embedded-spec: true

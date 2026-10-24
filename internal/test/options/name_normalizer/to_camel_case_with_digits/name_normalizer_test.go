@@ -10,7 +10,7 @@ import (
 // ToCamelCaseWithDigits treats digit sequences as word boundaries so
 // OneOf2things → OneOf2Things, but does NOT expand initialisms (uuid stays
 // Uuid, and operationId getHttpPet → GetHttpPet on both the client and the
-// server wrapper).
+// server interface).
 //
 // Sources: outputoptions/name-normalizer/to-camel-case-with-digits
 func TestToCamelCaseWithDigitsNormalizer(t *testing.T) {
@@ -23,8 +23,7 @@ func TestToCamelCaseWithDigitsNormalizer(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, client.GetHttpPet)
 
-	server := &ServerInterfaceWrapper{}
-	assert.NotNil(t, server.GetHttpPet)
+	assert.NotNil(t, ServerInterface.GetHttpPet)
 
 	oneOf := OneOf2Things{}
 	assert.Zero(t, oneOf)

@@ -3,8 +3,7 @@
 package: textandjson
 output: text_and_json.gen.go
 generate:
-  std-http-server: true
-  strict-server: true
+  server: true
   models: true
   client: true
 output-options:

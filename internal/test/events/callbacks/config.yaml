@@ -3,7 +3,7 @@ package: eventscallbacks
 generate:
   models: true
   client: true
-  std-http-server: true
+  server: true
 output-options:
   skip-prune: true
 output: callbacks.gen.go

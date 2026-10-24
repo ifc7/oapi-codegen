@@ -1,7 +1,7 @@
 package optionsfiltertags
 
 import (
-	"net/http"
+	"context"
 	"testing"
 )
 
@@ -11,12 +11,16 @@ import (
 // the compile-time proof; the calls exercise the generated handler signatures.
 type server struct{}
 
-func (s server) IncludedOperation1(w http.ResponseWriter, r *http.Request) {}
+func (s server) IncludedOperation1(ctx context.Context, request IncludedOperation1RequestObject) (IncludedOperation1ResponseObject, error) {
+	return IncludedOperation1200Response{}, nil
+}
 
-func (s server) IncludedOperation2(w http.ResponseWriter, r *http.Request) {}
+func (s server) IncludedOperation2(ctx context.Context, request IncludedOperation2RequestObject) (IncludedOperation2ResponseObject, error) {
+	return IncludedOperation2200Response{}, nil
+}
 
 func TestServer(_ *testing.T) {
 	var s ServerInterface = server{}
-	s.IncludedOperation1(nil, nil)
-	s.IncludedOperation2(nil, nil)
+	_, _ = s.IncludedOperation1(context.Background(), IncludedOperation1RequestObject{})
+	_, _ = s.IncludedOperation2(context.Background(), IncludedOperation2RequestObject{})
 }

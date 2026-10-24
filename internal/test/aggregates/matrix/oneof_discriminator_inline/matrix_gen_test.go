@@ -43,7 +43,7 @@ func holderSample(t *testing.T) string {
 }
 
 // echo re-types v through its JSON encoding, the way a handler that receives
-// one generated type and must return another would. A strict-server response
+// one generated type and must return another would. A server response
 // that carries its body in a Body field, as one whose body is an interface
 // type does, gets v in that field.
 func echo[T any](v any) (T, error) {
@@ -60,7 +60,7 @@ func echo[T any](v any) (T, error) {
 	return out, err
 }
 
-// bodyField returns the Body field of a strict-server response envelope: a
+// bodyField returns the Body field of a server response envelope: a
 // struct whose only field is an untagged Body. The field of a property named
 // body has a json tag, so it is never taken for one.
 func bodyField(v reflect.Value) (reflect.Value, bool) {
@@ -106,7 +106,7 @@ func (server) BodyHeaders(_ context.Context, req BodyHeadersRequestObject) (Body
 
 func newClient(t *testing.T) *ClientWithResponses {
 	t.Helper()
-	srv := httptest.NewServer(Handler(NewStrictHandler(server{}, nil)))
+	srv := httptest.NewServer(Handler(server{}))
 	t.Cleanup(srv.Close)
 	c, err := NewClientWithResponses(srv.URL)
 	require.NoError(t, err)

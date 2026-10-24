@@ -10,7 +10,7 @@ import (
 )
 
 // defaultStreamingContentTypes are the regex patterns matched against
-// response Content-Type to decide when the strict-server should emit a
+// response Content-Type to decide when the server should emit a
 // flush-per-chunk streaming path. User-supplied patterns are merged on top.
 var defaultStreamingContentTypes = []string{
 	"text/event-stream",
@@ -109,9 +109,9 @@ func (o Configuration) Warnings() map[string]string {
 func (o Configuration) UpdateDefaults() Configuration {
 	if reflect.ValueOf(o.Generate).IsZero() {
 		o.Generate = GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
-			EmbeddedSpec:  true,
+			Server:       true,
+			Models:       true,
+			EmbeddedSpec: true,
 		}
 	}
 	return o
@@ -119,10 +119,8 @@ func (o Configuration) UpdateDefaults() Configuration {
 
 // GenerateOptions specifies which supported output formats to generate.
 type GenerateOptions struct {
-	// StdHTTPServer specifies whether to generate stdlib http server boilerplate
-	StdHTTPServer bool `yaml:"std-http-server,omitempty"`
-	// Strict specifies whether to generate strict server wrapper
-	Strict bool `yaml:"strict-server,omitempty"`
+	// Server specifies whether to generate the net/http server
+	Server bool `yaml:"server,omitempty"`
 	// Client specifies whether to generate client boilerplate
 	Client bool `yaml:"client,omitempty"`
 	// Models specifies whether to generate type definitions
@@ -134,11 +132,11 @@ type GenerateOptions struct {
 }
 
 // AnyOperationGenerator returns true if any code generator that emits
-// per-operation Go code (clients, server frameworks, strict-server) is
+// per-operation Go code (the client or the server) is
 // enabled. Used to detect configurations where operation-derived type
 // references would be emitted without a corresponding declaration.
 func (g GenerateOptions) AnyOperationGenerator() bool {
-	return g.Client || g.StdHTTPServer || g.Strict
+	return g.Client || g.Server
 }
 
 func (oo GenerateOptions) Validate() map[string]string {
@@ -148,16 +146,16 @@ func (oo GenerateOptions) Validate() map[string]string {
 func (oo GenerateOptions) Warnings() map[string]string {
 	warnings := make(map[string]string)
 
-	if oo.StdHTTPServer {
-		if warning := oo.warningForStdHTTP(); warning != "" {
-			warnings["std-http-server"] = warning
+	if oo.Server {
+		if warning := oo.warningForServer(); warning != "" {
+			warnings["server"] = warning
 		}
 	}
 
 	return warnings
 }
 
-func (oo GenerateOptions) warningForStdHTTP() string {
+func (oo GenerateOptions) warningForServer() string {
 	pathToGoMod, mod, err := findAndParseGoModuleForDepth(".", maximumDepthToSearchForGoMod)
 	if err != nil {
 		return fmt.Sprintf("Encountered an error while trying to find a `go.mod` or a `tools.mod` in this directory, or %d levels above it: %v", maximumDepthToSearchForGoMod, err)
@@ -167,8 +165,8 @@ func (oo GenerateOptions) warningForStdHTTP() string {
 		return fmt.Sprintf("Failed to find a `go.mod` or a `tools.mod` in this directory, or %d levels above it, so unable to validate that you're using Go 1.22+. If you start seeing API interactions resulting in a `404 page not found`, the Go directive (implying source compatibility for this module) needs to be bumped. See also: https://www.jvt.me/posts/2024/03/04/go-net-http-why-404/", maximumDepthToSearchForGoMod)
 	}
 
-	if !hasMinimalMinorGoDirective(minimumGoVersionForGenerateStdHTTPServer, mod) {
-		return fmt.Sprintf("Found a `go.mod` or a `tools.mod` at path %v, but it only had a version of %v, whereas the minimum required is 1.%d. It's very likely API interactions will result in a `404 page not found`. The Go directive (implying source compatibility for this module) needs to be bumped. See also: https://www.jvt.me/posts/2024/03/04/go-net-http-why-404/", pathToGoMod, mod.Go.Version, minimumGoVersionForGenerateStdHTTPServer)
+	if !hasMinimalMinorGoDirective(minimumGoVersionForGenerateServer, mod) {
+		return fmt.Sprintf("Found a `go.mod` or a `tools.mod` at path %v, but it only had a version of %v, whereas the minimum required is 1.%d. It's very likely API interactions will result in a `404 page not found`. The Go directive (implying source compatibility for this module) needs to be bumped. See also: https://www.jvt.me/posts/2024/03/04/go-net-http-why-404/", pathToGoMod, mod.Go.Version, minimumGoVersionForGenerateServer)
 	}
 
 	return ""

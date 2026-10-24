@@ -4,11 +4,11 @@ output: name_normalizer.gen.go
 # name-normalizer: ToCamelCaseWithDigits — treats digit sequences as word
 # boundaries so OneOf2things → OneOf2Things, but does NOT expand initialisms
 # (uuid stays Uuid, getHttpPet → GetHttpPet).
-# std-http-server + client so the tests can assert the operation-derived names
+# server + client so the tests can assert the operation-derived names
 # on both ServerInterfaceWrapper and Client.
 # skip-prune: retain the Error schema which is not referenced from any path.
 generate:
-  std-http-server: true
+  server: true
   client: true
   models: true
 output-options:

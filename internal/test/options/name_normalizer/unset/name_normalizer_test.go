@@ -8,7 +8,7 @@ import (
 
 // TestUnsetNormalizer verifies that with no name-normalizer set the default
 // Go casing is applied: "uuid" → Uuid, "name" → Name, operationId getHttpPet
-// → GetHttpPet on both the client and the server wrapper, and digit "2" is
+// → GetHttpPet on both the client and the server interface, and digit "2" is
 // not a word boundary so OneOf2things stays OneOf2things.
 //
 // Sources: outputoptions/name-normalizer/unset
@@ -22,8 +22,7 @@ func TestUnsetNormalizer(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, client.GetHttpPet)
 
-	server := &ServerInterfaceWrapper{}
-	assert.NotNil(t, server.GetHttpPet)
+	assert.NotNil(t, ServerInterface.GetHttpPet)
 
 	oneOf := OneOf2things{}
 	assert.Zero(t, oneOf)

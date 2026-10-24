@@ -1,0 +1,50 @@
+{{/*
+Shared partials for the server response templates. This file contributes
+only {{define}} blocks to the base template tree; it emits nothing on its own.
+
+"server.responseHeaders" renders the 3-way (nullable / optional / plain) response
+header-writing branch the Visit*Response methods need. The header setter
+expression is passed as .Setter (e.g. "w.Header().Set"); .Headers is the
+response's []HeaderDefinition. Build the argument with the dict helper:
+{{`{{template "server.responseHeaders" (dict "Headers" $headers "Setter" "w.Header().Set")}}`}}
+
+Values are serialized by the header's Codec, rather than fmt.Sprint, so that format-carrying
+types (date-time, date, uuid, ...) go on the wire in the representation the spec
+calls for, matching how the generated client parses them back out. Every emitted write is wrapped in its own block so that the `v`/`err`
+pair cannot collide with declarations in the surrounding Visit*Response body.
+*/}}
+{{define "server.responseHeaders" -}}
+{{- $setter := .Setter -}}
+{{- range .Headers -}}
+{{if .IsNullable -}}
+if response.Headers.{{.GoName}}.IsSpecified() {
+{{template "server.styleResponseHeader" (dict "Header" . "Setter" $setter "Value" (printf "response.Headers.%s.MustGet()" .GoName))}}
+}
+{{else if .IsOptional -}}
+if response.Headers.{{.GoName}} != nil {
+{{template "server.styleResponseHeader" (dict "Header" . "Setter" $setter "Value" (printf "*response.Headers.%s" .GoName))}}
+}
+{{else -}}
+{{template "server.styleResponseHeader" (dict "Header" . "Setter" $setter "Value" (printf "response.Headers.%s" .GoName))}}
+{{end -}}
+{{end -}}
+{{end -}}
+
+{{/*
+"server.styleResponseHeader" emits one guarded header write. .Header is a
+ResponseHeaderDefinition, .Setter the framework's setter expression, and .Value
+the already-dereferenced Go expression holding the header value.
+*/}}
+{{define "server.styleResponseHeader" -}}
+{{- with .Header.Codec -}}
+{
+    var v string
+    var err error
+    {{.Style $.Value "v"}}
+    if err != nil {
+        return fmt.Errorf("error styling response header {{$.Header.Name}}: %w", err)
+    }
+    {{$.Setter}}("{{$.Header.Name}}", v)
+}
+{{- end -}}
+{{- end -}}

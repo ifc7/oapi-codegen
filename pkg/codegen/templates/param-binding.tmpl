@@ -1,8 +1,10 @@
 {{/*
-Shared server-side parameter binding partials, used by the server wrappers
-(server-middleware.tmpl) and the webhook/callback receivers
-(receiver-stdlib.tmpl). Both call them with a dict: .Param is the
-ParameterDefinition and .Handler the expression of the error handler to call.
+Shared server-side parameter binding partials, used by the server
+(server/server-handler.tmpl) and the webhook/callback receivers
+(receiver-stdlib.tmpl). "param.bindRequest" binds a whole operation's
+parameters; the others bind one parameter, and are called with a dict: .Param
+is the ParameterDefinition and .Handler the expression of the error handler
+to call.
 
 A styled parameter is bound by the code its Codec generates.
 */}}
@@ -68,4 +70,171 @@ if values_, found_ := r.URL.Query()["{{$p.ParamName}}"]; found_ {
 }{{end}}
 {{- end}}
 {{- end}}
+{{- end}}
+
+{{/*
+"param.bindRequest" binds an operation's parameters from the request r: each
+path parameter into a variable named for it, and the query, header and cookie
+parameters into params. On a missing or invalid parameter it calls the error
+handler and returns. Called with a dict: .Op is the OperationDefinition and
+.Handler the expression of the error handler to call.
+*/}}
+{{define "param.bindRequest" -}}
+{{- $op := .Op -}}
+{{- $handler := .Handler -}}
+  {{if or $op.RequiresParamObject (gt (len $op.PathParams) 0) }}
+  var err error
+  _ = err
+  {{end}}
+
+  {{range $op.PathParams}}// ------------- Path parameter "{{.ParamName}}" -------------
+  var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}
+
+  {{if .IsPassThrough}}
+  {{$varName}} = r.PathValue("{{.SanitizedParamName}}")
+  {{end}}
+  {{if .IsJson}}
+  err = json.Unmarshal([]byte(r.PathValue("{{.SanitizedParamName}}")), &{{$varName}})
+  if err != nil {
+    {{$handler}}(w, r, &UnmarshalingParamError{ParamName: "{{.ParamName}}", Err: err})
+    return
+  }
+  {{end}}
+  {{if .IsStyled}}
+  {{template "param.bindStyled" (dict "Param" . "Src" (printf "r.PathValue(%q)" .SanitizedParamName) "Dst" $varName)}}
+  if err != nil {
+    {{$handler}}(w, r, &InvalidParamFormatError{ParamName: "{{.ParamName}}", Err: err})
+    return
+  }
+  {{end}}
+
+  {{end}}
+
+  {{if $op.RequiresParamObject}}
+    // Parameter object where we will unmarshal all parameters from the request
+    var params {{$op.OperationId}}Params
+
+    {{range $op.QueryParams}}
+      {{- if (or (or .Required .IsPassThrough) (or .IsJson .IsStyled)) -}}
+        // ------------- {{if .Required}}Required{{else}}Optional{{end}} query parameter "{{.ParamName}}" -------------
+      {{ end }}
+      {{ if (or .IsPassThrough .IsJson) }}
+        if paramValue := r.URL.Query().Get("{{.ParamName}}"); paramValue != "" {
+
+        {{if .IsPassThrough}}
+          params.{{.GoName}} = {{if .HasOptionalPointer}}&{{end}}paramValue
+        {{end}}
+
+        {{if .IsJson}}
+          var value {{.TypeDef}}
+          err = json.Unmarshal([]byte(paramValue), &value)
+          if err != nil {
+            {{$handler}}(w, r, &UnmarshalingParamError{ParamName: "{{.ParamName}}", Err: err})
+            return
+          }
+
+          params.{{.GoName}} = {{if .HasOptionalPointer}}&{{end}}value
+        {{end}}
+        }{{if .Required}} else {
+            {{$handler}}(w, r, &RequiredParamError{ParamName: "{{.ParamName}}"})
+            return
+        }{{end}}
+      {{end}}
+      {{if .IsStyled}}
+      {{template "param.bindQuery" (dict "Param" . "Handler" $handler)}}
+      {{end}}
+  {{end}}
+
+    {{if $op.HeaderParams}}
+      headers := r.Header
+
+      {{range $op.HeaderParams}}// ------------- {{if .Required}}Required{{else}}Optional{{end}} header parameter "{{.ParamName}}" -------------
+        if valueList, found := headers[http.CanonicalHeaderKey("{{.ParamName}}")]; found {
+          var {{.GoName}} {{.TypeDef}}
+          n := len(valueList)
+          if n != 1 {
+            {{$handler}}(w, r, &TooManyValuesForParamError{ParamName: "{{.ParamName}}", Count: n})
+            return
+          }
+
+        {{if .IsPassThrough}}
+          {{.GoName}} = valueList[0]
+        {{end}}
+
+        {{if .IsJson}}
+          err = json.Unmarshal([]byte(valueList[0]), &{{.GoName}})
+          if err != nil {
+            {{$handler}}(w, r, &UnmarshalingParamError{ParamName: "{{.ParamName}}", Err: err})
+            return
+          }
+        {{end}}
+
+        {{if .IsStyled}}
+          {{template "param.bindStyled" (dict "Param" . "Src" "valueList[0]" "Dst" .GoName)}}
+          if err != nil {
+            {{$handler}}(w, r, &InvalidParamFormatError{ParamName: "{{.ParamName}}", Err: err})
+            return
+          }
+        {{end}}
+
+          params.{{.GoName}} = {{if .HasOptionalPointer}}&{{end}}{{.GoName}}
+
+        } {{if .Required}}else {
+            err := fmt.Errorf("Header parameter {{.ParamName}} is required, but not found")
+            {{$handler}}(w, r, &RequiredHeaderError{ParamName: "{{.ParamName}}", Err: err})
+            return
+        }{{end}}
+
+      {{end}}
+    {{end}}
+
+    {{range $op.CookieParams}}
+    {
+      var cookie *http.Cookie
+
+      if cookie, err = r.Cookie("{{.ParamName}}"); err == nil {
+
+      {{- if .IsPassThrough}}
+        params.{{.GoName}} = {{if .HasOptionalPointer}}&{{end}}cookie.Value
+      {{end}}
+
+      {{- if .IsJson}}
+        var value {{.TypeDef}}
+        var decoded string
+        decoded, err := url.QueryUnescape(cookie.Value)
+        if err != nil {
+          err = fmt.Errorf("Error unescaping cookie parameter '{{.ParamName}}'")
+          {{$handler}}(w, r, &UnescapedCookieParamError{ParamName: "{{.ParamName}}", Err: err})
+          return
+        }
+
+        err = json.Unmarshal([]byte(decoded), &value)
+        if err != nil {
+          {{$handler}}(w, r, &UnmarshalingParamError{ParamName: "{{.ParamName}}", Err: err})
+          return
+        }
+
+        params.{{.GoName}} = {{if .HasOptionalPointer}}&{{end}}value
+      {{end}}
+
+      {{- if .IsStyled}}
+        var value {{.TypeDef}}
+        {{template "param.bindStyled" (dict "Param" . "Src" "cookie.Value" "Dst" "value")}}
+        if err != nil {
+          {{$handler}}(w, r, &InvalidParamFormatError{ParamName: "{{.ParamName}}", Err: err})
+          return
+        }
+        params.{{.GoName}} = {{if .HasOptionalPointer}}&{{end}}value
+      {{end}}
+
+      }
+
+      {{- if .Required}} else {
+        {{$handler}}(w, r, &RequiredParamError{ParamName: "{{.ParamName}}"})
+        return
+      }
+      {{- end}}
+    }
+    {{end}}
+  {{end}}
 {{- end}}

@@ -9,7 +9,7 @@
 //   - issue-vnd-json:   application/vnd.api+json (incl. anyOf error body).
 //   - issue #1914:      text/plain request body coerces UUID/number to string.
 //
-// Strict-server content-type regressions that need per-framework server codegen
+// Server content-type regressions that need per-framework server codegen
 // live in the multi_json and text_and_json sub-packages.
 package bodiescontenttypes
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"log"
 	"math/rand/v2"
@@ -48,25 +47,28 @@ func NewBadgeReader() *BadgeReader {
 	}
 }
 
-func sendError(w http.ResponseWriter, code int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(doorbadge.Error{
+func apiError(code int, message string) doorbadge.Error {
+	return doorbadge.Error{
 		Code:    int32(code),
 		Message: message,
-	})
+	}
 }
 
-func (br *BadgeReader) RegisterWebhook(w http.ResponseWriter, r *http.Request, kind doorbadge.RegisterWebhookParamsKind) {
-	var req doorbadge.WebhookRegistration
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		sendError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
-		return
+func (br *BadgeReader) RegisterWebhook(ctx context.Context, request doorbadge.RegisterWebhookRequestObject) (doorbadge.RegisterWebhookResponseObject, error) {
+	if request.Body == nil {
+		return doorbadge.RegisterWebhookdefaultJSONResponse{
+			StatusCode: http.StatusBadRequest,
+			Body:       apiError(http.StatusBadRequest, "request body is required"),
+		}, nil
 	}
+	req := *request.Body
+	kind := request.Kind
 
 	if kind != doorbadge.EnterEvent && kind != doorbadge.ExitEvent {
-		sendError(w, http.StatusBadRequest, "Invalid webhook kind: "+string(kind))
-		return
+		return doorbadge.RegisterWebhookdefaultJSONResponse{
+			StatusCode: http.StatusBadRequest,
+			Body:       apiError(http.StatusBadRequest, "Invalid webhook kind: "+string(kind)),
+		}, nil
 	}
 
 	id := uuid.New()
@@ -78,24 +80,26 @@ func (br *BadgeReader) RegisterWebhook(w http.ResponseWriter, r *http.Request, k
 
 	log.Printf("Registered webhook: id=%s kind=%s url=%s", id, kind, req.URL)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(doorbadge.WebhookRegistrationResponse{ID: id})
+	return doorbadge.RegisterWebhook201JSONResponse{ID: id}, nil
 }
 
-func (br *BadgeReader) DeregisterWebhook(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+func (br *BadgeReader) DeregisterWebhook(ctx context.Context, request doorbadge.DeregisterWebhookRequestObject) (doorbadge.DeregisterWebhookResponseObject, error) {
+	id := request.ID
+
 	br.mu.Lock()
 	entry, ok := br.webhooks[id]
 	delete(br.webhooks, id)
 	br.mu.Unlock()
 
 	if !ok {
-		sendError(w, http.StatusNotFound, "Webhook not found: "+id.String())
-		return
+		return doorbadge.DeregisterWebhookdefaultJSONResponse{
+			StatusCode: http.StatusNotFound,
+			Body:       apiError(http.StatusNotFound, "Webhook not found: "+id.String()),
+		}, nil
 	}
 
 	log.Printf("Deregistered webhook: id=%s kind=%s url=%s", id, entry.kind, entry.url)
-	w.WriteHeader(http.StatusNoContent)
+	return doorbadge.DeregisterWebhook204Response{}, nil
 }
 
 // generateEvents picks a random name and event kind every second and notifies webhooks.
@@ -173,7 +177,7 @@ func main() {
 	go reader.generateEvents(ctx)
 
 	mux := http.NewServeMux()
-	doorbadge.HandlerFromMux(reader, mux)
+	doorbadge.HandlerWithOptions(reader, doorbadge.ServerOptions{BaseRouter: mux})
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)

@@ -10,7 +10,7 @@ import (
 // name-normalizer: ToCamelCaseWithInitialisms combined with
 // additional-initialisms: [NAME] causes the "name" field to be rendered as
 // NAME in addition to the standard initialism expansions (uuid → UUID,
-// getHttpPet → GetHTTPPet on both the client and the server wrapper), with
+// getHttpPet → GetHTTPPet on both the client and the server interface), with
 // digit "2" treated as a word boundary (OneOf2Things).
 //
 // Sources: outputoptions/name-normalizer/to-camel-case-with-additional-initialisms
@@ -24,8 +24,7 @@ func TestToCamelCaseWithAdditionalInitialismsNormalizer(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, client.GetHTTPPet)
 
-	server := &ServerInterfaceWrapper{}
-	assert.NotNil(t, server.GetHTTPPet)
+	assert.NotNil(t, ServerInterface.GetHTTPPet)
 
 	oneOf := OneOf2Things{}
 	assert.Zero(t, oneOf)

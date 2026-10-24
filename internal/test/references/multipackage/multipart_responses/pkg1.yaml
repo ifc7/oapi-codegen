@@ -1,4 +1,4 @@
-# From issue-1212: a strict server referring to an external multipart response definition.
+# From issue-1212: a server referring to an external multipart response definition.
 openapi: 3.0.0
 paths:
   /test:

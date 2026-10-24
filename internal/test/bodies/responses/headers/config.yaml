@@ -4,5 +4,4 @@ package: responseheaders
 output: headers.gen.go
 generate:
   models: true
-  std-http-server: true
-  strict-server: true
+  server: true

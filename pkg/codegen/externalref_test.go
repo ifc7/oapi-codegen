@@ -194,10 +194,9 @@ func TestExternalTypeQualification(t *testing.T) {
 	code, err := Generate(swagger, Configuration{
 		PackageName: "api",
 		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Strict:        true,
-			Models:        true,
-			Client:        true,
+			Server: true,
+			Models: true,
+			Client: true,
 		},
 		ImportMapping: map[string]string{"./common.yaml": "example.com/common"},
 	})

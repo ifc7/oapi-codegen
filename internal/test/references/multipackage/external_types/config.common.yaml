@@ -2,8 +2,7 @@
 package: common
 generate:
   models: true
-  std-http-server: true
-  strict-server: true
+  server: true
 output: gen/common/common.gen.go
 output-options:
   skip-prune: true

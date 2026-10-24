@@ -39,7 +39,7 @@ components:
 `
 	swagger, err := openapi3.NewLoader().LoadFromData([]byte(spec))
 	require.NoError(t, err)
-	_, err = Generate(swagger, Configuration{PackageName: "api", Generate: GenerateOptions{StdHTTPServer: true}})
+	_, err = Generate(swagger, Configuration{PackageName: "api", Generate: GenerateOptions{Server: true}})
 	require.NoError(t, err)
 	ops, err := OperationDefinitions(swagger)
 	require.NoError(t, err)
@@ -85,7 +85,7 @@ paths:
 	swagger, err := openapi3.NewLoader().LoadFromData([]byte(spec))
 	require.NoError(t, err)
 	code, err := Generate(swagger, Configuration{PackageName: "api", Generate: GenerateOptions{
-		StdHTTPServer: true, Strict: true, Client: true, Models: true,
+		Server: true, Client: true, Models: true,
 	}})
 	require.NoError(t, err)
 	assert.NotContains(t, code, `"github.com/oapi-codegen/runtime"`)

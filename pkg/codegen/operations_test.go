@@ -938,7 +938,7 @@ func TestNewInitiatorTemplateDataRejectsPathParams(t *testing.T) {
 	assert.Equal(t, "callback", data.PrefixLower)
 }
 
-func TestGenerateStrictServerInterface(t *testing.T) {
+func TestGenerateServerInterface(t *testing.T) {
 	funcs := make(template.FuncMap, len(TemplateFunctions)+1)
 	for k, v := range TemplateFunctions {
 		funcs[k] = v
@@ -949,14 +949,79 @@ func TestGenerateStrictServerInterface(t *testing.T) {
 	require.NoError(t, LoadTemplates(templates, base))
 	ops := []OperationDefinition{{OperationId: "Ping"}}
 
-	out, err := GenerateStrictServer(base, ops, Configuration{
-		Generate: GenerateOptions{StdHTTPServer: true},
-	})
+	out, err := GenerateServer(base, ops)
 	require.NoError(t, err)
-	assert.Equal(t, 1, strings.Count(out, "type StrictServerInterface interface"))
+	assert.Equal(t, 1, strings.Count(out, "type ServerInterface interface"))
 }
 
-func TestStrictServerResponseReceiverCompatibility(t *testing.T) {
+func TestOperationSecurity(t *testing.T) {
+	document := openapi3.SecurityRequirements{{"bearer": {"read"}}}
+	tests := []struct {
+		name      string
+		operation *openapi3.SecurityRequirements
+		document  openapi3.SecurityRequirements
+		want      []SecurityRequirementDefinition
+	}{
+		{
+			name:     "inherits the document's",
+			document: document,
+			want:     []SecurityRequirementDefinition{{{Scheme: "bearer", Scopes: []string{"read"}}}},
+		},
+		{
+			name:      "overrides the document's, sorting schemes",
+			operation: &openapi3.SecurityRequirements{{"oauth2": {"a"}, "apiKey": {}}, {}},
+			document:  document,
+			want: []SecurityRequirementDefinition{
+				{{Scheme: "apiKey", Scopes: []string{}}, {Scheme: "oauth2", Scopes: []string{"a"}}},
+				{},
+			},
+		},
+		{
+			name:      "an empty list removes the document's",
+			operation: &openapi3.SecurityRequirements{},
+			document:  document,
+			want:      nil,
+		},
+		{
+			name: "none anywhere",
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, operationSecurity(tt.operation, tt.document))
+		})
+	}
+}
+
+func TestGenerateServerSecurity(t *testing.T) {
+	funcs := make(template.FuncMap, len(TemplateFunctions)+1)
+	for k, v := range TemplateFunctions {
+		funcs[k] = v
+	}
+	funcs["opts"] = func() Configuration { return Configuration{} }
+	base := template.New("codegen").Funcs(funcs)
+	require.NoError(t, LoadTemplates(templates, base))
+
+	t.Run("omitted without security", func(t *testing.T) {
+		out, err := GenerateServer(base, []OperationDefinition{{OperationId: "Ping"}})
+		require.NoError(t, err)
+		assert.NotContains(t, out, "SecurityRequirement")
+	})
+
+	t.Run("stored for a secured operation", func(t *testing.T) {
+		out, err := GenerateServer(base, []OperationDefinition{{
+			OperationId:          "Ping",
+			SecurityRequirements: []SecurityRequirementDefinition{{{Scheme: "bearer", Scopes: []string{"read"}}}},
+		}})
+		require.NoError(t, err)
+		assert.Contains(t, out, `"Ping": {{"bearer": {"read"}}},`)
+		assert.Contains(t, out, `context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity["Ping"])`)
+		assert.Contains(t, out, "func SecurityRequirements(ctx context.Context) []SecurityRequirement {")
+	})
+}
+
+func TestServerResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.0.3"
 info: {title: t, version: "1"}
@@ -1066,7 +1131,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	}
 
 	for _, server := range servers {
@@ -1075,7 +1140,6 @@ components:
 			require.NoError(t, err)
 
 			server.generate.Models = true
-			server.generate.Strict = true
 			code, err := Generate(swagger, Configuration{
 				PackageName: "api",
 				Generate:    server.generate,
@@ -1099,7 +1163,7 @@ components:
 	}
 }
 
-func TestStrictServerResolvedExternalResponseReceiverCompatibility(t *testing.T) {
+func TestServerResolvedExternalResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.0.3"
 info: {title: t, version: "1"}
@@ -1166,7 +1230,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	}
 
 	for _, server := range servers {
@@ -1180,7 +1244,6 @@ components:
 			require.NoError(t, err)
 
 			server.generate.Models = true
-			server.generate.Strict = true
 			code, err := Generate(swagger, Configuration{
 				PackageName: "api",
 				Generate:    server.generate,
@@ -1229,7 +1292,7 @@ func TestGoTypeNeedsBodyWrapper(t *testing.T) {
 // operation that reaches it through $ref. Embedding an interface compiles, so
 // an untyped or interface envelope keeps its direct type; only a pointer,
 // which cannot be embedded, is wrapped.
-func TestStrictServerReusableResponseEnvelopeCompatibility(t *testing.T) {
+func TestServerReusableResponseEnvelopeCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.1.0"
 info: {title: t, version: "1"}
@@ -1284,7 +1347,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	}
 
 	for _, server := range servers {
@@ -1292,7 +1355,6 @@ components:
 			code := generateSpec(t, spec, func(c *Configuration) {
 				c.Generate = server.generate
 				c.Generate.Models = true
-				c.Generate.Strict = true
 			})
 			assert.Contains(t, code, "type UntypedJSONResponse any\n")
 			assert.Contains(t, code, "type MultiJSONResponse any\n")
@@ -1313,7 +1375,7 @@ components:
 
 // A composition lowered to an untyped member's type is wrapped. The member is
 // identified by the type the generator emitted.
-func TestStrictServerComposedResponseReceiverCompatibility(t *testing.T) {
+func TestServerComposedResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.1.0"
 info: {title: t, version: "1"}
@@ -1397,8 +1459,7 @@ components:
 
 	wrapped := []string{"AllOfOp", "AllOfSiblingOp", "WrappedOp", "NullableOp", "NullableAnyOfOp", "NamedOp"}
 	code := generateSpec(t, spec, func(c *Configuration) {
-		c.Generate.StdHTTPServer = true
-		c.Generate.Strict = true
+		c.Generate.Server = true
 	})
 	for _, op := range wrapped {
 		assert.Contains(t, code, "type "+op+"200JSONResponse struct {\n\tBody ", op)
@@ -1427,7 +1488,7 @@ func TestResponseContentUsesSchemaReceiver(t *testing.T) {
 // bodies are, so an untyped one needs a Body field too. A reusable text
 // envelope is redeclared as the receiver of each operation that reaches it
 // through $ref, while a form envelope is embedded like a JSON one.
-func TestStrictServerTextAndFormResponseReceiverCompatibility(t *testing.T) {
+func TestServerTextAndFormResponseReceiverCompatibility(t *testing.T) {
 	const spec = `
 openapi: "3.0.3"
 info: {title: t, version: "1"}
@@ -1507,7 +1568,7 @@ components:
 		name     string
 		generate GenerateOptions
 	}{
-		{name: "standard", generate: GenerateOptions{StdHTTPServer: true}},
+		{name: "standard", generate: GenerateOptions{Server: true}},
 	}
 
 	for _, server := range servers {
@@ -1515,7 +1576,6 @@ components:
 			code := generateSpec(t, spec, func(c *Configuration) {
 				c.Generate = server.generate
 				c.Generate.Models = true
-				c.Generate.Strict = true
 			})
 			assert.Contains(t, code, "type TextUntypedOp200TextResponse struct {\n\tBody any\n}")
 			assert.Contains(t, code, "type TextNoSchemaOp200TextResponse struct {\n\tBody any\n}")
@@ -1536,7 +1596,7 @@ components:
 	}
 }
 
-// visitorOf returns the source of the strict response visitor declared on
+// visitorOf returns the source of the server response visitor declared on
 // receiver.
 func visitorOf(t *testing.T, code, receiver string) string {
 	t.Helper()

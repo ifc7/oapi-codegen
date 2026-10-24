@@ -5,5 +5,4 @@ output: allof_union_duplicate_members.gen.go
 generate:
   models: true
   client: true
-  std-http-server: true
-  strict-server: true
+  server: true

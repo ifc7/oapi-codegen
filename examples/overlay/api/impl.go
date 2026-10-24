@@ -1,8 +1,7 @@
 package api
 
 import (
-	"encoding/json"
-	"net/http"
+	"context"
 )
 
 // ensure that we've conformed to the `ServerInterface` with a compile-time check
@@ -15,11 +14,8 @@ func NewServer() Server {
 }
 
 // (GET /ping)
-func (Server) GetPing(w http.ResponseWriter, r *http.Request) {
-	resp := OverriddenPong{
+func (Server) GetPing(ctx context.Context, request GetPingRequestObject) (GetPingResponseObject, error) {
+	return GetPing200JSONResponse{
 		Ping: "pong",
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(resp)
+	}, nil
 }

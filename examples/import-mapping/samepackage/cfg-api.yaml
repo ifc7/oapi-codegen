@@ -3,8 +3,7 @@ package: samepackage
 output: server.gen.go
 generate:
   models: true
-  std-http-server: true
-  strict-server: true
+  server: true
 output-options:
   # to make sure that all types are generated
   skip-prune: true

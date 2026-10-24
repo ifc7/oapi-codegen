@@ -24,8 +24,6 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/getkin/kin-openapi/openapi3"
-
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
 )
 
@@ -59,21 +57,6 @@ func genParamArgs(params []ParameterDefinition) string {
 	for i, p := range params {
 		paramName := p.GoVariableName()
 		parts[i] = fmt.Sprintf("%s %s", paramName, p.TypeDef())
-	}
-	return ", " + strings.Join(parts, ", ")
-}
-
-// genParamTypes is much like the one above, except it only produces the
-// types of the parameters for a type declaration. It would produce this
-// from the same input as above:
-// ", int, string, float32".
-func genParamTypes(params []ParameterDefinition) string {
-	if len(params) == 0 {
-		return ""
-	}
-	parts := make([]string, len(params))
-	for i, p := range params {
-		parts[i] = p.TypeDef()
 	}
 	return ", " + strings.Join(parts, ", ")
 }
@@ -357,46 +340,11 @@ func responsesWithHeaders(responses []ResponseDefinition) []ResponseDefinition {
 }
 
 // This outputs a string array
-func toStringArray(sarr []string) string {
-	s := strings.Join(sarr, `","`)
-	if len(s) > 0 {
-		s = `"` + s + `"`
-	}
-	return `[]string{` + s + `}`
-}
-
 // stripNewLines removes newlines so untrusted spec text stays inside a single
 // generated `//` line comment instead of breaking out into real Go source.
 func stripNewLines(s string) string {
 	r := strings.NewReplacer("\n", "", "\r", "")
 	return r.Replace(s)
-}
-
-// genServerURLWithVariablesFunctionParams is a template helper method to generate the function parameters for the generated function for a Server object that contains `variables` (https://spec.openapis.org/oas/v3.0.3#server-object)
-//
-// goTypePrefix is the prefix being used to create underlying types in the template (likely the `ServerObjectDefinition.GoName`)
-// variables are this `ServerObjectDefinition`'s variables for the Server object (likely the `ServerObjectDefinition.OAPISchema`)
-//
-// Undeclared `{name}` placeholders that appear in the URL but have no
-// entry in `variables` are NOT handled here; they're emitted as plain
-// `string` parameters by `ServerObjectDefinition.NewFunctionParams`,
-// which the template calls instead of this helper. Custom
-// `server-urls.tmpl` overrides that still call this helper directly
-// keep their pre-existing two-argument signature.
-func genServerURLWithVariablesFunctionParams(goTypePrefix string, variables map[string]*openapi3.ServerVariable) string {
-	keys := SortedMapKeys(variables)
-
-	if len(variables) == 0 {
-		return ""
-	}
-	parts := make([]string, len(variables))
-
-	for i := range keys {
-		k := keys[i]
-		variableDefinitionPrefix := goTypePrefix + UppercaseFirstCharacter(k) + "Variable"
-		parts[i] = k + " " + variableDefinitionPrefix
-	}
-	return strings.Join(parts, ", ")
 }
 
 // httpMethodConstant converts an HTTP method string (e.g. "GET") to the
@@ -460,7 +408,6 @@ var TemplateFunctions = template.FuncMap{
 	"formBind":                   formBind,
 	"formEncode":                 formEncode,
 	"genParamArgs":               genParamArgs,
-	"genParamTypes":              genParamTypes,
 	"genParamNames":              genParamNames,
 	"genPathString":              GenPathString,
 	"swaggerUriToStdHttpUri":     SwaggerUriToStdHttpUri,
@@ -474,7 +421,6 @@ var TemplateFunctions = template.FuncMap{
 	"getConditionOfResponseName": getConditionOfResponseName,
 	"responsesWithHeaders":       responsesWithHeaders,
 	"getResponseTypeDefinitions": getResponseTypeDefinitions,
-	"toStringArray":              toStringArray,
 	"lower":                      strings.ToLower,
 	"title":                      titleCaser.String,
 	"stripNewLines":              stripNewLines,
@@ -483,7 +429,5 @@ var TemplateFunctions = template.FuncMap{
 	"toGoString":                 StringToGoString,
 	"toGoComment":                StringWithTypeNameToGoComment,
 	"withoutPkgName":             withoutPkgName,
-
-	"genServerURLWithVariablesFunctionParams": genServerURLWithVariablesFunctionParams,
-	"httpMethodConstant":                      httpMethodConstant,
+	"httpMethodConstant":         httpMethodConstant,
 }

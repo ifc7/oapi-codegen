@@ -67,18 +67,9 @@ func TestClient_WhenPathHasIdContainingReservedCharacter_RequestHasCorrectPath(t
 }
 
 func TestClient_ServerUnescapesEscapedArg(t *testing.T) {
-
-	m := &MockClient{}
+	m := &petServer{}
 	svr := httptest.NewServer(Handler(m))
 	defer svr.Close()
-
-	// We'll make a function in the mock client which records the value of
-	// the petId variable
-	receivedPetID := ""
-	m.getPet = func(w http.ResponseWriter, r *http.Request, petId string) {
-		receivedPetID = petId
-		w.WriteHeader(http.StatusOK)
-	}
 
 	client, err := NewClientWithResponses(svr.URL)
 	require.NoError(t, err)
@@ -87,7 +78,7 @@ func TestClient_ServerUnescapesEscapedArg(t *testing.T) {
 	response, err := client.GetPetWithResponse(context.Background(), petID)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, response.StatusCode())
-	assert.Equal(t, petID, receivedPetID)
+	assert.Equal(t, petID, m.receivedPetID)
 }
 
 // From issue-1180: TestParameterPrecedence validates that the parameter `param`
@@ -110,34 +101,14 @@ func (m *HTTPRequestDoerMock) Do(req *http.Request) (*http.Response, error) {
 	return args.Get(0).(*http.Response), args.Error(1)
 }
 
-// An implementation of the server interface which helps us check server
-// expectations for funky paths and parameters.
-type MockClient struct {
-	getPet             func(w http.ResponseWriter, r *http.Request, petId string)
-	validatePets       func(w http.ResponseWriter, r *http.Request)
-	getSimplePrimitive func(w http.ResponseWriter, r *http.Request, param string)
+// petServer records the petId the server unescaped from the path. It
+// implements only GetPet; the embedded interface stands in for the rest.
+type petServer struct {
+	ServerInterface
+	receivedPetID string
 }
 
-func (m *MockClient) GetPet(w http.ResponseWriter, r *http.Request, petId string) {
-	if m.getPet != nil {
-		m.getPet(w, r, petId)
-		return
-	}
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-func (m *MockClient) ValidatePets(w http.ResponseWriter, r *http.Request) {
-	if m.validatePets != nil {
-		m.validatePets(w, r)
-		return
-	}
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-func (m *MockClient) GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param string) {
-	if m.getSimplePrimitive != nil {
-		m.getSimplePrimitive(w, r, param)
-		return
-	}
-	w.WriteHeader(http.StatusNotImplemented)
+func (m *petServer) GetPet(ctx context.Context, request GetPetRequestObject) (GetPetResponseObject, error) {
+	m.receivedPetID = request.PetId
+	return GetPet200JSONResponse{}, nil
 }

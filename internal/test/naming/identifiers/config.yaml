@@ -3,11 +3,16 @@ package: namingidentifiers
 output: identifiers.gen.go
 # Union of the flags every folded case needs:
 #   - models       : issue1767 (underscore field → PascalCase)
-#   - strict-server: issue-head-digit-of-operation-id (operationId starting with digit)
+#   - server       : issue-head-digit-of-operation-id (operationId starting with digit)
 #                    issue-head-digit-of-httpheader   (header name starting with digit)
-#   - skip-prune   : keep schemas/components not referenced by a path (all three sources)
+#                    issues #30, #41, #209 (path parameter binding)
+#   - client       : issues #30, #41, #209 (path parameter styling)
+#   - embedded-spec: the schemas fold embedded its spec
+#   - skip-prune   : keep schemas/components not referenced by a path
 generate:
   models: true
-  strict-server: true
+  server: true
+  client: true
+  embedded-spec: true
 output-options:
   skip-prune: true

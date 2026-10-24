@@ -2,7 +2,7 @@
 
 // Package matrixallofsinglerefcustomjson is the allof_single_ref_custom_json cell of the aggregate test matrix.
 //
-// allOf over a single $ref to an object with additionalProperties. The composition is an alias of the referenced type, and keeps its generated MarshalJSON: at a strict-server response, the envelope has to delegate to it, or the additional properties are lost.
+// allOf over a single $ref to an object with additionalProperties. The composition is an alias of the referenced type, and keeps its generated MarshalJSON: at a server response, the envelope has to delegate to it, or the additional properties are lost.
 package matrixallofsinglerefcustomjson
 
 //go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

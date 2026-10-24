@@ -3363,295 +3363,6 @@ func ParseHolderInlineResponse(rsp *http.Response) (*HolderInlineResponse, error
 	return response, nil
 }
 
-// ServerInterface represents all server handlers.
-type ServerInterface interface {
-
-	// (POST /body/component)
-	BodyComponent(w http.ResponseWriter, r *http.Request)
-
-	// (POST /body/component-inline)
-	BodyComponentInline(w http.ResponseWriter, r *http.Request)
-
-	// (POST /body/default)
-	BodyDefault(w http.ResponseWriter, r *http.Request)
-
-	// (POST /body/headers)
-	BodyHeaders(w http.ResponseWriter, r *http.Request)
-
-	// (POST /body/inline)
-	BodyInline(w http.ResponseWriter, r *http.Request)
-
-	// (POST /body/ref)
-	BodyRef(w http.ResponseWriter, r *http.Request)
-
-	// (POST /holder)
-	Holder(w http.ResponseWriter, r *http.Request)
-
-	// (POST /holder-inline)
-	HolderInline(w http.ResponseWriter, r *http.Request)
-}
-
-// ServerInterfaceWrapper converts contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-type MiddlewareFunc func(http.Handler) http.Handler
-
-// BodyComponent operation middleware
-func (siw *ServerInterfaceWrapper) BodyComponent(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BodyComponent(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// BodyComponentInline operation middleware
-func (siw *ServerInterfaceWrapper) BodyComponentInline(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BodyComponentInline(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// BodyDefault operation middleware
-func (siw *ServerInterfaceWrapper) BodyDefault(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BodyDefault(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// BodyHeaders operation middleware
-func (siw *ServerInterfaceWrapper) BodyHeaders(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BodyHeaders(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// BodyInline operation middleware
-func (siw *ServerInterfaceWrapper) BodyInline(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BodyInline(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// BodyRef operation middleware
-func (siw *ServerInterfaceWrapper) BodyRef(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BodyRef(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// Holder operation middleware
-func (siw *ServerInterfaceWrapper) Holder(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Holder(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// HolderInline operation middleware
-func (siw *ServerInterfaceWrapper) HolderInline(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.HolderInline(w, r)
-	}))
-
-	// Wrap in reverse, so the first middleware is the outermost and runs first.
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-type UnescapedCookieParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnescapedCookieParamError) Error() string {
-	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
-}
-
-func (e *UnescapedCookieParamError) Unwrap() error {
-	return e.Err
-}
-
-type UnmarshalingParamError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *UnmarshalingParamError) Error() string {
-	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *UnmarshalingParamError) Unwrap() error {
-	return e.Err
-}
-
-type RequiredParamError struct {
-	ParamName string
-}
-
-func (e *RequiredParamError) Error() string {
-	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
-}
-
-type RequiredHeaderError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *RequiredHeaderError) Error() string {
-	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
-}
-
-func (e *RequiredHeaderError) Unwrap() error {
-	return e.Err
-}
-
-type InvalidParamFormatError struct {
-	ParamName string
-	Err       error
-}
-
-func (e *InvalidParamFormatError) Error() string {
-	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
-}
-
-func (e *InvalidParamFormatError) Unwrap() error {
-	return e.Err
-}
-
-type TooManyValuesForParamError struct {
-	ParamName string
-	Count     int
-}
-
-func (e *TooManyValuesForParamError) Error() string {
-	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
-}
-
-// Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{})
-}
-
-// ServeMux is an abstraction of [http.ServeMux].
-type ServeMux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-	http.Handler
-}
-
-type StdHTTPServerOptions struct {
-	BaseURL          string
-	BaseRouter       ServeMux
-	Middlewares      []MiddlewareFunc
-	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, m ServeMux) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseRouter: m,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, m ServeMux, baseURL string) http.Handler {
-	return HandlerWithOptions(si, StdHTTPServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: m,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.Handler {
-	m := options.BaseRouter
-
-	if m == nil {
-		m = http.NewServeMux()
-	}
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	}
-
-	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
-	}
-
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/holder", wrapper.Holder)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/holder-inline", wrapper.HolderInline)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/ref", wrapper.BodyRef)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/inline", wrapper.BodyInline)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/component", wrapper.BodyComponent)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/component-inline", wrapper.BodyComponentInline)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/default", wrapper.BodyDefault)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/headers", wrapper.BodyHeaders)
-
-	return m
-}
-
 type InlineSubjectResponseJSONResponse = InlineSubjectResponse
 
 type SubjectResponseJSONResponse Subject
@@ -3869,8 +3580,8 @@ func (response HolderInline200JSONResponse) VisitHolderInlineResponse(w http.Res
 	return err
 }
 
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
+// ServerInterface represents all server handlers.
+type ServerInterface interface {
 
 	// (POST /body/component)
 	BodyComponent(ctx context.Context, request BodyComponentRequestObject) (BodyComponentResponseObject, error)
@@ -3897,26 +3608,50 @@ type StrictServerInterface interface {
 	HolderInline(ctx context.Context, request HolderInlineRequestObject) (HolderInlineResponseObject, error)
 }
 
-type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
-type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+// ServeMux is an abstraction of [http.ServeMux].
+type ServeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	http.Handler
+}
 
-type StrictHTTPServerOptions struct {
-	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+// HandlerFunc is an operation's handler as a MiddlewareFunc sees it: request
+// is the operation's RequestObject, and the result its ResponseObject.
+type HandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
+
+// MiddlewareFunc wraps the handler f of the operation operationID.
+type MiddlewareFunc func(f HandlerFunc, operationID string) HandlerFunc
+
+// ServerOptions configures the http.Handler HandlerWithOptions creates.
+type ServerOptions struct {
+	// BaseURL prefixes every operation's path.
+	BaseURL string
+	// BaseRouter is the mux the operations are registered on. When nil, they
+	// are registered on a new http.ServeMux.
+	BaseRouter ServeMux
+	// Middlewares wrap every operation's handler, in order, so the last is
+	// the outermost.
+	Middlewares []MiddlewareFunc
+	// RequestErrorHandlerFunc answers a request whose parameters or body
+	// can't be read. When nil, it responds 400 with the error's message.
+	RequestErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+	// ResponseErrorHandlerFunc answers a request whose handler returned an
+	// error, or a response that couldn't be written. When nil, it responds
+	// 500 with the error's message.
 	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
-		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		},
-	}}
+// Handler creates an http.Handler with routing matching the OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ServerOptions{})
 }
 
-func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+// HandlerWithOptions creates an http.Handler with routing matching the
+// OpenAPI spec, configured by options.
+func HandlerWithOptions(si ServerInterface, options ServerOptions) http.Handler {
+	m := options.BaseRouter
+	if m == nil {
+		m = http.NewServeMux()
+	}
 	if options.RequestErrorHandlerFunc == nil {
 		options.RequestErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -3927,17 +3662,32 @@ func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []Strict
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+
+	sh := &serverHandler{si: si, options: options}
+
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/holder", sh.Holder)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/holder-inline", sh.HolderInline)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/ref", sh.BodyRef)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/inline", sh.BodyInline)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/component", sh.BodyComponent)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/component-inline", sh.BodyComponentInline)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/default", sh.BodyDefault)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/body/headers", sh.BodyHeaders)
+
+	return m
 }
 
-type strictHandler struct {
-	ssi         StrictServerInterface
-	middlewares []StrictMiddlewareFunc
-	options     StrictHTTPServerOptions
+// serverHandler serves each operation: it binds the operation's request
+// object from the HTTP request, calls the ServerInterface through the
+// middlewares, and writes the response object the handler returns.
+type serverHandler struct {
+	si      ServerInterface
+	options ServerOptions
 }
 
-// BodyComponent operation middleware
-func (sh *strictHandler) BodyComponent(w http.ResponseWriter, r *http.Request) {
+// BodyComponent serves the BodyComponent operation.
+func (sh *serverHandler) BodyComponent(w http.ResponseWriter, r *http.Request) {
+
 	var request BodyComponentRequestObject
 
 	var body BodyComponentJSONRequestBody
@@ -3948,9 +3698,9 @@ func (sh *strictHandler) BodyComponent(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.BodyComponent(ctx, request.(BodyComponentRequestObject))
+		return sh.si.BodyComponent(ctx, request.(BodyComponentRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "BodyComponent")
 	}
 
@@ -3967,8 +3717,9 @@ func (sh *strictHandler) BodyComponent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// BodyComponentInline operation middleware
-func (sh *strictHandler) BodyComponentInline(w http.ResponseWriter, r *http.Request) {
+// BodyComponentInline serves the BodyComponentInline operation.
+func (sh *serverHandler) BodyComponentInline(w http.ResponseWriter, r *http.Request) {
+
 	var request BodyComponentInlineRequestObject
 
 	var body BodyComponentInlineJSONRequestBody
@@ -3979,9 +3730,9 @@ func (sh *strictHandler) BodyComponentInline(w http.ResponseWriter, r *http.Requ
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.BodyComponentInline(ctx, request.(BodyComponentInlineRequestObject))
+		return sh.si.BodyComponentInline(ctx, request.(BodyComponentInlineRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "BodyComponentInline")
 	}
 
@@ -3998,8 +3749,9 @@ func (sh *strictHandler) BodyComponentInline(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// BodyDefault operation middleware
-func (sh *strictHandler) BodyDefault(w http.ResponseWriter, r *http.Request) {
+// BodyDefault serves the BodyDefault operation.
+func (sh *serverHandler) BodyDefault(w http.ResponseWriter, r *http.Request) {
+
 	var request BodyDefaultRequestObject
 
 	var body BodyDefaultJSONRequestBody
@@ -4010,9 +3762,9 @@ func (sh *strictHandler) BodyDefault(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.BodyDefault(ctx, request.(BodyDefaultRequestObject))
+		return sh.si.BodyDefault(ctx, request.(BodyDefaultRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "BodyDefault")
 	}
 
@@ -4029,8 +3781,9 @@ func (sh *strictHandler) BodyDefault(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// BodyHeaders operation middleware
-func (sh *strictHandler) BodyHeaders(w http.ResponseWriter, r *http.Request) {
+// BodyHeaders serves the BodyHeaders operation.
+func (sh *serverHandler) BodyHeaders(w http.ResponseWriter, r *http.Request) {
+
 	var request BodyHeadersRequestObject
 
 	var body BodyHeadersJSONRequestBody
@@ -4041,9 +3794,9 @@ func (sh *strictHandler) BodyHeaders(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.BodyHeaders(ctx, request.(BodyHeadersRequestObject))
+		return sh.si.BodyHeaders(ctx, request.(BodyHeadersRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "BodyHeaders")
 	}
 
@@ -4060,8 +3813,9 @@ func (sh *strictHandler) BodyHeaders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// BodyInline operation middleware
-func (sh *strictHandler) BodyInline(w http.ResponseWriter, r *http.Request) {
+// BodyInline serves the BodyInline operation.
+func (sh *serverHandler) BodyInline(w http.ResponseWriter, r *http.Request) {
+
 	var request BodyInlineRequestObject
 
 	var body BodyInlineJSONRequestBody
@@ -4072,9 +3826,9 @@ func (sh *strictHandler) BodyInline(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.BodyInline(ctx, request.(BodyInlineRequestObject))
+		return sh.si.BodyInline(ctx, request.(BodyInlineRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "BodyInline")
 	}
 
@@ -4091,8 +3845,9 @@ func (sh *strictHandler) BodyInline(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// BodyRef operation middleware
-func (sh *strictHandler) BodyRef(w http.ResponseWriter, r *http.Request) {
+// BodyRef serves the BodyRef operation.
+func (sh *serverHandler) BodyRef(w http.ResponseWriter, r *http.Request) {
+
 	var request BodyRefRequestObject
 
 	var body BodyRefJSONRequestBody
@@ -4103,9 +3858,9 @@ func (sh *strictHandler) BodyRef(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.BodyRef(ctx, request.(BodyRefRequestObject))
+		return sh.si.BodyRef(ctx, request.(BodyRefRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "BodyRef")
 	}
 
@@ -4122,8 +3877,9 @@ func (sh *strictHandler) BodyRef(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Holder operation middleware
-func (sh *strictHandler) Holder(w http.ResponseWriter, r *http.Request) {
+// Holder serves the Holder operation.
+func (sh *serverHandler) Holder(w http.ResponseWriter, r *http.Request) {
+
 	var request HolderRequestObject
 
 	var body HolderJSONRequestBody
@@ -4134,9 +3890,9 @@ func (sh *strictHandler) Holder(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.Holder(ctx, request.(HolderRequestObject))
+		return sh.si.Holder(ctx, request.(HolderRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "Holder")
 	}
 
@@ -4153,8 +3909,9 @@ func (sh *strictHandler) Holder(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HolderInline operation middleware
-func (sh *strictHandler) HolderInline(w http.ResponseWriter, r *http.Request) {
+// HolderInline serves the HolderInline operation.
+func (sh *serverHandler) HolderInline(w http.ResponseWriter, r *http.Request) {
+
 	var request HolderInlineRequestObject
 
 	var body HolderInlineJSONRequestBody
@@ -4165,9 +3922,9 @@ func (sh *strictHandler) HolderInline(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
-		return sh.ssi.HolderInline(ctx, request.(HolderInlineRequestObject))
+		return sh.si.HolderInline(ctx, request.(HolderInlineRequestObject))
 	}
-	for _, middleware := range sh.middlewares {
+	for _, middleware := range sh.options.Middlewares {
 		handler = middleware(handler, "HolderInline")
 	}
 
@@ -4182,4 +3939,73 @@ func (sh *strictHandler) HolderInline(w http.ResponseWriter, r *http.Request) {
 	} else if response != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
 	}
+}
+
+type UnescapedCookieParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter '%s'", e.ParamName)
+}
+
+func (e *UnescapedCookieParamError) Unwrap() error {
+	return e.Err
+}
+
+type UnmarshalingParamError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("Error unmarshaling parameter %s as JSON: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *UnmarshalingParamError) Unwrap() error {
+	return e.Err
+}
+
+type RequiredParamError struct {
+	ParamName string
+}
+
+func (e *RequiredParamError) Error() string {
+	return fmt.Sprintf("Query argument %s is required, but not found", e.ParamName)
+}
+
+type RequiredHeaderError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *RequiredHeaderError) Error() string {
+	return fmt.Sprintf("Header parameter %s is required, but not found", e.ParamName)
+}
+
+func (e *RequiredHeaderError) Unwrap() error {
+	return e.Err
+}
+
+type InvalidParamFormatError struct {
+	ParamName string
+	Err       error
+}
+
+func (e *InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("Invalid format for parameter %s: %s", e.ParamName, e.Err.Error())
+}
+
+func (e *InvalidParamFormatError) Unwrap() error {
+	return e.Err
+}
+
+type TooManyValuesForParamError struct {
+	ParamName string
+	Count     int
+}
+
+func (e *TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
 }

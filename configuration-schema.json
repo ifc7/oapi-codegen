@@ -13,13 +13,9 @@
       "additionalProperties": false,
       "description": "Generate specifies which supported output formats to generate",
       "properties": {
-        "std-http-server": {
+        "server": {
           "type": "boolean",
-          "description": "StdHTTPServer specifies whether to generate stdlib http server boilerplate"
-        },
-        "strict-server": {
-          "type": "boolean",
-          "description": "Strict specifies whether to generate strict server wrapper"
+          "description": "Server specifies whether to generate the net/http server"
         },
         "client": {
           "type": "boolean",
@@ -136,7 +132,7 @@
         },
         "streaming-content-types": {
           "type": "array",
-          "description": "Additional regex patterns matched against response Content-Type to decide when the strict server should generate a flush-per-chunk streaming response. Merged with the defaults (text/event-stream, application/jsonl, application/x-ndjson). Invalid regexes fail configuration validation.",
+          "description": "Additional regex patterns matched against response Content-Type to decide when the server should generate a flush-per-chunk streaming response. Merged with the defaults (text/event-stream, application/jsonl, application/x-ndjson). Invalid regexes fail configuration validation.",
           "items": {
             "type": "string"
           }

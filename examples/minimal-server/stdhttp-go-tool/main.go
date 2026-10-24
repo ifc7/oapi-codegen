@@ -14,7 +14,7 @@ func main() {
 	r := http.NewServeMux()
 
 	// get an `http.Handler` that we can use
-	h := api.HandlerFromMux(server, r)
+	h := api.HandlerWithOptions(server, api.ServerOptions{BaseRouter: r})
 
 	s := &http.Server{
 		Handler: h,

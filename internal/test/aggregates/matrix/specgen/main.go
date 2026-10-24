@@ -38,8 +38,8 @@ var allPositions = []string{
 	"body-inline",           // request and response body: the subject schema inline
 	"body-component",        // components/requestBodies and components/responses wrapping $ref Subject
 	"body-component-inline", // components/requestBodies and components/responses wrapping the inline subject
-	"body-default",          // a `default:` response, so the strict envelope is a struct with Body and StatusCode
-	"body-headers",          // a response with a header, so the strict envelope is a struct with Body and Headers
+	"body-default",          // a `default:` response, so the response envelope is a struct with Body and StatusCode
+	"body-headers",          // a response with a header, so the response envelope is a struct with Body and Headers
 }
 
 type shape struct {
@@ -75,7 +75,7 @@ func (s shape) Has(position string) bool {
 func (s shape) HasHolder() bool { return s.Has("holder") || s.Has("holder-inline") }
 
 // HasOperations reports whether the spec has any operation, and so a client
-// and a strict server.
+// and a server.
 func (s shape) HasOperations() bool {
 	for _, p := range allPositions {
 		if p != "subject" && s.Has(p) {
@@ -419,8 +419,7 @@ func buildConfig(s shape) ([]byte, error) {
 		"generate", mapping(
 			"models", true,
 			"client", true,
-			"std-http-server", true,
-			"strict-server", true,
+			"server", true,
 		),
 	)
 	if s.Config.Kind == yaml.MappingNode {
@@ -578,7 +577,7 @@ func holderSample(t *testing.T) string {
 
 {{if .HasOperations -}}
 // echo re-types v through its JSON encoding, the way a handler that receives
-// one generated type and must return another would. A strict-server response
+// one generated type and must return another would. A server response
 // that carries its body in a Body field, as one whose body is an interface
 // type does, gets v in that field.
 func echo[T any](v any) (T, error) {
@@ -595,7 +594,7 @@ func echo[T any](v any) (T, error) {
 	return out, err
 }
 
-// bodyField returns the Body field of a strict-server response envelope: a
+// bodyField returns the Body field of a server response envelope: a
 // struct whose only field is an untagged Body. The field of a property named
 // body has a json tag, so it is never taken for one.
 func bodyField(v reflect.Value) (reflect.Value, bool) {
@@ -657,7 +656,7 @@ func (server) BodyHeaders(_ context.Context, req BodyHeadersRequestObject) (Body
 
 func newClient(t *testing.T) *ClientWithResponses {
 	t.Helper()
-	srv := httptest.NewServer(Handler(NewStrictHandler(server{}, nil)))
+	srv := httptest.NewServer(Handler(server{}))
 	t.Cleanup(srv.Close)
 	c, err := NewClientWithResponses(srv.URL)
 	require.NoError(t, err)

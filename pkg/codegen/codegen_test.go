@@ -26,10 +26,10 @@ func TestExampleOpenAPICodeGeneration(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Client:        true,
-			Models:        true,
-			EmbeddedSpec:  true,
+			Server:       true,
+			Client:       true,
+			Models:       true,
+			EmbeddedSpec: true,
 		},
 	}
 
@@ -103,10 +103,9 @@ func TestExtPropGoTypeSkipOptionalPointer(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
-			EmbeddedSpec:  true,
-			Strict:        true,
+			Server:       true,
+			Models:       true,
+			EmbeddedSpec: true,
 		},
 	}
 	spec := "test_specs/x-go-type-skip-optional-pointer.yaml"
@@ -141,9 +140,9 @@ func TestGoTypeImport(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
-			EmbeddedSpec:  true,
+			Server:       true,
+			Models:       true,
+			EmbeddedSpec: true,
 		},
 	}
 	spec := "test_specs/x-go-type-import-pet.yaml"
@@ -184,9 +183,9 @@ func TestGoAllofTypeOverride(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
-			EmbeddedSpec:  true,
+			Server:       true,
+			Models:       true,
+			EmbeddedSpec: true,
 		},
 	}
 	spec := "test_specs/x-go-type-pet-allof.yaml"
@@ -315,9 +314,9 @@ paths:
 	opts := Configuration{
 		PackageName: "api",
 		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Client:        true,
-			Models:        true,
+			Server: true,
+			Client: true,
+			Models: true,
 		},
 	}
 
@@ -526,11 +525,13 @@ func indexOf(s, substr string) int {
 	return -1
 }
 
-// TestNoAuthScopesOnContext verifies that generated server code doesn't embed
-// security scheme scopes into the request context: authentication belongs in
-// the validation middleware, which evaluates the security requirements.
+// TestSecurityRequirementsOnContext verifies that generated server code puts
+// an operation's security requirements into the request context whole, as
+// alternatives of combined schemes, rather than flattening them into a
+// per-scheme list of scopes, which can't represent alternative (OR), combined
+// (AND) or anonymous ({}) requirements.
 // Please see https://github.com/oapi-codegen/oapi-codegen/issues/1524
-func TestNoAuthScopesOnContext(t *testing.T) {
+func TestSecurityRequirementsOnContext(t *testing.T) {
 	const spec = `
 openapi: "3.0.0"
 info:
@@ -558,8 +559,8 @@ paths:
 	opts := Configuration{
 		PackageName: "api",
 		Generate: GenerateOptions{
-			StdHTTPServer: true,
-			Models:        true,
+			Server: true,
+			Models: true,
 		},
 	}
 
@@ -567,7 +568,8 @@ paths:
 	require.NoError(t, err)
 	assert.NotContains(t, code, "BearerAuthScopes")
 	assert.NotContains(t, code, "bearerAuthContextKey")
-	assert.NotContains(t, code, "context.WithValue")
+	assert.Contains(t, code, `"Secured": {{"bearerAuth": {"read"}}},`)
+	assert.Contains(t, code, `context.WithValue(r.Context(), securityRequirementsKey{}, operationSecurity["Secured"])`)
 }
 
 // TestEnumValueEscaping verifies that a string enum value containing a
@@ -640,7 +642,7 @@ paths:
 
 	base := Configuration{
 		PackageName: "api",
-		Generate:    GenerateOptions{StdHTTPServer: true, Models: true},
+		Generate:    GenerateOptions{Server: true, Models: true},
 	}
 
 	regOrder := func(code string) (zebra, apple int) {

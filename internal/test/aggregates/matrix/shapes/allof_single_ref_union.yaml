@@ -1,6 +1,6 @@
 description: >-
   allOf over a single $ref to a oneOf. The composition is an alias of the
-  union type, and keeps its generated MarshalJSON: at a strict-server
+  union type, and keeps its generated MarshalJSON: at a server
   response, the envelope has to delegate to it, or the union's data is lost.
 subject:
   allOf:
