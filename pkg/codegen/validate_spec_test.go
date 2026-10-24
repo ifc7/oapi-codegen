@@ -194,3 +194,60 @@ func TestValidateSpec_XOapiCodegenExtraTags_StillValidated(t *testing.T) {
 	require.Error(t, err)
 	assert.True(t, strings.Contains(err.Error(), "x-oapi-codegen-extra-tags"))
 }
+
+func TestValidateOpenAPIVersion(t *testing.T) {
+	tests := []struct {
+		name    string
+		doc     string
+		wantErr string
+	}{
+		{
+			name:    "OpenAPI 2.0",
+			doc:     "swagger: \"2.0\"\ninfo: {title: t, version: \"1\"}\npaths: {}\n",
+			wantErr: "the document is OpenAPI 2.0 (Swagger), which oapi-codegen doesn't support: convert it to OpenAPI 3, for instance with https://converter.swagger.io/",
+		},
+		{
+			name:    "another version",
+			doc:     "openapi: 4.0.0\ninfo: {title: t, version: \"1\"}\npaths: {}\n",
+			wantErr: "the document is OpenAPI 4.0.0, which oapi-codegen doesn't support: it supports OpenAPI 3.0 and 3.1",
+		},
+		{name: "OpenAPI 3.0", doc: "openapi: 3.0.3\ninfo: {title: t, version: \"1\"}\npaths: {}\n"},
+		{name: "OpenAPI 3.1", doc: "openapi: 3.1.0\ninfo: {title: t, version: \"1\"}\npaths: {}\n"},
+		{name: "shared definitions with no version", doc: "components:\n  schemas:\n    Pet: {type: object}\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec, err := openapi3.NewLoader().LoadFromData([]byte(tt.doc))
+			require.NoError(t, err)
+			err = ValidateOpenAPIVersion(spec)
+			if tt.wantErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// Generate rejects an OpenAPI 2.0 document up front, rather than failing on
+// whichever part of it generation first reaches.
+func TestGenerateRejectsOpenAPI2(t *testing.T) {
+	const doc = `
+swagger: "2.0"
+info: {title: Pets, version: "1.0"}
+paths:
+  /pets/{id}:
+    get:
+      operationId: getPet
+      parameters:
+        - {name: id, in: path, required: true, type: integer}
+      responses:
+        200:
+          description: ok
+`
+	spec, err := openapi3.NewLoader().LoadFromData([]byte(doc))
+	require.NoError(t, err)
+	_, err = Generate(spec, Configuration{PackageName: "api", Generate: GenerateOptions{Server: true, Models: true}})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "OpenAPI 2.0 (Swagger)")
+}

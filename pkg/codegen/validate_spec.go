@@ -10,6 +10,25 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
+// openAPIConverterURL converts OpenAPI 2.0 (Swagger) documents to OpenAPI 3.
+const openAPIConverterURL = "https://converter.swagger.io/"
+
+// ValidateOpenAPIVersion rejects a document that isn't OpenAPI 3: an OpenAPI
+// 2.0 (Swagger) document, which loads as an OpenAPI 3 document with nothing
+// in it that generation understands, or one that declares another version.
+// Without it, such a document fails partway through generation, on whichever
+// part of it first differs from OpenAPI 3. A document that declares no
+// version is taken to be OpenAPI 3, as a file of shared definitions often is.
+func ValidateOpenAPIVersion(spec *openapi3.T) error {
+	if _, ok := spec.Extensions["swagger"]; ok && spec.OpenAPI == "" {
+		return fmt.Errorf("the document is OpenAPI 2.0 (Swagger), which oapi-codegen doesn't support: convert it to OpenAPI 3, for instance with %s", openAPIConverterURL)
+	}
+	if spec.OpenAPI != "" && !strings.HasPrefix(spec.OpenAPI, "3.") {
+		return fmt.Errorf("the document is OpenAPI %s, which oapi-codegen doesn't support: it supports OpenAPI 3.0 and 3.1", spec.OpenAPI)
+	}
+	return nil
+}
+
 // ValidateSpec walks a loaded OpenAPI document and rejects values that cannot be
 // represented in the generated Go source.
 //
