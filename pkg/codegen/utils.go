@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"go/token"
+	"mime"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -1173,6 +1174,16 @@ func normalizeWhitespace(s string) string {
 	s = strings.ReplaceAll(s, "\r\n", "\n")
 	s = strings.ReplaceAll(s, "\r", "\n")
 	return strings.TrimRight(s, "\n\r")
+}
+
+// isMediaTypeJson reports whether mediaType is application/json or a
+// vendor JSON type such as application/vnd.api+json.
+func isMediaTypeJson(mediaType string) bool {
+	parsed, _, err := mime.ParseMediaType(mediaType)
+	if err != nil {
+		return false
+	}
+	return parsed == "application/json" || strings.HasSuffix(parsed, "+json")
 }
 
 // appendUnique appends v to s unless s already has it.

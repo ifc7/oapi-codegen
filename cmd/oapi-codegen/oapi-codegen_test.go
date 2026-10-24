@@ -15,7 +15,7 @@ func TestLoader(t *testing.T) {
 
 	for _, v := range paths {
 
-		swagger, err := util.LoadSwagger(v)
+		swagger, err := util.LoadSwagger(v) //nolint:staticcheck // the test covers the deprecated loader shim
 		if err != nil {
 			t.Error(err)
 		}

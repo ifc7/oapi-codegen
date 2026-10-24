@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/util"
 )
 
 var _ fmt.Stringer = (*SchemaPath)(nil)
@@ -191,7 +190,7 @@ func gatherComponentResponses(components *model.Components) []*GatheredSchema {
 			goNameOverride = extractGoNameOverride(response.Extensions)
 		}
 		for _, mediaType := range SortedMapKeys(response.Content) {
-			if !util.IsMediaTypeJson(mediaType) {
+			if !isMediaTypeJson(mediaType) {
 				continue
 			}
 			mt := response.Content[mediaType]
@@ -224,7 +223,7 @@ func gatherComponentRequestBodies(components *model.Components) []*GatheredSchem
 			goNameOverride = extractGoNameOverride(body.Extensions)
 		}
 		for _, mediaType := range SortedMapKeys(body.Content) {
-			if !util.IsMediaTypeJson(mediaType) {
+			if !isMediaTypeJson(mediaType) {
 				continue
 			}
 			mt := body.Content[mediaType]

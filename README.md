@@ -1283,7 +1283,24 @@ output-options:
 
 ### Using the Go package
 
-Alternatively, you are able to use the underlying code generation as a package, which [will be documented in the future](https://github.com/oapi-codegen/oapi-codegen/issues/1487).
+`codegen.Generate` takes a `*model.Document` (`pkg/model`), not a kin-openapi document. Load one with the kin-openapi engine and pass it in:
+
+```go
+import (
+    "github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
+    "github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
+    "github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+)
+
+doc, err := kin.Engine{}.Load(path, engine.LoadOptions{})
+code, err := codegen.Generate(doc, cfg)
+```
+
+User templates receive that same model. `Schema.OAPISchema`, `ParameterDefinition.Spec` and `OperationDefinition.Spec` are model types, not kin-openapi structs.
+
+`pkg/util.LoadSwagger` and `LoadSwaggerWithOverlay` still return a kin-openapi document. They are deprecated; use `kin.Engine.Load`.
+
+Further use of the package as a library [will be documented in the future](https://github.com/oapi-codegen/oapi-codegen/issues/1487).
 
 ## Additional Properties (`additionalProperties`)
 
