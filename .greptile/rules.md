@@ -41,7 +41,7 @@ Flag any PR that changes `pkg/codegen/configuration.go` without a corresponding 
 - `paths/` — path-level routing edge cases: URL escaping of reserved characters and path-parameter precedence
 - `references/` — external `$ref`s, import-mapping, multi-package generation, overlays
 - `schemas/` — schema-to-type mapping (primitives, objects, enums, nullable, recursive, …)
-- `servers/` — server codegen (routers, middleware, strict servers)
+- `servers/` — server codegen (routers, middleware, request and response objects)
 - `spec_validation/` — pre-generation spec validation
 
 When a PR adds a test, enforce the following:
