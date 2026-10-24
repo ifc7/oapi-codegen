@@ -8,6 +8,12 @@
       "type": "string",
       "description": "Go package name to generate the code under"
     },
+    "engine": {
+      "type": "string",
+      "enum": ["kin", "libopenapi"],
+      "default": "kin",
+      "description": "The OpenAPI library that loads the spec. The OAPI_CODEGEN_ENGINE environment variable overrides it"
+    },
     "generate": {
       "type": "object",
       "additionalProperties": false,

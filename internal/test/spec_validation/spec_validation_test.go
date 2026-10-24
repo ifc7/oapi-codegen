@@ -15,7 +15,7 @@ import (
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/engines"
 )
 
 func TestValidateSpecRejects(t *testing.T) {
@@ -36,7 +36,7 @@ func TestValidateSpecRejects(t *testing.T) {
 
 	for file, want := range cases {
 		t.Run(file, func(t *testing.T) {
-			spec, err := kin.Engine{}.Load(filepath.Join("testdata", file), engine.LoadOptions{})
+			spec, err := engines.Load("", filepath.Join("testdata", file), engine.LoadOptions{})
 			require.NoError(t, err, "test spec should load")
 
 			err = codegen.ValidateSpec(spec)
@@ -47,7 +47,7 @@ func TestValidateSpecRejects(t *testing.T) {
 }
 
 func TestValidateSpecAcceptsLegitimateSpec(t *testing.T) {
-	spec, err := kin.Engine{}.Load(filepath.Join("testdata", "valid.yaml"), engine.LoadOptions{})
+	spec, err := engines.Load("", filepath.Join("testdata", "valid.yaml"), engine.LoadOptions{})
 	require.NoError(t, err)
 	require.NoError(t, codegen.ValidateSpec(spec), "a legitimate spec must not be rejected")
 }

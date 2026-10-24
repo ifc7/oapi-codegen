@@ -23,6 +23,10 @@ Every setting is shown below with its default value. Each section links to the G
 # Required: Go package name
 package: api
 
+# The OpenAPI library that loads the spec: kin or libopenapi.
+# The OAPI_CODEGEN_ENGINE environment variable overrides it.
+engine: kin
+
 # What to generate.
 # If the `generate` block is omitted entirely, it defaults to generating
 # a net/http server with models.
