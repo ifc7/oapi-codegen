@@ -3,7 +3,6 @@ package codegen
 import (
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -112,9 +111,7 @@ components:
           type: string
           format: duration
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	opts := Configuration{
 		PackageName:   "api",
@@ -166,9 +163,7 @@ components:
           type: string
           format: date-time
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	opts := Configuration{
 		PackageName:   "api",
@@ -212,9 +207,7 @@ components:
           type: string
           format: date
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	opts := Configuration{
 		PackageName:   "api",
@@ -251,9 +244,7 @@ paths:
       responses:
         '200': {description: ok}
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	code, err := Generate(swagger, Configuration{
 		PackageName: "api",

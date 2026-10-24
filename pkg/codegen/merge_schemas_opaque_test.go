@@ -42,10 +42,7 @@ func generateWithCommon(t *testing.T, spec string, opts ...func(*Configuration))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "user.yaml"), []byte(opaqueUserDocument), 0o600))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "api.yaml"), []byte(spec), 0o600))
 
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	swagger, err := loader.LoadFromFile(filepath.Join(dir, "api.yaml"))
-	require.NoError(t, err)
+	swagger := loadTestSpecFile(t, filepath.Join(dir, "api.yaml"))
 
 	cfg := Configuration{
 		PackageName:   "api",

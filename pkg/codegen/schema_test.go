@@ -2,7 +2,6 @@ package codegen
 
 import (
 	"math"
-	"net/url"
 	"strings"
 	"testing"
 
@@ -1095,8 +1094,7 @@ components:
         - type: string
         - type: "null"
 `
-	swagger, err := openapi3.NewLoader().LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 	out, err := Generate(swagger, Configuration{
 		PackageName: "api",
 		Generate:    GenerateOptions{Models: true, Server: true},
@@ -1187,8 +1185,7 @@ components:
               - $ref: '#/components/schemas/Cat'
               - $ref: '#/components/schemas/Dog'
 `
-	swagger, err := openapi3.NewLoader().LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 	out, err := Generate(swagger, Configuration{
 		PackageName: "api",
 		Generate:    GenerateOptions{Models: true, Server: true},
@@ -1284,13 +1281,7 @@ components:
 		{name: "standard", generate: GenerateOptions{Server: true}},
 	} {
 		t.Run(server.name, func(t *testing.T) {
-			loader := openapi3.NewLoader()
-			loader.IsExternalRefsAllowed = true
-			loader.ReadFromURIFunc = func(_ *openapi3.Loader, _ *url.URL) ([]byte, error) {
-				return []byte(externalSpec), nil
-			}
-			swagger, err := loader.LoadFromDataWithPath([]byte(spec), &url.URL{Path: "root.yaml"})
-			require.NoError(t, err)
+			swagger := loadTestSpec(t, []byte(spec), withExternalRef("root.yaml", []byte(externalSpec)))
 
 			server.generate.Models = true
 			code, err := Generate(swagger, Configuration{

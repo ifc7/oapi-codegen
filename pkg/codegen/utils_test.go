@@ -204,9 +204,7 @@ components:
           x-order: 1
   `
 
-	loader := openapi3.NewLoader()
-	spec, err := loader.LoadFromData([]byte(rawSpec))
-	require.NoError(t, err)
+	spec := loadTestSpec(t, []byte(rawSpec))
 	require.NotNil(t, spec.Components)
 	require.NotNil(t, spec.Components.Schemas)
 
@@ -915,11 +913,9 @@ paths:
         "204":
           description: Applied
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
-	_, err = Generate(swagger, Configuration{
+	_, err := Generate(swagger, Configuration{
 		PackageName: "api",
 		Generate: GenerateOptions{
 			Server: true,
@@ -956,14 +952,12 @@ paths:
         "200":
           description: OK
 `
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData([]byte(spec))
-	require.NoError(t, err)
+	swagger := loadTestSpec(t, []byte(spec))
 
 	// Tag filtering removes the only operation on the mixed segment but leaves
 	// the path key in the spec; no route is emitted for it, so generation must
 	// succeed.
-	_, err = Generate(swagger, Configuration{
+	_, err := Generate(swagger, Configuration{
 		PackageName: "api",
 		Generate: GenerateOptions{
 			Server: true,
