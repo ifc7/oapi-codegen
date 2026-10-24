@@ -240,22 +240,6 @@ func (s Schema) TypeDecl() string {
 	return s.GoType
 }
 
-// AddProperty adds a new property to the current Schema, and returns an error
-// if it collides. Two identical fields will not collide, but two properties by
-// the same name, but different definition, will collide. It's safe to merge the
-// fields of two schemas with overlapping properties if those properties are
-// identical.
-func (s *Schema) AddProperty(p Property) error {
-	// Scan all existing properties for a conflict
-	for _, e := range s.Properties {
-		if e.JsonFieldName == p.JsonFieldName && !PropertiesEqual(e, p) {
-			return fmt.Errorf("property '%s' already exists with a different type", e.JsonFieldName)
-		}
-	}
-	s.Properties = append(s.Properties, p)
-	return nil
-}
-
 func (s Schema) GetAdditionalTypeDefs() []TypeDefinition {
 	return s.AdditionalTypes
 }
@@ -750,10 +734,6 @@ func (u UnionElement) Method() string {
 		method.WriteString(UppercaseFirstCharacter(part))
 	}
 	return method.String()
-}
-
-func PropertiesEqual(a, b Property) bool {
-	return a.JsonFieldName == b.JsonFieldName && a.Schema.TypeDecl() == b.Schema.TypeDecl() && a.Required == b.Required
 }
 
 // schemaIsNullable reports whether an OpenAPI schema represents a nullable

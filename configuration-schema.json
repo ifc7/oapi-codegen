@@ -132,7 +132,7 @@
         },
         "streaming-content-types": {
           "type": "array",
-          "description": "Additional regex patterns matched against response Content-Type to decide when the strict server should generate a flush-per-chunk streaming response. Merged with the defaults (text/event-stream, application/jsonl, application/x-ndjson). Invalid regexes fail configuration validation.",
+          "description": "Additional regex patterns matched against response Content-Type to decide when the server should generate a flush-per-chunk streaming response. Merged with the defaults (text/event-stream, application/jsonl, application/x-ndjson). Invalid regexes fail configuration validation.",
           "items": {
             "type": "string"
           }

@@ -569,8 +569,6 @@ func sharedParameterTypeDefs(sharedParams []ParameterDefinition) []TypeDefinitio
 type OperationDefinition struct {
 	// OperationId is the `operationId` field from the OpenAPI Specification, after going through a `nameNormalizer`, and will be used to generate function names
 	OperationId string
-	// SpecOperationId is the raw `operationId` value as it appears in the OpenAPI spec, before normalization to a Go identifier. Empty when the spec didn't supply one (in which case the codegen-generated ID is the only available identifier and is exposed via OperationId).
-	SpecOperationId string
 
 	PathParams      []ParameterDefinition // Parameters in the path, eg, /path/:param
 	HeaderParams    []ParameterDefinition // Parameters in HTTP headers
@@ -1537,10 +1535,6 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 			}
 			// take a copy of operationId, so we don't modify the underlying spec
 			operationId := op.OperationID
-			// Preserve the raw spec value (pre-normalization, pre-prefix, pre-alias-suffix)
-			// so templates that need to mirror the OpenAPI spec verbatim can do so
-			// without seeing the Go-identifier-friendly transformations applied below.
-			specOperationId := op.OperationID
 			// We rely on OperationID to generate function names, it's required
 			if operationId == "" {
 				operationId, err = generateDefaultOperationID(opName, requestPath)
@@ -1608,12 +1602,11 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 			ensureExternalRefsInResponseDefinitions(&responseDefinitions, pathItem.Ref)
 
 			opDef := OperationDefinition{
-				PathParams:      pathParams,
-				HeaderParams:    FilterParameterDefinitionByType(allParams, "header"),
-				QueryParams:     FilterParameterDefinitionByType(allParams, "query"),
-				CookieParams:    FilterParameterDefinitionByType(allParams, "cookie"),
-				OperationId:     nameNormalizer(operationId),
-				SpecOperationId: specOperationId,
+				PathParams:   pathParams,
+				HeaderParams: FilterParameterDefinitionByType(allParams, "header"),
+				QueryParams:  FilterParameterDefinitionByType(allParams, "query"),
+				CookieParams: FilterParameterDefinitionByType(allParams, "cookie"),
+				OperationId:  nameNormalizer(operationId),
 				// Replace newlines in summary.
 				Summary:         op.Summary,
 				Method:          opName,
