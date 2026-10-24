@@ -4,7 +4,6 @@ generate:
   server: true
   client: true
   models: true
-  embedded-spec: true
 output: pkg2.gen.go
 output-options:
   skip-prune: true

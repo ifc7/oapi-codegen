@@ -25,10 +25,6 @@
           "type": "boolean",
           "description": "Models specifies whether to generate type definitions"
         },
-        "embedded-spec": {
-          "type": "boolean",
-          "description": "EmbeddedSpec indicates whether to embed the swagger spec in the generated code"
-        },
         "server-urls": {
           "type": "boolean",
           "description": "Generate types for the `Server` definitions' URLs, instead of needing to provide your own values"

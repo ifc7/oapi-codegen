@@ -25,13 +25,12 @@ package: api
 
 # What to generate.
 # If the `generate` block is omitted entirely, it defaults to generating
-# a net/http server with models and an embedded spec.
+# a net/http server with models.
 # See <a href="https://pkg.go.dev/github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen#GenerateOptions">GenerateOptions</a>
 generate:
   server: false
   client: false
   models: false
-  embedded-spec: false
   server-urls: false
 
 # Output modification options

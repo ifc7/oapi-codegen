@@ -13,10 +13,9 @@ func TestFilterOperationsByTag(t *testing.T) {
 		opts := Configuration{
 			PackageName: packageName,
 			Generate: GenerateOptions{
-				Server:       true,
-				Client:       true,
-				Models:       true,
-				EmbeddedSpec: true,
+				Server: true,
+				Client: true,
+				Models: true,
 			},
 			OutputOptions: OutputOptions{
 				IncludeTags: []string{"hippo", "giraffe", "cat"},
@@ -42,10 +41,9 @@ func TestFilterOperationsByTag(t *testing.T) {
 		opts := Configuration{
 			PackageName: packageName,
 			Generate: GenerateOptions{
-				Server:       true,
-				Client:       true,
-				Models:       true,
-				EmbeddedSpec: true,
+				Server: true,
+				Client: true,
+				Models: true,
 			},
 			OutputOptions: OutputOptions{
 				ExcludeTags: []string{"hippo", "giraffe", "cat"},
@@ -74,10 +72,9 @@ func TestFilterOperationsByOperationID(t *testing.T) {
 		opts := Configuration{
 			PackageName: packageName,
 			Generate: GenerateOptions{
-				Server:       true,
-				Client:       true,
-				Models:       true,
-				EmbeddedSpec: true,
+				Server: true,
+				Client: true,
+				Models: true,
 			},
 			OutputOptions: OutputOptions{
 				IncludeOperationIDs: []string{"getCatStatus"},
@@ -103,10 +100,9 @@ func TestFilterOperationsByOperationID(t *testing.T) {
 		opts := Configuration{
 			PackageName: packageName,
 			Generate: GenerateOptions{
-				Server:       true,
-				Client:       true,
-				Models:       true,
-				EmbeddedSpec: true,
+				Server: true,
+				Client: true,
+				Models: true,
 			},
 			OutputOptions: OutputOptions{
 				ExcludeOperationIDs: []string{"getCatStatus"},

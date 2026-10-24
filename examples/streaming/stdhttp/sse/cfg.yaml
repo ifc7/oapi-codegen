@@ -4,4 +4,3 @@ output: streaming.gen.go
 generate:
   server: true
   models: true
-  embedded-spec: true

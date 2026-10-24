@@ -7,12 +7,10 @@ output: identifiers.gen.go
 #                    issue-head-digit-of-httpheader   (header name starting with digit)
 #                    issues #30, #41, #209 (path parameter binding)
 #   - client       : issues #30, #41, #209 (path parameter styling)
-#   - embedded-spec: the schemas fold embedded its spec
 #   - skip-prune   : keep schemas/components not referenced by a path
 generate:
   models: true
   server: true
   client: true
-  embedded-spec: true
 output-options:
   skip-prune: true

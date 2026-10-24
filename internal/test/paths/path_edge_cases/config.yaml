@@ -4,5 +4,4 @@ generate:
   server: true
   client: true
   models: true
-  embedded-spec: true
 output: path_edge_cases.gen.go

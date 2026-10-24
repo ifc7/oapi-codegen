@@ -4,6 +4,5 @@ package: multijson
 generate:
   client: true
   models: true
-  embedded-spec: true
   server: true
 output: multi_json.gen.go

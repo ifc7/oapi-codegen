@@ -488,14 +488,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 		}
 	}
 
-	var inlinedSpec string
-	if opts.Generate.EmbeddedSpec {
-		inlinedSpec, err = GenerateInlinedSpec(t, globalState.importMapping, spec)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 
@@ -579,13 +571,6 @@ func Generate(spec *openapi3.T, opts Configuration) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("error writing stdhttp callback receiver: %w", err)
 			}
-		}
-	}
-
-	if opts.Generate.EmbeddedSpec {
-		_, err = w.WriteString(inlinedSpec)
-		if err != nil {
-			return "", fmt.Errorf("error writing inlined spec: %w", err)
 		}
 	}
 

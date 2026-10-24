@@ -23,9 +23,8 @@ func TestIssue(t *testing.T) {
 	opts := codegen.Configuration{
 		PackageName: "parentchild",
 		Generate: codegen.GenerateOptions{
-			Server:       true,
-			Models:       true,
-			EmbeddedSpec: true,
+			Server: true,
+			Models: true,
 		},
 		ImportMapping: map[string]string{
 			"parent.api.yaml": "github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/parent_child/api/parent",

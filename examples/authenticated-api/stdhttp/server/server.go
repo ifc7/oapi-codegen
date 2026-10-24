@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
+	"runtime"
 	"sort"
 	"sync"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	middleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/oapi-codegen/oapi-codegen/v2/examples/authenticated-api/stdhttp/api"
@@ -27,7 +30,10 @@ func NewServer() *server {
 }
 
 func CreateMiddleware(v JWSValidator) (func(next http.Handler) http.Handler, error) {
-	spec, err := api.GetSpec()
+	_, thisFile, _, _ := runtime.Caller(0)
+	loader := openapi3.NewLoader()
+	loader.IsExternalRefsAllowed = true
+	spec, err := loader.LoadFromFile(filepath.Join(filepath.Dir(thisFile), "..", "..", "api.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("loading spec: %w", err)
 	}

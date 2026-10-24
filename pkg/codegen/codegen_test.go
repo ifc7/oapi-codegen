@@ -26,10 +26,9 @@ func TestExampleOpenAPICodeGeneration(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			Server:       true,
-			Client:       true,
-			Models:       true,
-			EmbeddedSpec: true,
+			Server: true,
+			Client: true,
+			Models: true,
 		},
 	}
 
@@ -103,9 +102,8 @@ func TestExtPropGoTypeSkipOptionalPointer(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			Server:       true,
-			Models:       true,
-			EmbeddedSpec: true,
+			Server: true,
+			Models: true,
 		},
 	}
 	spec := "test_specs/x-go-type-skip-optional-pointer.yaml"
@@ -140,9 +138,8 @@ func TestGoTypeImport(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			Server:       true,
-			Models:       true,
-			EmbeddedSpec: true,
+			Server: true,
+			Models: true,
 		},
 	}
 	spec := "test_specs/x-go-type-import-pet.yaml"
@@ -183,9 +180,8 @@ func TestGoAllofTypeOverride(t *testing.T) {
 	opts := Configuration{
 		PackageName: packageName,
 		Generate: GenerateOptions{
-			Server:       true,
-			Models:       true,
-			EmbeddedSpec: true,
+			Server: true,
+			Models: true,
 		},
 	}
 	spec := "test_specs/x-go-type-pet-allof.yaml"
