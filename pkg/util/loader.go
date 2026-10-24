@@ -1,31 +1,14 @@
 package util
 
 import (
-	"bytes"
-	"fmt"
-	"net/url"
-	"path/filepath"
-	"strings"
-
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/speakeasy-api/openapi/overlay/loader"
-	"gopkg.in/yaml.v3"
+
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
 )
 
 func LoadSwagger(filePath string) (swagger *openapi3.T, err error) {
-
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	// Record each element's source location so route registration can be
-	// emitted in the order paths are declared in the spec (issue #1887).
-	loader.IncludeOrigin = true
-
-	u, err := url.Parse(filePath)
-	if err == nil && u.Scheme != "" && u.Host != "" {
-		return loader.LoadFromURI(u)
-	} else {
-		return loader.LoadFromFile(filePath)
-	}
+	return kin.LoadSpec(filePath)
 }
 
 type LoadSwaggerWithOverlayOpts struct {
@@ -34,68 +17,8 @@ type LoadSwaggerWithOverlayOpts struct {
 }
 
 func LoadSwaggerWithOverlay(filePath string, opts LoadSwaggerWithOverlayOpts) (swagger *openapi3.T, err error) {
-	spec, err := LoadSwagger(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load OpenAPI specification: %w", err)
-	}
-
-	if opts.Path == "" {
-		return spec, nil
-	}
-
-	// parse out the yaml.Node, which is required by the overlay library
-	buf := &bytes.Buffer{}
-	enc := yaml.NewEncoder(buf)
-	// set to 2 to work around https://github.com/yaml/go-yaml/issues/76
-	enc.SetIndent(2)
-	err = enc.Encode(spec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal spec from %#v as YAML: %w", filePath, err)
-	}
-
-	var node yaml.Node
-	err = yaml.NewDecoder(buf).Decode(&node)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse spec from %#v: %w", filePath, err)
-	}
-
-	overlay, err := loader.LoadOverlay(opts.Path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load Overlay from %#v: %v", opts.Path, err)
-	}
-
-	err = overlay.Validate()
-	if err != nil {
-		return nil, fmt.Errorf("the Overlay in %#v was not valid: %v", opts.Path, err)
-	}
-
-	if opts.Strict {
-		vs, err := overlay.ApplyToStrict(&node)
-		if err != nil {
-			return nil, fmt.Errorf("failed to apply Overlay %#v to specification %#v: %v\nAdditionally, the following validation errors were found:\n- %s", opts.Path, filePath, err, strings.Join(vs, "\n- "))
-		}
-	} else {
-		err = overlay.ApplyTo(&node)
-		if err != nil {
-			return nil, fmt.Errorf("failed to apply Overlay %#v to specification %#v: %v", opts.Path, filePath, err)
-		}
-	}
-
-	b, err := yaml.Marshal(&node)
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize Overlay'd specification %#v: %v", opts.Path, err)
-	}
-
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	loader.IncludeOrigin = true
-
-	swagger, err = loader.LoadFromDataWithPath(b, &url.URL{
-		Path: filepath.ToSlash(filePath),
+	return kin.LoadSpecWithOverlay(filePath, engine.LoadOptions{
+		OverlayPath:   opts.Path,
+		OverlayStrict: opts.Strict,
 	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize Overlay'd specification %#v: %v", opts.Path, err)
-	}
-
-	return swagger, nil
 }
