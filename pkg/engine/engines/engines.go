@@ -3,10 +3,9 @@
 package engines
 
 import (
-	"fmt"
-
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
 )
 
@@ -16,7 +15,7 @@ func New(name string) (engine.Engine, error) {
 	case engine.Kin:
 		return kin.Engine{}, nil
 	case engine.LibOpenAPI:
-		return nil, fmt.Errorf("the %s engine is not available yet; use %s", engine.LibOpenAPI, engine.Kin)
+		return libopenapi.Engine{}, nil
 	default:
 		return nil, engine.Validate(name)
 	}

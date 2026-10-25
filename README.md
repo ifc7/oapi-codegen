@@ -163,6 +163,8 @@ Prefer the configuration file to command line options, which only cover a subset
 
 For full details of what is supported, check out the [oapi-codegen configuration documentation](docs/configuration.md).
 
+`engine: libopenapi` loads the spec with [libopenapi](https://github.com/pb33f/libopenapi) instead of kin-openapi. It is experimental, and the code it generates matches kin's.
+
 We also have [a JSON Schema](configuration-schema.json) that can be used by IDEs/editors with the Language Server Protocol (LSP) to perform intelligent suggestions, i.e.:
 
 ```yaml
