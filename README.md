@@ -1300,8 +1300,6 @@ code, err := codegen.Generate(doc, cfg)
 
 User templates receive that same model. `Schema.OAPISchema`, `ParameterDefinition.Spec` and `OperationDefinition.Spec` are model types, not kin-openapi structs.
 
-`pkg/util.LoadSwagger` and `LoadSwaggerWithOverlay` still return a kin-openapi document. They are deprecated; use `kin.Engine.Load`.
-
 Further use of the package as a library [will be documented in the future](https://github.com/oapi-codegen/oapi-codegen/issues/1487).
 
 ## Additional Properties (`additionalProperties`)
