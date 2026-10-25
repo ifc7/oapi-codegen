@@ -4,8 +4,10 @@ GOBIN=$(GOBASE)/bin
 help:
 	@echo "This is a helper makefile for oapi-codegen"
 	@echo "Targets:"
-	@echo "    generate:    regenerate all generated files"
-	@echo "    test:        run all tests"
+	@echo "    generate:             regenerate all generated files"
+	@echo "    generate-libopenapi: regenerate with the libopenapi engine"
+	@echo "    test:                 run all tests"
+	@echo "    test-libopenapi:      run all tests with the libopenapi engine"
 	@echo "    tidy         tidy go mod"
 	@echo "    lint         lint the project"
 	@echo "    install:     build and install the oapi-codegen-ifc7 binary"
@@ -39,6 +41,14 @@ test:
 	go test -cover ./...
 	# then, for all child modules, use a module-managed `Makefile`
 	git ls-files '**/*go.mod' -z | xargs -0 -I{} bash -xc 'cd $$(dirname {}) && make test'
+
+.PHONY: generate-libopenapi
+generate-libopenapi:
+	OAPI_CODEGEN_ENGINE=libopenapi $(MAKE) generate
+
+.PHONY: test-libopenapi
+test-libopenapi:
+	OAPI_CODEGEN_ENGINE=libopenapi $(MAKE) test
 
 tidy:
 	# for the root module, explicitly run the step, to prevent recursive calls
