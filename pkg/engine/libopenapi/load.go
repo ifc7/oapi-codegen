@@ -15,7 +15,6 @@ import (
 
 	openapi "github.com/pb33f/libopenapi"
 	"github.com/pb33f/libopenapi/datamodel"
-	v3high "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/index"
 	"github.com/speakeasy-api/openapi/overlay/loader"
 	"gopkg.in/yaml.v3"
@@ -66,19 +65,6 @@ func (Engine) Load(path string, opts engine.LoadOptions) (*model.Document, error
 		out.OpenAPI = *declared
 	}
 	return out, nil
-}
-
-// Convert copies the parts of a libopenapi document the loader tests. The
-// rest of the model is filled in later.
-func Convert(doc *v3high.Document) *model.Document {
-	out := &model.Document{OpenAPI: doc.Version}
-	if doc.Info != nil {
-		out.Info = &model.Info{
-			Title:   doc.Info.Title,
-			Version: doc.Info.Version,
-		}
-	}
-	return out
 }
 
 func documentConfig(specPath string, remote *url.URL) *datamodel.DocumentConfiguration {
