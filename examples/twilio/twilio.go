@@ -1,3 +1,3 @@
-//go:generate oapi-codegen --config=config.yaml twilio_api_v2010.yaml
+//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen -config config.yaml twilio_api_v2010.yaml
 
 package twilio

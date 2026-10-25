@@ -54,6 +54,10 @@ type ParameterDefinition struct {
 	// pathValueVar. Empty for whole-segment parameters, and for every
 	// parameter but the first in a segment that holds several.
 	pathSegmentStmts string
+	// goNameOverride, when set, is the Go name to use in place of the one
+	// derived from ParamName. It is set when the derived name collides with
+	// another parameter's in the operation's Params struct.
+	goNameOverride string
 }
 
 // PathValueExpr is the Go expression for this path parameter's raw text.
@@ -235,6 +239,9 @@ func (pd ParameterDefinition) GoVariableName() string {
 }
 
 func (pd ParameterDefinition) GoName() string {
+	if pd.goNameOverride != "" {
+		return pd.goNameOverride
+	}
 	goName := pd.ParamName
 	if extension, ok := pd.Spec.Extensions[extGoName]; ok {
 		if extGoFieldName, err := extParseGoFieldName(extension); err == nil {
@@ -1718,6 +1725,7 @@ func OperationDefinitions(swagger *model.Document) ([]OperationDefinition, error
 				PathItemRef:          pathItem.Ref,
 				SecurityRequirements: operationSecurity(op.Security, swagger.Security),
 			}
+			opDef.dedupeParamGoNames()
 
 			if op.RequestBody != nil {
 				opDef.BodyRequired = op.RequestBody.Value.Required
@@ -1846,6 +1854,7 @@ func WebhookOperationDefinitions(swagger *model.Document) ([]OperationDefinition
 				IsWebhook:       true,
 				WebhookName:     webhookName,
 			}
+			opDef.dedupeParamGoNames()
 
 			if op.RequestBody != nil {
 				opDef.BodyRequired = op.RequestBody.Value.Required
@@ -1991,6 +2000,7 @@ func CallbackOperationDefinitions(swagger *model.Document) ([]OperationDefinitio
 							IsCallback:      true,
 							CallbackName:    callbackName,
 						}
+						opDef.dedupeParamGoNames()
 
 						if op.RequestBody != nil {
 							opDef.BodyRequired = op.RequestBody.Value.Required
@@ -2472,6 +2482,8 @@ func GenerateParamsTypes(op OperationDefinition) []TypeDefinition {
 			NeedsFormTag:  param.Style() == "form",
 			Extensions:    extensions,
 			Deprecated:    param.Spec.Deprecated,
+
+			goFieldNameOverride: param.goNameOverride,
 		}
 		s.Properties = append(s.Properties, prop)
 	}

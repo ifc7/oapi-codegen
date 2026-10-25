@@ -255,9 +255,17 @@ type Property struct {
 	NeedsFormTag  bool
 	Extensions    map[string]any
 	Deprecated    bool
+
+	// goFieldNameOverride, when set, is the Go field name to use in place of
+	// the one derived from JsonFieldName. It is set when the derived name
+	// collides with another field's in the same struct.
+	goFieldNameOverride string
 }
 
 func (p Property) GoFieldName() string {
+	if p.goFieldNameOverride != "" {
+		return p.goFieldNameOverride
+	}
 	goFieldName := p.JsonFieldName
 	if extension, ok := p.Extensions[extGoName]; ok {
 		if extGoFieldName, err := extParseGoFieldName(extension); err == nil {
@@ -1493,6 +1501,7 @@ func generateGoSchema(ctx genContext, sref *model.SchemaRef, path []string) (Sch
 					outSchema.AdditionalTypes = append(outSchema.AdditionalTypes, pSchema.AdditionalTypes...)
 				}
 			}
+			dedupePropertyGoFieldNames(strings.Join(path, "."), outSchema.Properties)
 
 			if err := generateUnions(ctx, &outSchema, schema, path); err != nil {
 				return Schema{}, err
