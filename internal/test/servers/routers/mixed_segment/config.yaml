@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../../../configuration-schema.json
+package: serversroutersmixedsegment
+generate:
+  server: true
+  models: true
+output: mixed_segment.gen.go

@@ -42,6 +42,34 @@ type ParameterDefinition struct {
 	// once for the path item rather than once per operation, so operation type
 	// collection skips them (issue #2090).
 	Shared bool
+
+	// pathValueVar is the local holding this parameter's raw text when the
+	// parameter shares its path segment with literal text, as in "{Sid}.json".
+	// ServeMux captures the whole segment; the handler splits it into
+	// pathValueVar before binding. Empty when the parameter is the whole
+	// segment and is read with PathValue.
+	pathValueVar string
+	// pathSegmentStmts is Go source, starting with a newline, emitted after
+	// this parameter's variable declaration. It splits a mixed segment into
+	// pathValueVar. Empty for whole-segment parameters, and for every
+	// parameter but the first in a segment that holds several.
+	pathSegmentStmts string
+}
+
+// PathValueExpr is the Go expression for this path parameter's raw text.
+func (pd ParameterDefinition) PathValueExpr() string {
+	if pd.pathValueVar != "" {
+		return pd.pathValueVar
+	}
+	return fmt.Sprintf("r.PathValue(%q)", pd.SanitizedParamName())
+}
+
+// PathSegmentStmts is the Go that splits a mixed path segment, or empty when
+// this parameter occupies its segment alone. The text starts with a newline
+// so it can be appended to the parameter's variable declaration without
+// changing the source generated for whole-segment parameters.
+func (pd ParameterDefinition) PathSegmentStmts() string {
+	return pd.pathSegmentStmts
 }
 
 // TypeDef is here as an adapter after a large refactoring so that I don't
@@ -1654,6 +1682,7 @@ func OperationDefinitions(swagger *model.Document) ([]OperationDefinition, error
 			if err != nil {
 				return nil, err
 			}
+			annotateMixedPathSegments(requestPath, pathParams)
 
 			bodyDefinitions, typeDefinitions, err := GenerateBodyDefinitions(operationId, op.RequestBody, pathItem.Ref)
 			if err != nil {

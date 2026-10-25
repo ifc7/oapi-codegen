@@ -1,0 +1,94 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Mixed path segments
+paths:
+  # A literal ".json" segment must stay distinct from the instance path below.
+  /2010-04-01/Accounts/{AccountSid}/Addresses.json:
+    get:
+      operationId: listAddresses
+      parameters:
+        - name: AccountSid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+  # Twilio's 2010 API puts the format suffix in the same segment as the id.
+  /2010-04-01/Accounts/{AccountSid}/Addresses/{Sid}.json:
+    get:
+      operationId: fetchAddress
+      parameters:
+        - name: AccountSid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: Sid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+  # Google-style custom method: the verb is literal text after the parameter.
+  /resources/{resourceId}:apply:
+    post:
+      operationId: applyResource
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Applied
+          content:
+            text/plain:
+              schema:
+                type: string
+  # A concrete file wins over the templated file beside it.
+  /files/readme.json:
+    get:
+      operationId: fetchReadme
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+  # Two parameters in one segment, split on the literal dot.
+  /files/{name}.{ext}:
+    get:
+      operationId: fetchFile
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ext
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string

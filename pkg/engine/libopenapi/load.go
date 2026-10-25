@@ -120,7 +120,12 @@ func readHTTP(u *url.URL) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			slog.Error("failed to close HTTP response body", "err", err)
+		}
+	}(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GET %s: %s", u, resp.Status)
 	}
