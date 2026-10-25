@@ -19,14 +19,14 @@ func writeSpec(dir string, resources int) (string, error) {
 		return "", err
 	}
 
-	fmt.Fprintf(f, `openapi: 3.0.3
+	_, _ = fmt.Fprintf(f, `openapi: 3.0.3
 info:
   title: Engine benchmark
   version: "1.0.0"
 paths:
 `)
 	for i := 0; i < resources; i++ {
-		fmt.Fprintf(f, `  "/groups/%d/items/{id}":
+		_, _ = fmt.Fprintf(f, `  "/groups/%d/items/{id}":
     get:
       operationId: getItem%d
       parameters:
@@ -65,10 +65,10 @@ paths:
                 $ref: "#/components/schemas/Item%d"
 `, i, i, i, i, i, i)
 	}
-	fmt.Fprintf(f, "components:\n  schemas:\n")
+	_, _ = fmt.Fprintf(f, "components:\n  schemas:\n")
 	for i := 0; i < resources; i++ {
 		next := (i + 1) % resources
-		fmt.Fprintf(f, `    Item%d:
+		_, _ = fmt.Fprintf(f, `    Item%d:
       type: object
       required: [id, name]
       properties:

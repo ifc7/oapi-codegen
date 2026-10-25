@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"go/token"
 	"mime"
+	"net/http"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -529,8 +530,10 @@ func IsWholeDocumentReference(ref string) bool {
 
 // SwaggerUriToStdHttpUri converts a swagger style path URI with parameters to a
 // net/http ServeMux compatible path URI. Parameter names are sanitized to be
-// valid Go identifiers, as required by ServeMux wildcard segments. Valid input
-// parameters are:
+// valid Go identifiers, as required by ServeMux wildcard segments. A parameter
+// that shares its segment with literal text, such as "{Sid}.json", is widened
+// to a wildcard occupying the whole segment; the handler checks the literal
+// text and strips it before binding. Valid input parameters are:
 //
 //	{param}
 //	{param*}
@@ -541,65 +544,352 @@ func IsWholeDocumentReference(ref string) bool {
 //	{?param}
 //	{?param*}
 func SwaggerUriToStdHttpUri(uri string) string {
+	if pattern, err := stdHTTPPattern(uri); err == nil {
+		return pattern
+	}
+	return sanitizeSwaggerPathParams(uri)
+}
+
+// sanitizeSwaggerPathParams rewrites parameter names and anchors a trailing
+// slash, leaving literal text in a segment where it is. Paths ServeMux cannot
+// represent fall back to this; server generation reports them from
+// ValidateStdHTTPPaths instead of emitting the pattern.
+func sanitizeSwaggerPathParams(uri string) string {
 	uri = pathParamRE.ReplaceAllStringFunc(uri, func(match string) string {
 		sub := pathParamRE.FindStringSubmatch(match)
 		return "{" + SanitizeGoIdentifier(sub[1]) + "}"
 	})
+	return anchorTrailingSlash(uri)
+}
 
-	// https://pkg.go.dev/net/http#hdr-Patterns-ServeMux
-	// A ServeMux pattern ending in '/' matches the whole subtree below it,
-	// while an OpenAPI path ending in '/' means exactly that path. The
-	// special wildcard {$} anchors the pattern to the end of the URL:
-	// "/foo/{$}" matches only "/foo/", whereas "/foo/" matches every path
-	// under it. Anchoring also prevents registration panics when subtree
-	// patterns from independent spec paths overlap ambiguously (#2065).
-	// Appended after parameter sanitization so the '$' is not treated as a
-	// parameter name.
+// anchorTrailingSlash appends the ServeMux {$} wildcard to a path that ends
+// in '/'. A pattern ending in '/' matches the whole subtree below it, while
+// an OpenAPI path ending in '/' means exactly that path. {$} anchors the
+// pattern to the end of the URL: "/foo/{$}" matches only "/foo/", whereas
+// "/foo/" matches every path under it. Anchoring also prevents registration
+// panics when subtree patterns from independent spec paths overlap
+// ambiguously (#2065). Appended after parameter sanitization so the '$' is
+// not treated as a parameter name.
+func anchorTrailingSlash(uri string) string {
 	if strings.HasSuffix(uri, "/") {
 		uri += "{$}"
 	}
-
 	return uri
 }
 
-// ValidateStdHTTPPath reports whether an OpenAPI path can be registered with
-// net/http ServeMux. ServeMux wildcards must occupy an entire path segment, so
-// mixed segments such as "{resourceId}:apply" are rejected at codegen time
-// instead of panicking at server startup (see #2488).
-func ValidateStdHTTPPath(path string) error {
-	for _, seg := range strings.Split(path, "/") {
-		if seg == "" || seg == "{$}" {
-			continue
+// pathSegment is one slash-separated piece of an OpenAPI path.
+// literals[0] is the text before the first parameter and literals[i+1] is the
+// text after params[i], so a segment with no parameters has one literal and a
+// segment "{Sid}.json" has params ["Sid"] and literals ["", ".json"].
+type pathSegment struct {
+	params   []string
+	literals []string
+}
+
+func parseOpenAPISegment(seg string) pathSegment {
+	matches := pathParamRE.FindAllStringSubmatchIndex(seg, -1)
+	if len(matches) == 0 {
+		return pathSegment{literals: []string{seg}}
+	}
+	literals := make([]string, 0, len(matches)+1)
+	params := make([]string, 0, len(matches))
+	pos := 0
+	for _, match := range matches {
+		literals = append(literals, seg[pos:match[0]])
+		params = append(params, seg[match[2]:match[3]])
+		pos = match[1]
+	}
+	literals = append(literals, seg[pos:])
+	return pathSegment{params: params, literals: literals}
+}
+
+// mixed reports whether the segment places literal text beside a parameter.
+// "{Sid}" is a whole-segment parameter. "{Sid}.json" and "{name}.{ext}" are mixed.
+func (s pathSegment) mixed() bool {
+	if len(s.params) == 0 {
+		return false
+	}
+	for _, literal := range s.literals {
+		if literal != "" {
+			return true
 		}
-		loc := pathParamRE.FindStringIndex(seg)
-		if loc == nil {
-			// pure literal segment
-			continue
-		}
-		// Wildcard must be the entire segment.
-		if loc[0] != 0 || loc[1] != len(seg) {
-			return fmt.Errorf("path %q: segment %q mixes a path parameter with literal text; net/http ServeMux requires wildcards to occupy an entire path segment", path, seg)
+	}
+	return false
+}
+
+// validate reports segments ServeMux cannot capture, even after widening a
+// mixed segment to one wildcard. Adjacent parameters ("{a}{b}") have nothing
+// to split on.
+func (s pathSegment) validate(path, seg string) error {
+	for i := 1; i < len(s.params); i++ {
+		if s.literals[i] == "" {
+			return fmt.Errorf("path %q: segment %q contains adjacent path parameters %q and %q with no literal text between them", path, seg, s.params[i-1], s.params[i])
 		}
 	}
 	return nil
 }
 
+// wildcard is the ServeMux name that captures this segment, or "" when the
+// segment is a literal. A mixed segment is one wildcard, named for its first
+// parameter; the handler splits the captured text into the rest.
+func (s pathSegment) wildcard() string {
+	if len(s.params) == 0 {
+		return ""
+	}
+	return SanitizeGoIdentifier(s.params[0])
+}
+
+// stdHTTPPattern rewrites an OpenAPI path into a ServeMux pattern. Mixed
+// segments become a single wildcard so the pattern is legal to register.
+func stdHTTPPattern(uri string) (string, error) {
+	parts := strings.Split(uri, "/")
+	for i, seg := range parts {
+		if seg == "" {
+			continue
+		}
+		parsed := parseOpenAPISegment(seg)
+		if err := parsed.validate(uri, seg); err != nil {
+			return "", err
+		}
+		if len(parsed.params) == 0 {
+			continue
+		}
+		parts[i] = "{" + parsed.wildcard() + "}"
+	}
+	return anchorTrailingSlash(strings.Join(parts, "/")), nil
+}
+
+func pathHasMixedSegment(path string) bool {
+	for _, seg := range strings.Split(path, "/") {
+		if seg == "" {
+			continue
+		}
+		if parseOpenAPISegment(seg).mixed() {
+			return true
+		}
+	}
+	return false
+}
+
+// pathSegmentVar is the local that holds one parameter's raw text after a
+// mixed segment has been split.
+func pathSegmentVar(param string) string {
+	return "pathseg_" + SanitizeGoIdentifier(param)
+}
+
+// annotateMixedPathSegments records how each parameter that shares its
+// segment with literal text is recovered from the ServeMux capture. params
+// is updated in place and must already be in path order.
+func annotateMixedPathSegments(path string, params []ParameterDefinition) {
+	indexByName := make(map[string]int, len(params))
+	for i, param := range params {
+		indexByName[param.ParamName] = i
+	}
+	for _, seg := range strings.Split(path, "/") {
+		if seg == "" {
+			continue
+		}
+		parsed := parseOpenAPISegment(seg)
+		if !parsed.mixed() || parsed.validate(path, seg) != nil {
+			continue
+		}
+		stmts := renderMixedSegment(parsed)
+		first := true
+		for _, name := range parsed.params {
+			idx, ok := indexByName[name]
+			if !ok || params[idx].pathValueVar != "" {
+				continue
+			}
+			params[idx].pathValueVar = pathSegmentVar(name)
+			if first {
+				params[idx].pathSegmentStmts = stmts
+				first = false
+			}
+		}
+	}
+}
+
+// renderMixedSegment writes the statements that match literal text around a
+// parameter and store each parameter's raw text. A request whose segment does
+// not contain that text is not this operation: ServeMux widened the wildcard
+// to the whole segment, so the handler answers 404.
+func renderMixedSegment(seg pathSegment) string {
+	if len(seg.params) == 1 {
+		return renderSingleMixedSegment(seg)
+	}
+	return renderMultiMixedSegment(seg)
+}
+
+func renderSingleMixedSegment(seg pathSegment) string {
+	name := pathSegmentVar(seg.params[0])
+	prefix, suffix := seg.literals[0], seg.literals[1]
+	var b strings.Builder
+	fmt.Fprintf(&b, "\n// ServeMux captured the whole segment. The parameter matches only when the literal text beside it is present.\nvar %s string\n", name)
+	fmt.Fprintf(&b, "if raw := r.PathValue(%s); ", strconv.Quote(seg.wildcard()))
+	var conds []string
+	if prefix != "" {
+		conds = append(conds, fmt.Sprintf("strings.HasPrefix(raw, %s)", strconv.Quote(prefix)))
+	}
+	if suffix != "" {
+		conds = append(conds, fmt.Sprintf("strings.HasSuffix(raw, %s)", strconv.Quote(suffix)))
+	}
+	switch {
+	case prefix == "":
+		conds = append(conds, fmt.Sprintf("len(raw) > len(%s)", strconv.Quote(suffix)))
+	case suffix == "":
+		conds = append(conds, fmt.Sprintf("len(raw) > len(%s)", strconv.Quote(prefix)))
+	default:
+		conds = append(conds, fmt.Sprintf("len(raw) > len(%s)+len(%s)", strconv.Quote(prefix), strconv.Quote(suffix)))
+	}
+	b.WriteString(strings.Join(conds, " && "))
+	b.WriteString(" {\n")
+	switch {
+	case prefix == "" && suffix != "":
+		fmt.Fprintf(&b, "%s = raw[:len(raw)-len(%s)]\n", name, strconv.Quote(suffix))
+	case prefix != "" && suffix == "":
+		fmt.Fprintf(&b, "%s = raw[len(%s):]\n", name, strconv.Quote(prefix))
+	default:
+		fmt.Fprintf(&b, "%s = raw[len(%s):len(raw)-len(%s)]\n", name, strconv.Quote(prefix), strconv.Quote(suffix))
+	}
+	b.WriteString("} else {\nhttp.NotFound(w, r)\nreturn\n}\n")
+	return b.String()
+}
+
+func renderMultiMixedSegment(seg pathSegment) string {
+	names := make([]string, len(seg.params))
+	for i, param := range seg.params {
+		names[i] = pathSegmentVar(param)
+	}
+	var b strings.Builder
+	b.WriteString("\n// ServeMux captured the whole segment. Split it on the literal text between its parameters.\nvar ")
+	b.WriteString(strings.Join(names, ", "))
+	b.WriteString(" string\n{\n")
+	fmt.Fprintf(&b, "raw := r.PathValue(%s)\nrest := raw\n", strconv.Quote(seg.wildcard()))
+	if prefix := seg.literals[0]; prefix != "" {
+		fmt.Fprintf(&b, "if !strings.HasPrefix(rest, %s) || len(rest) <= len(%s) {\nhttp.NotFound(w, r)\nreturn\n}\n", strconv.Quote(prefix), strconv.Quote(prefix))
+		fmt.Fprintf(&b, "rest = rest[len(%s):]\n", strconv.Quote(prefix))
+	}
+	for i := 0; i < len(seg.params)-1; i++ {
+		sep := seg.literals[i+1]
+		b.WriteString("{\n")
+		fmt.Fprintf(&b, "idx := strings.Index(rest, %s)\n", strconv.Quote(sep))
+		b.WriteString("if idx <= 0 {\nhttp.NotFound(w, r)\nreturn\n}\n")
+		fmt.Fprintf(&b, "%s = rest[:idx]\n", names[i])
+		fmt.Fprintf(&b, "rest = rest[idx+len(%s):]\n", strconv.Quote(sep))
+		b.WriteString("}\n")
+	}
+	last := names[len(names)-1]
+	if suffix := seg.literals[len(seg.params)]; suffix != "" {
+		fmt.Fprintf(&b, "if !strings.HasSuffix(rest, %s) || len(rest) <= len(%s) {\nhttp.NotFound(w, r)\nreturn\n}\n", strconv.Quote(suffix), strconv.Quote(suffix))
+		fmt.Fprintf(&b, "%s = rest[:len(rest)-len(%s)]\n", last, strconv.Quote(suffix))
+	} else {
+		b.WriteString("if rest == \"\" {\nhttp.NotFound(w, r)\nreturn\n}\n")
+		fmt.Fprintf(&b, "%s = rest\n", last)
+	}
+	b.WriteString("}\n")
+	return b.String()
+}
+
+// ValidateStdHTTPPath reports whether one OpenAPI path can be rewritten into
+// a ServeMux pattern. A parameter may share its segment with literal text;
+// adjacent parameters in one segment cannot, because nothing marks where one
+// ends and the next begins.
+func ValidateStdHTTPPath(path string) error {
+	_, err := stdHTTPPattern(path)
+	return err
+}
+
+// serveMuxRegisteredAt strips the source position ServeMux adds to a
+// registration panic, which points at this generator rather than the spec.
+var serveMuxRegisteredAt = regexp.MustCompile(` \(registered at [^)]*\)`)
+
 // ValidateStdHTTPPaths validates every path in the document for ServeMux.
 // Paths whose operations have all been removed (e.g. by tag or operation-id
 // filtering) emit no routes, so they are skipped.
+//
+// A mixed segment is widened to a whole-segment wildcard. Two operations that
+// then register as the same pattern, or whose widened patterns overlap, are
+// rejected here: ServeMux would panic when the handler is constructed.
+// Overlaps between paths that were already legal ServeMux patterns are left
+// alone, matching generation from before mixed segments were accepted.
 func ValidateStdHTTPPaths(spec *model.Document) error {
 	if spec == nil || spec.Paths == nil {
 		return nil
 	}
+	type route struct {
+		path    string
+		method  string
+		pattern string
+		mixed   bool
+	}
 	var errs []error
+	var routes []route
 	pathMap := spec.Paths.Map()
 	for _, path := range SortedMapKeys(pathMap) {
 		pathItem := pathMap[path]
 		if pathItem == nil || len(pathItem.Operations()) == 0 {
 			continue
 		}
-		if err := ValidateStdHTTPPath(path); err != nil {
+		pattern, err := stdHTTPPattern(path)
+		if err != nil {
 			errs = append(errs, err)
+			continue
+		}
+		mixed := pathHasMixedSegment(path)
+		for _, method := range SortedMapKeys(pathItem.Operations()) {
+			routes = append(routes, route{path: path, method: method, pattern: pattern, mixed: mixed})
+		}
+	}
+
+	type key struct {
+		method  string
+		pattern string
+	}
+	first := make(map[key]route, len(routes))
+	for _, r := range routes {
+		k := key{r.method, r.pattern}
+		prev, ok := first[k]
+		if !ok {
+			first[k] = r
+			continue
+		}
+		if prev.path == r.path || (!prev.mixed && !r.mixed) {
+			continue
+		}
+		errs = append(errs, fmt.Errorf("paths %q and %q both register as %s %s; net/http ServeMux cannot distinguish a parameter that shares its segment with literal text from another route in that segment", prev.path, r.path, r.method, r.pattern))
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	// Register unchanged patterns first. A panic here is a conflict the
+	// previous generator also emitted, so it does not fail codegen. Widened
+	// patterns are registered afterward; a panic then is a conflict the
+	// widening introduced.
+	mux := http.NewServeMux()
+	noop := func(http.ResponseWriter, *http.Request) {}
+	register := func(method, pattern string) (err error) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				msg := serveMuxRegisteredAt.ReplaceAllString(fmt.Sprint(rec), "")
+				err = errors.New(msg)
+			}
+		}()
+		mux.HandleFunc(method+" "+pattern, noop)
+		return nil
+	}
+	for _, r := range routes {
+		if r.mixed {
+			continue
+		}
+		_ = register(r.method, r.pattern)
+	}
+	for _, r := range routes {
+		if !r.mixed {
+			continue
+		}
+		if err := register(r.method, r.pattern); err != nil {
+			errs = append(errs, fmt.Errorf("path %q registers as %s %s: %w", r.path, r.method, r.pattern, err))
 		}
 	}
 	return errors.Join(errs...)

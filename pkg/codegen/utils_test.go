@@ -366,6 +366,15 @@ func TestSwaggerUriToStdHttpUriUri(t *testing.T) {
 	assert.Equal(t, "/path/{$}", SwaggerUriToStdHttpUri("/path/"))
 	assert.Equal(t, "/api/test/{id}/test2/{$}", SwaggerUriToStdHttpUri("/api/test/{id}/test2/"))
 	assert.Equal(t, "/api/test/test3/{$}", SwaggerUriToStdHttpUri("/api/test/test3/"))
+
+	// Literal text sharing a segment with a parameter is widened to a
+	// whole-segment wildcard. The handler matches the literal and strips it.
+	assert.Equal(t, "/accounts/{Sid}", SwaggerUriToStdHttpUri("/accounts/{Sid}.json"))
+	assert.Equal(t, "/resources/{resourceId}", SwaggerUriToStdHttpUri("/resources/{resourceId}:apply"))
+	assert.Equal(t, "/resources/{resourceId}", SwaggerUriToStdHttpUri("/resources/prefix{resourceId}"))
+	assert.Equal(t, "/files/{name}", SwaggerUriToStdHttpUri("/files/{name}.{ext}"))
+	assert.Equal(t, "/path/{addressing_identifier}", SwaggerUriToStdHttpUri("/path/{addressing-identifier}.json"))
+	assert.Equal(t, "/path/{id}/{$}", SwaggerUriToStdHttpUri("/path/{id}.json/"))
 }
 
 func TestOrderedParamsFromUri(t *testing.T) {
@@ -878,11 +887,13 @@ func TestValidateStdHTTPPath(t *testing.T) {
 	}{
 		{"/resources/{resourceId}", false},
 		{"/resources/{resourceId}/apply", false},
-		{"/resources/{resourceId}:apply", true},
-		{"/resources/prefix{resourceId}", true},
-		{"/resources/{resourceId}suffix", true},
+		{"/resources/{resourceId}:apply", false},
+		{"/resources/prefix{resourceId}", false},
+		{"/resources/{resourceId}suffix", false},
+		{"/files/{name}.{ext}", false},
 		{"/pets:validate", false}, // pure literal segment with colon is fine for ServeMux
 		{"/path/{arg1}/{arg2}/foo", false},
+		{"/files/{a}{b}", true}, // nothing marks where one parameter ends
 	}
 	for _, tt := range tests {
 		err := ValidateStdHTTPPath(tt.path)
@@ -895,7 +906,7 @@ func TestValidateStdHTTPPath(t *testing.T) {
 	}
 }
 
-func TestGenerateRejectsMixedServeMuxPathParam(t *testing.T) {
+func TestGenerateMixedServeMuxPathParam(t *testing.T) {
 	spec := `openapi: 3.0.3
 info:
   title: mixed path param
@@ -916,6 +927,53 @@ paths:
 `
 	swagger := loadTestSpec(t, []byte(spec))
 
+	code, err := Generate(swagger, Configuration{
+		PackageName: "api",
+		Generate: GenerateOptions{
+			Server: true,
+			Models: true,
+		},
+	})
+	require.NoError(t, err)
+	require.Contains(t, code, `options.BaseURL+"/resources/{resourceId}"`)
+	require.Contains(t, code, `strings.HasSuffix(raw, ":apply")`)
+	require.Contains(t, code, `http.NotFound(w, r)`)
+	require.Contains(t, code, `resourceId = pathseg_resourceId`)
+}
+
+func TestGenerateRejectsWidenedServeMuxPathConflict(t *testing.T) {
+	spec := `openapi: 3.0.3
+info:
+  title: widened path conflict
+  version: 1.0.0
+paths:
+  /pets/{id}:
+    get:
+      operationId: getPet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: OK
+  /pets/{id}.json:
+    get:
+      operationId: getPetJSON
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: OK
+`
+	swagger := loadTestSpec(t, []byte(spec))
+
 	_, err := Generate(swagger, Configuration{
 		PackageName: "api",
 		Generate: GenerateOptions{
@@ -924,7 +982,91 @@ paths:
 		},
 	})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "mixes a path parameter")
+	require.Contains(t, err.Error(), `"/pets/{id}"`)
+	require.Contains(t, err.Error(), `"/pets/{id}.json"`)
+	require.Contains(t, err.Error(), "GET /pets/{id}")
+}
+
+func TestGenerateRejectsWidenedServeMuxOverlap(t *testing.T) {
+	spec := `openapi: 3.0.3
+info:
+  title: widened path overlap
+  version: 1.0.0
+paths:
+  /{entity}/meta:
+    get:
+      operationId: getMeta
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: OK
+  /accounts/{id}.json:
+    get:
+      operationId: getAccount
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: OK
+`
+	swagger := loadTestSpec(t, []byte(spec))
+
+	_, err := Generate(swagger, Configuration{
+		PackageName: "api",
+		Generate: GenerateOptions{
+			Server: true,
+			Models: true,
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "/accounts/{id}.json")
+	require.Contains(t, err.Error(), "conflicts with")
+}
+
+func TestGenerateRejectsAdjacentPathParams(t *testing.T) {
+	spec := `openapi: 3.0.3
+info:
+  title: adjacent path params
+  version: 1.0.0
+paths:
+  /files/{name}{ext}:
+    get:
+      operationId: getFile
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ext
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: OK
+`
+	swagger := loadTestSpec(t, []byte(spec))
+
+	_, err := Generate(swagger, Configuration{
+		PackageName: "api",
+		Generate: GenerateOptions{
+			Server: true,
+			Models: true,
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "adjacent path parameters")
 }
 
 func TestGenerateAllowsMixedServeMuxPathParamWhenFilteredOut(t *testing.T) {

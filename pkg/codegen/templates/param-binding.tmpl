@@ -88,20 +88,20 @@ handler and returns. Called with a dict: .Op is the OperationDefinition and
   {{end}}
 
   {{range $op.PathParams}}// ------------- Path parameter "{{.ParamName}}" -------------
-  var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}
+  var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}{{.PathSegmentStmts}}
 
   {{if .IsPassThrough}}
-  {{$varName}} = r.PathValue("{{.SanitizedParamName}}")
+  {{$varName}} = {{.PathValueExpr}}
   {{end}}
   {{if .IsJson}}
-  err = json.Unmarshal([]byte(r.PathValue("{{.SanitizedParamName}}")), &{{$varName}})
+  err = json.Unmarshal([]byte({{.PathValueExpr}}), &{{$varName}})
   if err != nil {
     {{$handler}}(w, r, &UnmarshalingParamError{ParamName: "{{.ParamName}}", Err: err})
     return
   }
   {{end}}
   {{if .IsStyled}}
-  {{template "param.bindStyled" (dict "Param" . "Src" (printf "r.PathValue(%q)" .SanitizedParamName) "Dst" $varName)}}
+  {{template "param.bindStyled" (dict "Param" . "Src" .PathValueExpr "Dst" $varName)}}
   if err != nil {
     {{$handler}}(w, r, &InvalidParamFormatError{ParamName: "{{.ParamName}}", Err: err})
     return

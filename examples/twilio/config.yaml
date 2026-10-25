@@ -1,0 +1,7 @@
+## yaml-language-server: $schema=../../configuration-schema.json
+package: twilio
+generate:
+  models: true
+  client: true
+  server: true
+output: twilio.gen.go

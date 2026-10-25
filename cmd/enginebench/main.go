@@ -40,24 +40,24 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() != 0 {
-		fmt.Fprintf(os.Stderr, "unexpected arguments %q\n", flag.Args())
+		_, _ = fmt.Fprintf(os.Stderr, "unexpected arguments %q\n", flag.Args())
 		os.Exit(2)
 	}
 	if *warmupN < 0 || *minSamples < 2 || *maxSamples < *minSamples || *ciFrac <= 0 {
-		fmt.Fprintf(os.Stderr, "warmup must be >= 0, min-samples >= 2, max-samples >= min-samples, and ci > 0\n")
+		_, _ = fmt.Fprintf(os.Stderr, "warmup must be >= 0, min-samples >= 2, max-samples >= min-samples, and ci > 0\n")
 		os.Exit(2)
 	}
 
 	path, cleanup, err := openSpec(*specPath, *resources)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "spec: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "spec: %v\n", err)
 		os.Exit(1)
 	}
 	defer cleanup()
 
 	info, err := os.Stat(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "spec: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "spec: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -74,11 +74,11 @@ func main() {
 		},
 	}
 
-	fmt.Fprintf(os.Stderr, "warming up (%d %s)...\n", *warmupN, plural(*warmupN, "round", "rounds"))
+	_, _ = fmt.Fprintf(os.Stderr, "warming up (%d %s)...\n", *warmupN, plural(*warmupN, "round", "rounds"))
 	for round := 0; round < *warmupN; round++ {
 		for _, e := range order(engines, round) {
 			if _, err := measure(e, path, cfg); err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %v\n", e.name, err)
+				_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", e.name, err)
 				os.Exit(1)
 			}
 		}
@@ -91,15 +91,15 @@ func main() {
 	taken := make([][]observation, len(engines))
 	var docPaths, docOps int
 	if *samplesN == 0 {
-		fmt.Fprintf(os.Stderr, "measuring up to %d samples per engine\n", target)
+		_, _ = fmt.Fprintf(os.Stderr, "measuring up to %d samples per engine\n", target)
 	} else {
-		fmt.Fprintf(os.Stderr, "measuring %d samples per engine\n", target)
+		_, _ = fmt.Fprintf(os.Stderr, "measuring %d samples per engine\n", target)
 	}
 	for n := 0; n < target; n++ {
 		for _, idx := range orderIdx(len(engines), n) {
 			obs, err := measure(engines[idx], path, cfg)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %v\n", engines[idx].name, err)
+				_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", engines[idx].name, err)
 				os.Exit(1)
 			}
 			if n == 0 && idx == 0 {
@@ -108,11 +108,11 @@ func main() {
 			obs.doc = nil
 			taken[idx] = append(taken[idx], obs)
 		}
-		fmt.Fprintf(os.Stderr, "  sample %d", n+1)
+		_, _ = fmt.Fprintf(os.Stderr, "  sample %d", n+1)
 		for i, e := range engines {
-			fmt.Fprintf(os.Stderr, "  %s %s", e.name, formatDuration(taken[i][n].total))
+			_, _ = fmt.Fprintf(os.Stderr, "  %s %s", e.name, formatDuration(taken[i][n].total))
 		}
-		fmt.Fprintln(os.Stderr)
+		_, _ = fmt.Fprintln(os.Stderr)
 		if *samplesN == 0 && n+1 >= *minSamples && intervalsTight(taken, *ciFrac) {
 			break
 		}
@@ -178,10 +178,10 @@ func openSpec(path string, resources int) (string, func(), error) {
 	}
 	written, err := writeSpec(dir, resources)
 	if err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		return "", nil, err
 	}
-	return written, func() { os.RemoveAll(dir) }, nil
+	return written, func() { _ = os.RemoveAll(dir) }, nil
 }
 
 func order(engines []eng, round int) []eng {
@@ -252,32 +252,32 @@ type reportInput struct {
 }
 
 func report(w *os.File, in reportInput) {
-	fmt.Fprintln(w, "OpenAPI engine generation")
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w, "OpenAPI engine generation")
+	_, _ = fmt.Fprintln(w)
 	kind := "generated for this run"
 	if in.explicit {
 		kind = "file"
 	}
-	fmt.Fprintf(w, "Spec        %s (%s)\n", in.path, kind)
-	fmt.Fprintf(w, "Size        %d bytes, %d paths, %d operations\n", in.bytes, in.paths, in.ops)
-	fmt.Fprintf(w, "Generates   server, client, and models, then goimports\n")
-	fmt.Fprintf(w, "Columns     Load is the engine. Generate is the codegen step, which is the same code for both.\n")
-	fmt.Fprintf(w, "Go          %s, GOMAXPROCS=%d\n", runtime.Version(), runtime.GOMAXPROCS(0))
-	fmt.Fprintf(w, "Samples     %d per engine, %d warmup %s discarded\n",
+	_, _ = fmt.Fprintf(w, "Spec        %s (%s)\n", in.path, kind)
+	_, _ = fmt.Fprintf(w, "Size        %d bytes, %d paths, %d operations\n", in.bytes, in.paths, in.ops)
+	_, _ = fmt.Fprintf(w, "Generates   server, client, and models, then goimports\n")
+	_, _ = fmt.Fprintf(w, "Columns     Load is the engine. Generate is the codegen step, which is the same code for both.\n")
+	_, _ = fmt.Fprintf(w, "Go          %s, GOMAXPROCS=%d\n", runtime.Version(), runtime.GOMAXPROCS(0))
+	_, _ = fmt.Fprintf(w, "Samples     %d per engine, %d warmup %s discarded\n",
 		len(in.samples[0]), in.warmup, plural(in.warmup, "round", "rounds"))
-	fmt.Fprintf(w, "Method      engines alternate; GC before each sample\n")
-	fmt.Fprintf(w, "Interval    95%% Student's t interval of the mean (early stop when half-width ≤ %.0f%% of the mean)\n", in.ciFrac*100)
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintf(w, "Method      engines alternate; GC before each sample\n")
+	_, _ = fmt.Fprintf(w, "Interval    95%% Student's t interval of the mean (early stop when half-width ≤ %.0f%% of the mean)\n", in.ciFrac*100)
+	_, _ = fmt.Fprintln(w)
 
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(tw, "Engine\tLoad\tGenerate\tTotal\tTotal 95% CI\tMedian\tP95\tStdDev\tMin\tMax")
+	_, _ = fmt.Fprintln(tw, "Engine\tLoad\tGenerate\tTotal\tTotal 95% CI\tMedian\tP95\tStdDev\tMin\tMax")
 	sums := make([]summary, len(in.engines))
 	for i, e := range in.engines {
 		load := summarize(column(in.samples[i], func(o observation) time.Duration { return o.load }))
 		gen := summarize(column(in.samples[i], func(o observation) time.Duration { return o.generate }))
 		total := summarize(totals(in.samples[i]))
 		sums[i] = total
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t± %s\t%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t± %s\t%s\t%s\t%s\t%s\t%s\n",
 			e.name,
 			formatDuration(load.Mean),
 			formatDuration(gen.Mean),
@@ -290,8 +290,8 @@ func report(w *os.File, in reportInput) {
 			formatDuration(total.Max),
 		)
 	}
-	tw.Flush()
-	fmt.Fprintln(w)
+	_ = tw.Flush()
+	_, _ = fmt.Fprintln(w)
 
 	base, other := sums[0], sums[1]
 	writeComparison(w, "Total", in.engines[0].name, in.engines[1].name, base, other)
@@ -313,9 +313,9 @@ func report(w *os.File, in reportInput) {
 		}
 	}
 	if same {
-		fmt.Fprintf(w, "Output      %d bytes, identical for every sample of both engines\n", in.samples[0][0].nBytes)
+		_, _ = fmt.Fprintf(w, "Output      %d bytes, identical for every sample of both engines\n", in.samples[0][0].nBytes)
 	} else {
-		fmt.Fprintf(w, "Output      differs: kin %d bytes, libopenapi %d bytes\n", in.samples[0][0].nBytes, in.samples[1][0].nBytes)
+		_, _ = fmt.Fprintf(w, "Output      differs: kin %d bytes, libopenapi %d bytes\n", in.samples[0][0].nBytes, in.samples[1][0].nBytes)
 	}
 }
 
@@ -324,16 +324,16 @@ func writeComparison(w *os.File, label, leftName, rightName string, left, right 
 		return
 	}
 	ratio := float64(right.Mean) / float64(left.Mean)
-	fmt.Fprintf(w, "%-12s%s mean is %.2f× %s's\n", label, rightName, ratio, leftName)
+	_, _ = fmt.Fprintf(w, "%-12s%s mean is %.2f× %s's\n", label, rightName, ratio, leftName)
 	switch {
 	case left.N < 2 || right.N < 2:
-		fmt.Fprintf(w, "%-12sfewer than two samples, so there is no interval\n", "")
+		_, _ = fmt.Fprintf(w, "%-12sfewer than two samples, so there is no interval\n", "")
 	case intervalsOverlap(left, right):
-		fmt.Fprintf(w, "%-12sthe 95%% intervals overlap, so this run does not separate them\n", "")
+		_, _ = fmt.Fprintf(w, "%-12sthe 95%% intervals overlap, so this run does not separate them\n", "")
 	case right.Mean < left.Mean:
-		fmt.Fprintf(w, "%-12sthe 95%% intervals do not overlap; %s is %.2f× faster\n", "", rightName, 1/ratio)
+		_, _ = fmt.Fprintf(w, "%-12sthe 95%% intervals do not overlap; %s is %.2f× faster\n", "", rightName, 1/ratio)
 	default:
-		fmt.Fprintf(w, "%-12sthe 95%% intervals do not overlap; %s is %.2f× faster\n", "", leftName, ratio)
+		_, _ = fmt.Fprintf(w, "%-12sthe 95%% intervals do not overlap; %s is %.2f× faster\n", "", leftName, ratio)
 	}
 }
 
