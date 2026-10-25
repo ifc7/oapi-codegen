@@ -347,6 +347,25 @@ func (c *converter) header(in *v3.Header) *model.HeaderRef {
 	}
 }
 
+// headerExample returns the header's own example. Unlike for parameters,
+// libopenapi (as of v0.41.6) searches a header's node recursively for the
+// example key, so a header without one picks up its schema's example instead.
+// An example whose key is not a direct child of the header node belongs to
+// something nested and is dropped.
+func headerExample(in *v3.Header) *yaml.Node {
+	low := in.GoLow()
+	if in.Example == nil || low == nil || low.RootNode == nil {
+		return in.Example
+	}
+	content := low.RootNode.Content
+	for i := 0; i+1 < len(content); i += 2 {
+		if content[i] == low.Example.KeyNode {
+			return in.Example
+		}
+	}
+	return nil
+}
+
 func (c *converter) headerValue(in *v3.Header) *model.Header {
 	if low := in.GoLow(); low != nil {
 		if seen, ok := c.seen[low]; ok {
@@ -362,7 +381,7 @@ func (c *converter) headerValue(in *v3.Header) *model.Header {
 		Deprecated:      in.Deprecated,
 		Required:        in.Required,
 		Schema:          c.schemaProxy(in.Schema),
-		Example:         decodeNode(in.Example),
+		Example:         decodeNode(headerExample(in)),
 		Examples:        c.exampleMap(in.Examples),
 		Content:         c.content(in.Content),
 	}}

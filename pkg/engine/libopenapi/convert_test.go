@@ -130,6 +130,35 @@ paths: {}
 	assert.Equal(t, float64(1.5), doc.Info.Extensions["x-ratio"])
 }
 
+func TestConvertHeaderExampleNotHoistedFromSchema(t *testing.T) {
+	doc := loadYAML(t, `
+openapi: 3.0.3
+info:
+  title: t
+  version: "1"
+paths:
+  /x:
+    get:
+      responses:
+        "200":
+          description: ok
+          headers:
+            Own:
+              example: from-header
+              schema:
+                type: string
+                example: from-schema
+            Nested:
+              schema:
+                type: string
+                example: from-schema
+`)
+	headers := doc.Paths.Value("/x").Get.Responses.Value("200").Value.Headers
+	assert.Equal(t, "from-header", headers["Own"].Value.Example)
+	assert.Nil(t, headers["Nested"].Value.Example)
+	assert.Equal(t, "from-schema", headers["Nested"].Value.Schema.Value.Example)
+}
+
 func TestConvertPathKeyOrder(t *testing.T) {
 	doc := loadYAML(t, `
 openapi: 3.0.3
