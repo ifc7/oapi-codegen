@@ -8,6 +8,7 @@ import (
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
 )
 
 func TestNew(t *testing.T) {
@@ -15,8 +16,9 @@ func TestNew(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, kin.Engine{}, e)
 
-	_, err = New(engine.LibOpenAPI)
-	assert.EqualError(t, err, "the libopenapi engine is not available yet; use kin")
+	e, err = New(engine.LibOpenAPI)
+	require.NoError(t, err)
+	assert.Equal(t, libopenapi.Engine{}, e)
 
 	_, err = New("swagger")
 	assert.EqualError(t, err, `unknown engine "swagger": must be one of kin, libopenapi`)
@@ -29,8 +31,9 @@ func TestFromConfig(t *testing.T) {
 	assert.Equal(t, kin.Engine{}, e)
 
 	t.Setenv(engine.EnvVar, engine.LibOpenAPI)
-	_, err = FromConfig(engine.Kin)
-	assert.EqualError(t, err, "the libopenapi engine is not available yet; use kin")
+	e, err = FromConfig(engine.Kin)
+	require.NoError(t, err)
+	assert.Equal(t, libopenapi.Engine{}, e)
 }
 
 func TestLoad(t *testing.T) {

@@ -23,7 +23,8 @@ Every setting is shown below with its default value. Each section links to the G
 # Required: Go package name
 package: api
 
-# The OpenAPI library that loads the spec: kin or libopenapi.
+# The OpenAPI library that loads the spec: kin (default) or libopenapi.
+# libopenapi is experimental and generates the same output as kin.
 # The OAPI_CODEGEN_ENGINE environment variable overrides it.
 engine: kin
 
