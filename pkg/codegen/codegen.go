@@ -85,6 +85,9 @@ var globalState struct {
 	// output-options.struct-tags). Built in Generate; lazily built for direct
 	// callers via fieldTagGenerator().
 	fieldTagGenerator *structTagGenerator
+	// warnedFieldNameCollisions records the Go field name collisions already
+	// reported, so a struct generated more than once is only warned about once.
+	warnedFieldNameCollisions map[string]bool
 }
 
 // goImport represents a go package to be imported in the generated code
@@ -185,6 +188,7 @@ func Generate(spec *model.Document, opts Configuration) (string, error) {
 	}
 	globalState.typeMappingImports = nil
 	globalState.usedFormatTypes = nil
+	globalState.warnedFieldNameCollisions = nil
 
 	// Build the struct tag generator eagerly so invalid user templates in
 	// output-options.struct-tags are reported as errors instead of being
