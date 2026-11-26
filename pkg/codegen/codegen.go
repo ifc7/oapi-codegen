@@ -58,6 +58,9 @@ var globalState struct {
 	// version inside a template is a layering violation.
 	is31          bool
 	importMapping importMap
+	// componentNames maps each component schema to its name, built on first
+	// use after the spec is filtered and pruned (see componentNamed).
+	componentNames map[*model.Schema]string
 	// initialismsMap stores initialisms as "lower(initialism) -> initialism" map.
 	// List of initialisms was taken from https://staticcheck.io/docs/configuration/options/#initialisms.
 	initialismsMap map[string]string
@@ -179,6 +182,7 @@ func Generate(spec *model.Document, opts Configuration) (string, error) {
 	// This is global state
 	globalState.options = opts
 	globalState.spec = spec
+	globalState.componentNames = nil
 	globalState.is31 = spec.IsOpenAPI31OrLater()
 	globalState.importMapping = constructImportMapping(opts.ImportMapping)
 	if opts.OutputOptions.TypeMapping != nil {
