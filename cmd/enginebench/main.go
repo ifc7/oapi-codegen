@@ -3,7 +3,7 @@
 //
 // The default document is written to a temp file: many paths and schemas
 // that reference each other, large enough that loading and generating
-// dominate the timer. -spec times a file instead. Both engines see the
+// dominate the timer. -spec times a file, or a document fetched from a URL, instead. Both engines see the
 // same bytes.
 //
 // Samples alternate which engine runs first. The garbage collector runs
@@ -30,7 +30,7 @@ import (
 )
 
 func main() {
-	specPath := flag.String("spec", "", "OpenAPI file to time; empty writes a generated spec")
+	specPath := flag.String("spec", "", "OpenAPI file or http(s) URL to time; empty writes a generated spec")
 	resources := flag.Int("resources", 80, "paths in the generated spec, ignored when -spec is set")
 	warmupN := flag.Int("warmup", 2, "unmeasured rounds per engine")
 	samplesN := flag.Int("samples", 0, "samples per engine; 0 stops once the confidence interval is tight")
@@ -169,12 +169,20 @@ func measure(e eng, path string, cfg codegen.Configuration) (observation, error)
 }
 
 func openSpec(path string, resources int) (string, func(), error) {
-	if path != "" {
+	if path != "" && !isURL(path) {
 		return path, func() {}, nil
 	}
 	dir, err := os.MkdirTemp("", "enginebench")
 	if err != nil {
 		return "", nil, err
+	}
+	if path != "" {
+		downloaded, err := download(dir, path)
+		if err != nil {
+			_ = os.RemoveAll(dir)
+			return "", nil, err
+		}
+		return downloaded, func() { _ = os.RemoveAll(dir) }, nil
 	}
 	written, err := writeSpec(dir, resources)
 	if err != nil {
