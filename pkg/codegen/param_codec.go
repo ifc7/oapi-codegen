@@ -1001,17 +1001,26 @@ func newDeepCodec(s Schema, ref *model.SchemaRef) *deepCodec {
 	return d
 }
 
-// componentNamed returns the name of the component schema spec is, or "".
+// componentNamed returns the name of the component schema spec is, or "". A
+// schema that several components share is named for the first of them in
+// SortedSchemaKeys order.
 func componentNamed(spec *model.Schema) string {
 	if spec == nil || globalState.spec == nil || globalState.spec.Components == nil {
 		return ""
 	}
-	for _, name := range SortedSchemaKeys(globalState.spec.Components.Schemas) {
-		if ref := globalState.spec.Components.Schemas[name]; ref != nil && ref.Value == spec {
-			return name
+	if globalState.componentNames == nil {
+		schemas := globalState.spec.Components.Schemas
+		names := make(map[*model.Schema]string, len(schemas))
+		for _, name := range SortedSchemaKeys(schemas) {
+			if ref := schemas[name]; ref != nil && ref.Value != nil {
+				if _, taken := names[ref.Value]; !taken {
+					names[ref.Value] = name
+				}
+			}
 		}
+		globalState.componentNames = names
 	}
-	return ""
+	return globalState.componentNames[spec]
 }
 
 // kind returns the kind of a value of the generated schema s, from the
