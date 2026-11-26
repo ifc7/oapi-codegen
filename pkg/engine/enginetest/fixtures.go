@@ -53,7 +53,12 @@ func GenerateFixtures(t *testing.T) []Fixture {
 				if !strings.HasPrefix(line, "//go:generate ") || !strings.Contains(line, "oapi-codegen") {
 					continue
 				}
-				fx, err := parseDirective(filepath.Dir(path), strings.Fields(line))
+				fields := strings.Fields(line)
+				if spec := fields[len(fields)-1]; strings.HasPrefix(spec, "http://") || strings.HasPrefix(spec, "https://") {
+					// Fetched specs are too large to check in and stay out of unit tests.
+					continue
+				}
+				fx, err := parseDirective(filepath.Dir(path), fields)
 				if err != nil {
 					return fmt.Errorf("%s: %w", path, err)
 				}
