@@ -1058,29 +1058,7 @@ func GenerateEnums(t *template.Template, types []TypeDefinition) (string, error)
 	// conflicting enum's constants with its type name. Prefixing can itself
 	// introduce a new collision — a prefixed name like "Enum1One" matching
 	// another enum's raw value — so we iterate to a fixed point.
-	for {
-		changed := false
-		for i := range enums {
-			for j := i + 1; j < len(enums); j++ {
-				if enums[i].PrefixTypeName && enums[j].PrefixTypeName {
-					continue
-				}
-				if enumsConflict(enums[i], enums[j]) {
-					if !enums[i].PrefixTypeName {
-						enums[i].PrefixTypeName = true
-						changed = true
-					}
-					if !enums[j].PrefixTypeName {
-						enums[j].PrefixTypeName = true
-						changed = true
-					}
-				}
-			}
-		}
-		if !changed {
-			break
-		}
-	}
+	markConflictingEnums(enums)
 
 	// Check each enum against global type names and self-conflict.
 	for i := range enums {
@@ -1116,28 +1094,66 @@ func GenerateEnums(t *template.Template, types []TypeDefinition) (string, error)
 	})
 }
 
-// enumsConflict reports whether two enums must be disambiguated by prefixing.
+// markConflictingEnums resolves cross-enum constant-name collisions by
+// setting PrefixTypeName on every enum that shares a constant name with
+// another enum, iterating to a fixed point because prefixing can introduce a
+// new collision.
 //
-// They conflict when they share a raw value name, or when their current
-// effective constant names collide. The raw-value check uses Schema.EnumValues,
-// which is immutable, so the result is independent of any prefixing already
-// applied earlier in the same pass — otherwise prefixing one enum could mask
-// its conflict with a third (the order-dependent bug this resolution fixes).
-// The effective-name check uses GetValues() to catch collisions *introduced* by
-// prefixing, e.g. a prefixed "Enum1One" matching another enum's raw value.
-func enumsConflict(a, b EnumDefinition) bool {
-	for name := range a.Schema.EnumValues {
-		if _, ok := b.Schema.EnumValues[name]; ok {
-			return true
+// Two enums conflict when they share a raw value name, or when their current
+// effective constant names collide. The raw-value check uses
+// Schema.EnumValues, which is immutable, so the result is independent of any
+// prefixing already applied earlier in the same pass; otherwise prefixing one
+// enum could mask its conflict with a third (the order-dependent bug this
+// resolution fixes). The effective-name check uses GetValues() to catch
+// collisions *introduced* by prefixing, e.g. a prefixed "Enum1One" matching
+// another enum's raw value.
+//
+// Names are indexed by the enums that hold them, so each pass is linear in
+// the total number of values rather than quadratic in the number of enums.
+func markConflictingEnums(enums []EnumDefinition) {
+	rawConflicts := conflictingEnums(len(enums), func(i int) map[string]string {
+		return enums[i].Schema.EnumValues
+	})
+	for i, conflict := range rawConflicts {
+		if conflict {
+			enums[i].PrefixTypeName = true
 		}
 	}
-	bValues := b.GetValues()
-	for name := range a.GetValues() {
-		if _, ok := bValues[name]; ok {
-			return true
+	for {
+		changed := false
+		effective := conflictingEnums(len(enums), func(i int) map[string]string {
+			return enums[i].GetValues()
+		})
+		for i, conflict := range effective {
+			if conflict && !enums[i].PrefixTypeName {
+				enums[i].PrefixTypeName = true
+				changed = true
+			}
+		}
+		if !changed {
+			return
 		}
 	}
-	return false
+}
+
+// conflictingEnums reports, for each of n enums, whether one of the names
+// returned by names(i) is also a name of a different enum.
+func conflictingEnums(n int, names func(i int) map[string]string) []bool {
+	owner := make(map[string]int)
+	conflicts := make([]bool, n)
+	for i := 0; i < n; i++ {
+		for name := range names(i) {
+			first, seen := owner[name]
+			switch {
+			case !seen:
+				owner[name] = i
+			case first != i:
+				conflicts[i] = true
+				conflicts[first] = true
+			}
+		}
+	}
+	return conflicts
 }
 
 // GenerateImports generates our import statements and package definition.
