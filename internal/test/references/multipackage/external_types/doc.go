@@ -7,5 +7,5 @@
 // qualified with the imported package, not the whole type.
 package externaltypes
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.common.yaml common/spec.yaml
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.api.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.common.yaml common/spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.api.yaml spec.yaml

@@ -3,9 +3,9 @@ package: referencesmultipackage
 generate:
   models: true
 import-mapping:
-  ./packageA/spec.yaml: github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/packageA
-  ./packageB/spec.yaml: package_b github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/packageB
-  https://raw.githubusercontent.com/swagger-api/swagger-petstore/refs/heads/master/src/main/resources/openapi.yaml: github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/petstore
+  ./packageA/spec.yaml: github.com/ifc7/oapi-codegen/internal/test/references/multipackage/packageA
+  ./packageB/spec.yaml: package_b github.com/ifc7/oapi-codegen/internal/test/references/multipackage/packageB
+  https://raw.githubusercontent.com/swagger-api/swagger-petstore/refs/heads/master/src/main/resources/openapi.yaml: github.com/ifc7/oapi-codegen/internal/test/references/multipackage/petstore
 output: externalref.gen.go
 output-options:
   skip-prune: true

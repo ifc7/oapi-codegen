@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine/libopenapi"
+	"github.com/ifc7/oapi-codegen/pkg/engine"
+	"github.com/ifc7/oapi-codegen/pkg/engine/libopenapi"
 )
 
 func TestOverlayApply(t *testing.T) {

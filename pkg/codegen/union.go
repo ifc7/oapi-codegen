@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 // effectiveBranches counts the branches of a oneOf or anyOf other than a bare

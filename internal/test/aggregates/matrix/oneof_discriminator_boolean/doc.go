@@ -5,4 +5,4 @@
 // oneOf with a boolean discriminator (#1619). From* used to stamp the value as the JSON string "false", which the variant then failed to decode, and Discriminator() could not read a boolean.
 package matrixoneofdiscriminatorboolean
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml

@@ -4,7 +4,7 @@
 
 This page is a structural overview. The authoritative, always-current reference for every setting is:
 
-- the GoDoc for [`codegen.Configuration`](https://pkg.go.dev/github.com/ifc7/oapi-codegen/v2/pkg/codegen#Configuration), which documents each field alongside its YAML key
+- the GoDoc for [`codegen.Configuration`](https://pkg.go.dev/github.com/ifc7/oapi-codegen/pkg/codegen#Configuration), which documents each field alongside its YAML key
 - [the JSON Schema](../configuration-schema.json), which gives your editor autocompletion, hover documentation and validation via the Language Server Protocol (LSP)
 
 To get the IDE experience, add this line to the top of your configuration file:
@@ -27,14 +27,14 @@ package: api
 # What to generate.
 # If the `generate` block is omitted entirely, it defaults to generating
 # a net/http server with models.
-# See <a href="https://pkg.go.dev/github.com/ifc7/oapi-codegen/v2/pkg/codegen#GenerateOptions">GenerateOptions</a>
+# See <a href="https://pkg.go.dev/github.com/ifc7/oapi-codegen/pkg/codegen#GenerateOptions">GenerateOptions</a>
 generate:
   server: false
   client: false
   models: false
 
 # Output modification options
-# See <a href="https://pkg.go.dev/github.com/ifc7/oapi-codegen/v2/pkg/codegen#OutputOptions">OutputOptions</a>
+# See <a href="https://pkg.go.dev/github.com/ifc7/oapi-codegen/pkg/codegen#OutputOptions">OutputOptions</a>
 output-options:
   include-tags: []
   exclude-tags: []

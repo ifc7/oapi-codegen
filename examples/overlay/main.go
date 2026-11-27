@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ifc7/oapi-codegen/v2/examples/overlay/api"
+	"github.com/ifc7/oapi-codegen/examples/overlay/api"
 )
 
 func main() {

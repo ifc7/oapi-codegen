@@ -489,7 +489,7 @@ var docTemplate = template.Must(template.New("doc").Funcs(funcs).Parse(`// Code 
 package {{.Package}}
 {{- if not .Rejection}}
 
-{{"//go:generate"}} go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+{{"//go:generate"}} go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml
 {{- end}}
 `))
 
@@ -505,9 +505,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.yaml.in/yaml/v3"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/codegen"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine/libopenapi"
+	"github.com/ifc7/oapi-codegen/pkg/codegen"
+	"github.com/ifc7/oapi-codegen/pkg/engine"
+	"github.com/ifc7/oapi-codegen/pkg/engine/libopenapi"
 )
 
 // TestRejected generates code from spec.yaml with config.yaml, the way the

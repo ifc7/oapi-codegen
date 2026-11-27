@@ -5,4 +5,4 @@
 // allOf over a single $ref to a map (an object with only additionalProperties). The composition is the map's type. v1 used to embed the map in a struct, which encoding/json encodes as a field named after the type ({"Labels": {...}}), and decoding the map itself left it empty (#2590).
 package matrixallofsinglerefmap
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml

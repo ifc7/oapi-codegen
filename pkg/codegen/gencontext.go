@@ -3,7 +3,7 @@ package codegen
 import (
 	"slices"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 // genContext carries the state that has to survive the mutual recursion

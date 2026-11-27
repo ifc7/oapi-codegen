@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/engine"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 func loadYAML(t *testing.T, data string) *model.Document {

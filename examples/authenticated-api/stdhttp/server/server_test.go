@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ifc7/oapi-codegen/v2/examples/authenticated-api/stdhttp/api"
+	"github.com/ifc7/oapi-codegen/examples/authenticated-api/stdhttp/api"
 	"github.com/oapi-codegen/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

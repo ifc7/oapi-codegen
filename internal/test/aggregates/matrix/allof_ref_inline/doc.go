@@ -5,4 +5,4 @@
 // allOf over a $ref object schema and an inline object that adds properties.
 package matrixallofrefinline
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml

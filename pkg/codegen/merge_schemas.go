@@ -11,7 +11,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 // inProgressAllOf returns, for a composition that an enclosing frame is

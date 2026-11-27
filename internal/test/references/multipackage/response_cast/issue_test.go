@@ -12,9 +12,9 @@ import (
 
 	"github.com/google/uuid"
 
-	base "github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/response_cast/gen/spec_base"
-	other "github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/response_cast/gen/spec_other"
-	"github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/response_cast/support"
+	base "github.com/ifc7/oapi-codegen/internal/test/references/multipackage/response_cast/gen/spec_base"
+	other "github.com/ifc7/oapi-codegen/internal/test/references/multipackage/response_cast/gen/spec_other"
+	"github.com/ifc7/oapi-codegen/internal/test/references/multipackage/response_cast/support"
 )
 
 // Cross-package cast that broke in 2.1.0+ when both specs generate

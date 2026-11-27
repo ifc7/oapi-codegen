@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	paramclient "github.com/ifc7/oapi-codegen/v2/internal/test/parameters/roundtrip/client/gen"
-	stdhttpparams "github.com/ifc7/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp"
-	stdhttpgen "github.com/ifc7/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp/gen"
+	paramclient "github.com/ifc7/oapi-codegen/internal/test/parameters/roundtrip/client/gen"
+	stdhttpparams "github.com/ifc7/oapi-codegen/internal/test/parameters/roundtrip/stdhttp"
+	stdhttpgen "github.com/ifc7/oapi-codegen/internal/test/parameters/roundtrip/stdhttp/gen"
 )
 
 func TestStdHttpParameterRoundTrip(t *testing.T) {

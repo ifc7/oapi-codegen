@@ -5,5 +5,5 @@ generate:
 output-options:
   skip-prune: true
 import-mapping:
-  ../packageB/spec.yaml: github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/packageB
+  ../packageB/spec.yaml: github.com/ifc7/oapi-codegen/internal/test/references/multipackage/packageB
 output: externalref.gen.go

@@ -6,5 +6,5 @@
 //   - allOf merge behavior (flat struct)
 package aggregatesallof
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config_new_merge.yaml spec_new_merge.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config_new_merge.yaml spec_new_merge.yaml

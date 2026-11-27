@@ -27,9 +27,9 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/codegen"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine/libopenapi"
+	"github.com/ifc7/oapi-codegen/pkg/codegen"
+	"github.com/ifc7/oapi-codegen/pkg/engine"
+	"github.com/ifc7/oapi-codegen/pkg/engine/libopenapi"
 )
 
 func errExit(format string, args ...any) {

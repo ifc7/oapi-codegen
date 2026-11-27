@@ -5,4 +5,4 @@
 // anyOf over inline variants with additionalProperties: false. In v3, As* of a variant rejects the other variant's keys, as for a oneOf.
 package matrixanyofclosedinline
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml

@@ -5,4 +5,4 @@
 // A union whose variants share a property with the union's own fields: Pet is allOf a Base and a oneOf of Cat and Dog, and Cat and Dog are themselves allOf the same Base. From* used to leave the union's copy of the shared property at its zero value, which then overwrote the variant's value when marshaling.
 package matrixallofunionsharedproperties
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml

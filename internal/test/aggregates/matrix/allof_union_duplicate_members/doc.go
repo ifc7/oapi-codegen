@@ -5,4 +5,4 @@
 // An allOf whose member is a oneOf of Cat and Dog, with an anyOf of the same two next to it. Each type is a union member once, so its accessors are generated once.
 package matrixallofunionduplicatemembers
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml

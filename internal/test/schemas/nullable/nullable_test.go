@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	spec30 "github.com/ifc7/oapi-codegen/v2/internal/test/schemas/nullable/spec30"
-	spec31 "github.com/ifc7/oapi-codegen/v2/internal/test/schemas/nullable/spec31"
+	spec30 "github.com/ifc7/oapi-codegen/internal/test/schemas/nullable/spec30"
+	spec31 "github.com/ifc7/oapi-codegen/internal/test/schemas/nullable/spec31"
 )
 
 func ptr[T any](v T) *T {

@@ -2,5 +2,5 @@
 // See https://github.com/oapi-codegen/oapi-codegen/issues/1093
 package parentchild
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config parent.cfg.yaml parent.api.yaml
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config child.cfg.yaml child.api.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config parent.cfg.yaml parent.api.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config child.cfg.yaml child.api.yaml

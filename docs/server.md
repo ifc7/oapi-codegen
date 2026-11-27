@@ -117,7 +117,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ifc7/oapi-codegen/v2/examples/minimal-server/stdhttp/api"
+	"github.com/ifc7/oapi-codegen/examples/minimal-server/stdhttp/api"
 )
 
 func main() {

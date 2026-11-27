@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 // openAPIConverterURL converts OpenAPI 2.0 (Swagger) documents to OpenAPI 3.

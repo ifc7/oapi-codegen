@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 // This file generates the code that binds request parameters on the server,

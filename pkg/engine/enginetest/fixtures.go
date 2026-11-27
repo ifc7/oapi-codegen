@@ -14,7 +14,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
+	"github.com/ifc7/oapi-codegen/pkg/engine"
 )
 
 // Fixture is one document the repository generates code from: the spec named

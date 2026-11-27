@@ -4,7 +4,7 @@
 package engine
 
 import (
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 // Engine loads the OpenAPI document at path, a file path or an http(s) URL.

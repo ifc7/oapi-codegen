@@ -5,4 +5,4 @@
 // allOf over a single $ref to a oneOf. The composition is an alias of the union type, and keeps its generated MarshalJSON: at a server response, the envelope has to delegate to it, or the union's data is lost.
 package matrixallofsinglerefunion
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml

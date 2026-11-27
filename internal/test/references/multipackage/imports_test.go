@@ -3,8 +3,8 @@ package referencesmultipackage
 import (
 	"testing"
 
-	packageA "github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/packageA"
-	packageB "github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/packageB"
+	packageA "github.com/ifc7/oapi-codegen/internal/test/references/multipackage/packageA"
+	packageB "github.com/ifc7/oapi-codegen/internal/test/references/multipackage/packageB"
 )
 
 func TestParameters(t *testing.T) {

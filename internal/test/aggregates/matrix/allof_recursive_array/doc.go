@@ -5,4 +5,4 @@
 // allOf over a self-referential array schema and an annotation. The merged type refers to itself, so it must be a defined type: `type Subject = []Subject` would be an invalid recursive alias.
 package matrixallofrecursivearray
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml
