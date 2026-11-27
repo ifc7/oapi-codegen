@@ -38,6 +38,7 @@ func main() {
 	ciFrac := flag.Float64("ci", 0.05, "stop when the 95% CI half-width is within this fraction of the mean")
 	cpuProfile := flag.String("cpuprofile", "", "write a CPU profile of the measured samples to this file")
 	memProfile := flag.String("memprofile", "", "write an allocation profile (alloc_space) after the measured samples to this file")
+	skipFmt := flag.Bool("skip-fmt", false, "skip formatting the output, to time the rest of generation on its own")
 	flag.Parse()
 
 	if flag.NArg() != 0 {
@@ -69,6 +70,7 @@ func main() {
 			Client: true,
 			Models: true,
 		},
+		OutputOptions: codegen.OutputOptions{SkipFmt: *skipFmt},
 	}
 
 	_, _ = fmt.Fprintf(os.Stderr, "warming up (%d %s)...\n", *warmupN, plural(*warmupN, "round", "rounds"))

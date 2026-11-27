@@ -27,7 +27,7 @@ func TestFormatInPiecesMatchesImportsProcess(t *testing.T) {
 	minSize, chunkSize := parallelFormatMin, formatChunkSize
 	t.Cleanup(func() { parallelFormatMin, formatChunkSize = minSize, chunkSize })
 
-	var compared int
+	var compared, fallbacks int
 	for _, fx := range fixtures {
 		doc, err := libopenapi.Engine{}.Load(fx.Spec, fx.Opts)
 		if err != nil {
@@ -46,13 +46,23 @@ func TestFormatInPiecesMatchesImportsProcess(t *testing.T) {
 
 		for _, size := range []int{256, 4 << 10, 64 << 10} {
 			parallelFormatMin, formatChunkSize = 0, size
-			got, err := formatGoSource("api.go", []byte(raw))
-			require.NoError(t, err, fx.Name)
+			// The split itself, so that a source it can't split is not hidden
+			// by the fall back to the single call.
+			got, ok := formatInPieces("api.go", []byte(raw))
+			if !ok {
+				fallbacks++
+				t.Logf("%s with pieces of %d bytes: not split", fx.Name, size)
+				continue
+			}
 			require.Equal(t, string(want), string(got), "%s with pieces of %d bytes", fx.Name, size)
+			whole, err := formatGoSource("api.go", []byte(raw))
+			require.NoError(t, err, fx.Name)
+			require.Equal(t, string(want), string(whole), fx.Name)
 		}
 		compared++
 	}
 	require.NotZero(t, compared)
+	require.Zero(t, fallbacks, "sources the split could not handle")
 	t.Logf("compared %d documents", compared)
 }
 
