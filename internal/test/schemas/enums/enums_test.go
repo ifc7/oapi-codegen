@@ -10,14 +10,14 @@ import (
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/engines"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
 )
 
 // issue-illegal_enum_names: codegen must produce valid, unique Go identifiers
 // for enum values that are empty strings, contain spaces, hyphens, leading
 // digits, leading/trailing underscores, or that collide after normalization.
 func TestIllegalEnumNames(t *testing.T) {
-	swagger, err := engines.Load("", "spec.yaml", engine.LoadOptions{})
+	swagger, err := libopenapi.Engine{}.Load("spec.yaml", engine.LoadOptions{})
 	require.NoError(t, err)
 
 	opts := codegen.Configuration{

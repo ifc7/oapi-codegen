@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	openapi "github.com/pb33f/libopenapi"
@@ -35,9 +36,33 @@ func (Engine) Load(path string, opts engine.LoadOptions) (*model.Document, error
 	if err != nil {
 		return nil, fmt.Errorf("failed to load OpenAPI specification: %w", err)
 	}
-	raw, err = applyOverlay(raw, opts)
+	return load(raw, specPath, remote, opts)
+}
+
+// LoadData loads the document in raw as if it were the file at specPath, so
+// relative references resolve against that path's directory. specPath may be
+// empty, in which case they resolve against the working directory.
+func (Engine) LoadData(raw []byte, specPath string, opts engine.LoadOptions) (*model.Document, error) {
+	if specPath != "" {
+		abs, err := filepath.Abs(specPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load OpenAPI specification: %w", err)
+		}
+		specPath = abs
+	}
+	return load(raw, specPath, nil, opts)
+}
+
+func load(raw []byte, specPath string, remote *url.URL, opts engine.LoadOptions) (*model.Document, error) {
+	raw, err := applyOverlay(raw, opts)
 	if err != nil {
 		return nil, err
+	}
+	// libopenapi builds OpenAPI 3 only. A Swagger document comes back as an
+	// empty one that records the version it declared, so the generator can say
+	// that OpenAPI 2.0 is not supported (see codegen.ValidateOpenAPIVersion).
+	if swagger, ok := declaredSwagger(raw); ok {
+		return &model.Document{Extensions: map[string]any{"swagger": swagger}}, nil
 	}
 	// libopenapi will not build a document that has no openapi version.
 	// Some specs this repository generates from omit it (or misspell it).
@@ -82,6 +107,9 @@ func documentConfig(specPath string, remote *url.URL) *datamodel.DocumentConfigu
 	if remote != nil {
 		cfg.AllowRemoteReferences = true
 		cfg.BaseURL = remote
+		return cfg
+	}
+	if specPath == "" {
 		return cfg
 	}
 	cfg.BasePath = filepath.Dir(specPath)
@@ -145,8 +173,8 @@ func applyOverlay(spec []byte, opts engine.LoadOptions) ([]byte, error) {
 		return applied, nil
 	}
 	// libopenapi rejects an update whose JSONPath matches nodes of more than
-	// one YAML kind. The repository's overlay example does that, and the kin
-	// engine applies it with speakeasy, so fall back to that implementation.
+	// one YAML kind. The repository's overlay example does that, and the
+	// speakeasy implementation applies it, so fall back to that.
 	if !strings.Contains(err.Error(), "mixed target types") {
 		return nil, err
 	}
@@ -199,6 +227,27 @@ func applySpeakeasyOverlay(spec []byte, opts engine.LoadOptions) ([]byte, error)
 	return out, nil
 }
 
+// declaredSwagger returns the version of a document that declares `swagger`
+// and no `openapi`.
+func declaredSwagger(raw []byte) (any, bool) {
+	var root map[string]any
+	if err := yaml.Unmarshal(raw, &root); err != nil {
+		return nil, false
+	}
+	swagger, ok := root["swagger"]
+	if !ok {
+		return nil, false
+	}
+	if _, hasOpenAPI := root["openapi"]; hasOpenAPI {
+		return nil, false
+	}
+	return swagger, true
+}
+
+// documentStart matches what can precede the content of a YAML document:
+// blank lines, comments, and an optional `---` marker.
+var documentStart = regexp.MustCompile(`\A(?:[ \t]*(?:#[^\n]*)?\n)*(?:---[^\n]*\n)?`)
+
 // withOpenAPIVersion returns the bytes to parse and, when the file did not
 // declare one, the version string to keep (the empty string). The second
 // return is nil when the file already declared openapi.
@@ -210,7 +259,14 @@ func withOpenAPIVersion(raw []byte) ([]byte, *string) {
 		}
 	}
 	declared := ""
-	return append([]byte("openapi: 3.0.3\n"), raw...), &declared
+	// The version goes after any `---` marker, which would otherwise start a
+	// second document and leave the version alone in the first.
+	at := len(documentStart.Find(raw))
+	out := make([]byte, 0, len(raw)+len("openapi: 3.0.3\n"))
+	out = append(out, raw[:at]...)
+	out = append(out, "openapi: 3.0.3\n"...)
+	out = append(out, raw[at:]...)
+	return out, &declared
 }
 
 func onlyCircular(err error) bool {

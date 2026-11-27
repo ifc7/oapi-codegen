@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,41 +45,40 @@ func TestPathsFind(t *testing.T) {
 	require.Nil(t, paths.Find("/missing"))
 }
 
-func TestPathsFindMatchesKin(t *testing.T) {
+// Path variable names do not take part in matching, and a path is matched
+// against its keys as a whole.
+func TestPathsFindIgnoresVariableNames(t *testing.T) {
 	t.Parallel()
 
-	keys := []string{
+	paths := NewPaths()
+	for _, key := range []string{
 		"/person/{personName}",
 		"/files/{name*}",
 		"/a/{b}/c/{d}",
 		"/plain",
 		"/{a}{b}",
+	} {
+		paths.Set(key, &PathItem{Summary: key})
 	}
-	probes := append(append([]string{}, keys...),
-		"/person/{name}",
-		"/files/{path*}",
-		"/files/{name}",
-		"/a/{x}/c/{y}",
-		"/a/{b}/c",
-		"/nope",
-		"",
-	)
 
-	ours := NewPaths()
-	kin := openapi3.NewPaths()
-	for _, key := range keys {
-		ours.Set(key, &PathItem{Summary: key})
-		kin.Set(key, &openapi3.PathItem{Summary: key})
+	found := map[string]string{
+		"/person/{personName}": "/person/{personName}",
+		"/files/{name*}":       "/files/{name*}",
+		"/a/{b}/c/{d}":         "/a/{b}/c/{d}",
+		"/plain":               "/plain",
+		"/{a}{b}":              "/{a}{b}",
+		"/person/{name}":       "/person/{personName}",
+		"/files/{path*}":       "/files/{name*}",
+		"/files/{name}":        "/files/{name*}",
+		"/a/{x}/c/{y}":         "/a/{b}/c/{d}",
 	}
-	for _, probe := range probes {
-		got := ours.Find(probe)
-		want := kin.Find(probe)
-		if want == nil {
-			require.Nil(t, got, "Find %q", probe)
-			continue
-		}
+	for probe, want := range found {
+		got := paths.Find(probe)
 		require.NotNil(t, got, "Find %q", probe)
-		require.Equal(t, want.Summary, got.Summary, "Find %q", probe)
+		require.Equal(t, want, got.Summary, "Find %q", probe)
+	}
+	for _, probe := range []string{"/a/{b}/c", "/nope", ""} {
+		require.Nil(t, paths.Find(probe), "Find %q", probe)
 	}
 }
 

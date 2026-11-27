@@ -1578,14 +1578,14 @@ func FilterParameterDefinitionByType(params []ParameterDefinition, in string) []
 // OperationDefinitions returns all operations for a swagger definition.
 // pathItemSourceLine returns the 1-based source line on which a path item's
 // key is declared, when the spec was loaded with origin tracking enabled
-// (see pkg/engine/kin). Returns 0 when the location is unavailable — e.g. a
+// (see pkg/engine/libopenapi). Returns 0 when the location is unavailable — e.g. a
 // spec built in memory or one whose loader did not record origins.
 func pathItemSourceLine(pathItem *model.PathItem) int {
 	if pathItem == nil || pathItem.Origin == nil || pathItem.Origin.Key == nil {
 		return 0
 	}
-	// The kin loader attaches an origin to $ref-resolved
-	// path items, giving them an Origin from the *external* file rather than
+	// A $ref-resolved path item can carry an Origin from
+	// the *external* file rather than
 	// the base spec. Those line numbers are meaningless for base-spec
 	// declaration order, so treat them as unavailable (return 0), which lets
 	// the stable SortedMapKeys alphabetical order take over — matching the

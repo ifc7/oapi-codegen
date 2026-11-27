@@ -54,5 +54,5 @@ When a PR adds a test, enforce the following:
 ## 5. General
 
 - The repo is a multi-module monorepo (the root, `internal/test` and `examples`). Cross-module changes deserve extra scrutiny.
-- Generated code depends only on the standard library, plus `github.com/google/uuid`, `github.com/oapi-codegen/nullable` and `github.com/getkin/kin-openapi` when the spec or configuration calls for them. Flag a template change that adds an import beyond those.
+- Generated code depends only on the standard library, plus `github.com/google/uuid` and `github.com/oapi-codegen/nullable` when the spec or configuration calls for them. Flag a template change that adds an import beyond those.
 - Generated files are committed; CI fails if `make generate` produces a diff. If a PR's generated files look stale, that will fail CI regardless — but flagging it in review saves a round-trip.

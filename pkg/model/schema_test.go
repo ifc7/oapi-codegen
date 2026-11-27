@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,29 +34,6 @@ func TestTypesMethods(t *testing.T) {
 	require.False(t, many.Permits("number"))
 }
 
-func TestTypesMethodsMatchKin(t *testing.T) {
-	t.Parallel()
-
-	cases := [][]string{nil, {}, {"string"}, {"string", "null"}, {"integer", "number"}}
-	probes := []string{"string", "null", "integer", "number", "object", ""}
-	for _, types := range cases {
-		var ours *Types
-		var kin *openapi3.Types
-		if types != nil {
-			copied := append([]string(nil), types...)
-			ours = (*Types)(&copied)
-			kinCopied := append([]string(nil), types...)
-			kin = (*openapi3.Types)(&kinCopied)
-		}
-		require.Equal(t, kin.Slice(), ours.Slice())
-		for _, probe := range probes {
-			require.Equal(t, kin.Is(probe), ours.Is(probe), "Is %q of %v", probe, types)
-			require.Equal(t, kin.Includes(probe), ours.Includes(probe), "Includes %q of %v", probe, types)
-			require.Equal(t, kin.Permits(probe), ours.Permits(probe), "Permits %q of %v", probe, types)
-		}
-	}
-}
-
 func TestAdditionalPropertiesHelpers(t *testing.T) {
 	t.Parallel()
 
@@ -82,22 +58,87 @@ func TestNewSchemaRef(t *testing.T) {
 	require.Same(t, value, ref.Value)
 }
 
-// TestSchemaFieldsMatchKin guards the reflection the allOf merger uses.
-// Every kin Schema field must exist here, in the same order, with the same
-// json keyword (the name before the first comma). An extra field would be
-// reported as a keyword the merger cannot fold.
-func TestSchemaFieldsMatchKin(t *testing.T) {
+// TestSchemaFields guards the reflection the allOf merger uses. Schema's
+// fields must be exactly these, in this order, with these json keywords (the
+// name before the first comma). A field added without updating the merger
+// would be reported as a keyword it cannot fold, so adding one means
+// extending this list and the merger together.
+func TestSchemaFields(t *testing.T) {
 	t.Parallel()
 
-	kinFields := reflect.TypeFor[openapi3.Schema]()
-	ourFields := reflect.TypeFor[Schema]()
-	require.Equal(t, kinFields.NumField(), ourFields.NumField())
+	want := []struct{ name, keyword string }{
+		{"Extensions", "-"},
+		{"Origin", "-"},
+		{"OneOf", "oneOf"},
+		{"AnyOf", "anyOf"},
+		{"AllOf", "allOf"},
+		{"Not", "not"},
+		{"Type", "type"},
+		{"Title", "title"},
+		{"Format", "format"},
+		{"Description", "description"},
+		{"Enum", "enum"},
+		{"Default", "default"},
+		{"Example", "example"},
+		{"ExternalDocs", "externalDocs"},
+		{"UniqueItems", "uniqueItems"},
+		{"ExclusiveMin", "exclusiveMinimum"},
+		{"ExclusiveMax", "exclusiveMaximum"},
+		{"Nullable", "nullable"},
+		{"ReadOnly", "readOnly"},
+		{"WriteOnly", "writeOnly"},
+		{"AllowEmptyValue", "allowEmptyValue"},
+		{"Deprecated", "deprecated"},
+		{"XML", "xml"},
+		{"Min", "minimum"},
+		{"Max", "maximum"},
+		{"MultipleOf", "multipleOf"},
+		{"MinLength", "minLength"},
+		{"MaxLength", "maxLength"},
+		{"Pattern", "pattern"},
+		{"MinItems", "minItems"},
+		{"MaxItems", "maxItems"},
+		{"Items", "items"},
+		{"Required", "required"},
+		{"Properties", "properties"},
+		{"MinProps", "minProperties"},
+		{"MaxProps", "maxProperties"},
+		{"AdditionalProperties", "additionalProperties"},
+		{"Discriminator", "discriminator"},
+		{"Const", "const"},
+		{"Examples", "examples"},
+		{"PrefixItems", "prefixItems"},
+		{"Contains", "contains"},
+		{"MinContains", "minContains"},
+		{"MaxContains", "maxContains"},
+		{"PatternProperties", "patternProperties"},
+		{"DependentSchemas", "dependentSchemas"},
+		{"PropertyNames", "propertyNames"},
+		{"UnevaluatedItems", "unevaluatedItems"},
+		{"UnevaluatedProperties", "unevaluatedProperties"},
+		{"If", "if"},
+		{"Then", "then"},
+		{"Else", "else"},
+		{"DependentRequired", "dependentRequired"},
+		{"Always", "-"},
+		{"Defs", "$defs"},
+		{"SchemaDialect", "$schema"},
+		{"Comment", "$comment"},
+		{"SchemaID", "$id"},
+		{"Anchor", "$anchor"},
+		{"DynamicRef", "$dynamicRef"},
+		{"DynamicAnchor", "$dynamicAnchor"},
+		{"ContentMediaType", "contentMediaType"},
+		{"ContentEncoding", "contentEncoding"},
+		{"ContentSchema", "contentSchema"},
+	}
 
-	for i := range kinFields.NumField() {
-		kinField := kinFields.Field(i)
-		ourField := ourFields.Field(i)
-		require.Equal(t, kinField.Name, ourField.Name, "field %d", i)
-		require.Equal(t, jsonKeyword(kinField), jsonKeyword(ourField), "json keyword of %s", kinField.Name)
+	fields := reflect.TypeFor[Schema]()
+	require.Equal(t, len(want), fields.NumField())
+	for i, w := range want {
+		field := fields.Field(i)
+		require.Equal(t, w.name, field.Name, "field %d", i)
+		require.Equal(t, w.keyword, jsonKeyword(field), "json keyword of %s", w.name)
 	}
 }
 

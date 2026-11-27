@@ -8,7 +8,7 @@ import (
 
 // writeSpec writes a deterministic OpenAPI 3.0 document with resources
 // paths. Each path has a get and a post, and each schema references the
-// next, so both engines resolve a large, cyclic document.
+// next, so the loader resolves a large, cyclic document.
 func writeSpec(dir string, resources int) (string, error) {
 	if resources < 1 {
 		return "", fmt.Errorf("resources must be at least 1")

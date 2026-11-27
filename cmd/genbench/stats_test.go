@@ -8,7 +8,7 @@ import (
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
 )
 
 func TestSummarizeOdd(t *testing.T) {
@@ -54,7 +54,7 @@ func TestSpecDeclaresPathParameters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc, err := kin.Engine{}.Load(path, engine.LoadOptions{})
+	doc, err := libopenapi.Engine{}.Load(path, engine.LoadOptions{})
 	if err != nil {
 		body, _ := os.ReadFile(path)
 		t.Fatalf("load: %v\n%s", err, body)

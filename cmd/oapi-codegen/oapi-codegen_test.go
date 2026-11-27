@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/engines"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
 )
 
 func TestLoader(t *testing.T) {
@@ -14,7 +14,7 @@ func TestLoader(t *testing.T) {
 	}
 
 	for _, v := range paths {
-		doc, err := engines.Load("", v, engine.LoadOptions{})
+		doc, err := libopenapi.Engine{}.Load(v, engine.LoadOptions{})
 		if err != nil {
 			t.Error(err)
 		}

@@ -62,7 +62,6 @@ With `oapi-codegen`, there are a few [Key Design Decisions](#key-design-decision
   - [How can I ignore parts of the spec I don't care about?](#how-can-i-ignore-parts-of-the-spec-i-dont-care-about)
   - [Should I commit the generated code?](#should-i-commit-the-generated-code)
   - [Should I lint the generated code?](#should-i-lint-the-generated-code)
-  - [I've just updated my version of <code>kin-openapi</code>, and now I can't build my code 😠](#ive-just-updated-my-version-of-kin-openapi-and-now-i-cant-build-my-code-)
 - [Contributors](#contributors)
 - [Sponsors](#sponsors)
 <!-- /toc -->
@@ -163,7 +162,7 @@ Prefer the configuration file to command line options, which only cover a subset
 
 For full details of what is supported, check out the [oapi-codegen configuration documentation](docs/configuration.md).
 
-`engine: libopenapi` loads the spec with [libopenapi](https://github.com/pb33f/libopenapi) instead of kin-openapi. It is experimental, and the code it generates matches kin's.
+The spec is loaded with [libopenapi](https://github.com/pb33f/libopenapi).
 
 We also have [a JSON Schema](configuration-schema.json) that can be used by IDEs/editors with the Language Server Protocol (LSP) to perform intelligent suggestions, i.e.:
 
@@ -1285,20 +1284,20 @@ output-options:
 
 ### Using the Go package
 
-`codegen.Generate` takes a `*model.Document` (`pkg/model`), not a kin-openapi document. Load one with the kin-openapi engine and pass it in:
+`codegen.Generate` takes a `*model.Document` (`pkg/model`). Load one with the libopenapi engine and pass it in:
 
 ```go
 import (
     "github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
     "github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-    "github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/kin"
+    "github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
 )
 
-doc, err := kin.Engine{}.Load(path, engine.LoadOptions{})
+doc, err := libopenapi.Engine{}.Load(path, engine.LoadOptions{})
 code, err := codegen.Generate(doc, cfg)
 ```
 
-User templates receive that same model. `Schema.OAPISchema`, `ParameterDefinition.Spec` and `OperationDefinition.Spec` are model types, not kin-openapi structs.
+User templates receive that same model. `Schema.OAPISchema`, `ParameterDefinition.Spec` and `OperationDefinition.Spec` are model types.
 
 Further use of the package as a library [will be documented in the future](https://github.com/oapi-codegen/oapi-codegen/issues/1487).
 
@@ -2273,14 +2272,6 @@ We really ask that you don't. Although it intends to be idiomatic Go code, it's 
 
 > [!NOTE]
 > We will, on occasion, improve the generated code to fix some linting warnings, such as those from `go vet`, but this should not be an expected change.
-
-### I've just updated my version of `kin-openapi`, and now I can't build my code 😠
-
-The [kin-openapi](https://github.com/getkin/kin-openapi) project - which we 💜 for providing a great library and set of tooling for interacting with OpenAPI - is a pre-v1 release, which means that they're within their rights to push breaking changes.
-
-This may lead to breakage in your consuming code, and if so, sorry that's happened!
-
-We'll be aware of the issue, and will work to update both the core `oapi-codegen` and the middlewares accordingly.
 
 ## Contributors
 
