@@ -6,6 +6,7 @@ help:
 	@echo "Targets:"
 	@echo "    generate:             regenerate all generated files"
 	@echo "    test:                 run all tests"
+	@echo "    test-race:            run the tests of the generator and the command with the race detector"
 	@echo "    tidy         tidy go mod"
 	@echo "    lint         lint the project"
 	@echo "    install:     build and install the oapi-codegen-ifc7 binary"
@@ -39,6 +40,11 @@ test:
 	go test -cover ./...
 	# then, for all child modules, use a module-managed `Makefile`
 	git ls-files '**/*go.mod' -z | xargs -0 -I{} bash -xc 'cd $$(dirname {}) && make test'
+
+# The generator runs its passes at the same time, so its tests are also run
+# with the race detector. Only the root module has packages that do.
+test-race:
+	go test -race -timeout 15m ./pkg/... ./cmd/...
 
 tidy:
 	# for the root module, explicitly run the step, to prevent recursive calls
