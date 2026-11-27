@@ -10,7 +10,7 @@ import (
 	"github.com/oapi-codegen/testutil"
 	"github.com/stretchr/testify/assert"
 
-	. "github.com/oapi-codegen/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp/gen"
+	. "github.com/ifc7/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp/gen"
 )
 
 var _ ServerInterface = (*testServer)(nil)

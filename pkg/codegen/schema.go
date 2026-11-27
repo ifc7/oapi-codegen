@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/v2/pkg/model"
 )
 
 // Schema describes an OpenAPI schema, with lots of helper fields to use in the

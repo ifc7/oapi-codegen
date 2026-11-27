@@ -5,4 +5,4 @@
 // allOf marking a $ref readOnly, the only way OpenAPI 3.0 can. Failed with "merging two schemas with different ReadOnly".
 package matrixallofreadonly
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

@@ -9,5 +9,5 @@
 // response envelope must remain embedded so cross-package response casts compile.
 package responsecast
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.base.yaml spec-base.yaml
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.other.yaml spec-other.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.base.yaml spec-base.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.other.yaml spec-other.yaml

@@ -5,4 +5,4 @@
 // allOf over a $ref to a schema that declares a property next to an allOf of an empty object. v2 generates a map, and keeps it one rather than add the property (#2571); v3 generates the property.
 package matrixallofnestedownpropertiesempty
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

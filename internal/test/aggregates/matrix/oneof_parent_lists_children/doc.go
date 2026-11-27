@@ -5,4 +5,4 @@
 // A discriminated oneOf whose variants are each an allOf of the schema that lists them: the inheritance style some generators write, with the parent listing its children. Each child is one branch of the parent, so it isn't a union of all of them.
 package matrixoneofparentlistschildren
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

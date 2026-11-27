@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/examples/internal/requestvalidator"
-	"github.com/oapi-codegen/oapi-codegen/v2/examples/petstore-expanded/api"
+	"github.com/ifc7/oapi-codegen/v2/examples/internal/requestvalidator"
+	"github.com/ifc7/oapi-codegen/v2/examples/petstore-expanded/api"
 )
 
 // NewServer creates a fully configured *http.Server with the petstore

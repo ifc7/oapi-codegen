@@ -9,8 +9,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/examples/authenticated-api/stdhttp/api"
-	"github.com/oapi-codegen/oapi-codegen/v2/examples/internal/requestvalidator"
+	"github.com/ifc7/oapi-codegen/v2/examples/authenticated-api/stdhttp/api"
+	"github.com/ifc7/oapi-codegen/v2/examples/internal/requestvalidator"
 )
 
 type server struct {

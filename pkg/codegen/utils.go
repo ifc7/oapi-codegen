@@ -30,7 +30,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/v2/pkg/model"
 )
 
 var (

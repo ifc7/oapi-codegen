@@ -5,4 +5,4 @@
 // An object with both an anyOf and a oneOf whose branches only add constraints (issue #839): at least one of a and b, and exactly one of c and d.
 package matrixanyofoneofconstraints
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

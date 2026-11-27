@@ -5,4 +5,4 @@
 // allOf over a $ref to an untyped schema and a member with properties. The untyped member places no constraint and carries no value of its own, so the JSON is the object the other member describes. v1 keeps the embedded field, so code that sets it still compiles, but keeps it out of the JSON: it used to add a key named after the type ("Untyped") to every object (#2590).
 package matrixallofuntypedreffields
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

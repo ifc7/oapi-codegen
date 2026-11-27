@@ -4,7 +4,7 @@ package codegen
 // from, when a schema's type is not its own but one it refers to: whether a
 // server response body can be its own type (operations.go) needs it.
 
-import "github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
+import "github.com/ifc7/oapi-codegen/v2/pkg/model"
 
 // subschemaLists returns a schema's allOf, anyOf and oneOf.
 func subschemaLists(s *model.Schema) []model.SchemaRefs {

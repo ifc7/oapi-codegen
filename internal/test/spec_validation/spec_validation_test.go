@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
+	"github.com/ifc7/oapi-codegen/v2/pkg/codegen"
+	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
+	"github.com/ifc7/oapi-codegen/v2/pkg/engine/libopenapi"
 )
 
 func TestValidateSpecRejects(t *testing.T) {

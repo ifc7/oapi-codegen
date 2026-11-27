@@ -5,5 +5,5 @@ generate:
   server: true
   models: true
 import-mapping:
-  parent.api.yaml: github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/parent_child/api/parent
+  parent.api.yaml: github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/parent_child/api/parent
 output: api/child/child.gen.go

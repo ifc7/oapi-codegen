@@ -12,14 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
+	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
+	"github.com/ifc7/oapi-codegen/v2/pkg/engine/libopenapi"
 )
 
 const (
 	remoteRefFile = `https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/master/examples/petstore-expanded` +
 		`/petstore-expanded.yaml`
-	remoteRefImport = `github.com/oapi-codegen/oapi-codegen/v2/examples/petstore-expanded`
+	remoteRefImport = `github.com/ifc7/oapi-codegen/v2/examples/petstore-expanded`
 )
 
 func TestExampleOpenAPICodeGeneration(t *testing.T) {
@@ -240,7 +240,7 @@ func TestRemoteExternalReference(t *testing.T) {
 	assert.Contains(t, code, "package api")
 
 	// Check import
-	assert.Contains(t, code, `externalRef0 "github.com/oapi-codegen/oapi-codegen/v2/examples/petstore-expanded"`)
+	assert.Contains(t, code, `externalRef0 "github.com/ifc7/oapi-codegen/v2/examples/petstore-expanded"`)
 
 	// Check generated oneOf structure:
 	assert.Contains(t, code, `
