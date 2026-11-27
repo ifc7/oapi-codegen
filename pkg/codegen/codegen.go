@@ -1066,26 +1066,36 @@ func GenerateEnums(t *template.Template, types []TypeDefinition) (string, error)
 	markConflictingEnums(enums)
 
 	// Check each enum against global type names and self-conflict.
+	//
+	// An enum conflicts with the types when one of its constant names is the
+	// name of a type that is not an enum. The names of those types are kept in
+	// a set, so each constant is looked up once, and not compared with every
+	// type, which for a large document is millions of comparisons.
+	typeNames := make(map[string]struct{}, len(types))
+	for _, tp := range types {
+		if len(tp.Schema.EnumValues) == 0 {
+			typeNames[tp.TypeName] = struct{}{}
+		}
+	}
 	for i := range enums {
 		e1 := enums[i]
 
-		// now see if this enum conflicts with any global type names.
-		for _, tp := range types {
-			// Skip over enums, since we've handled those above.
-			if len(tp.Schema.EnumValues) > 0 {
-				continue
-			}
-			_, found := e1.Schema.EnumValues[tp.TypeName]
-			if found {
+		for name := range e1.Schema.EnumValues {
+			if _, found := typeNames[name]; found {
 				e1.PrefixTypeName = true
 				enums[i] = e1
+				break
 			}
 		}
 
 		// Another edge case is that an enum value can conflict with its own
-		// type name.
-		_, found := e1.GetValues()[e1.TypeName]
-		if found {
+		// type name. A prefixed name is the type name and the value's name
+		// with its first letter in upper case, so only an empty name matches.
+		own := e1.TypeName
+		if e1.PrefixTypeName {
+			own = ""
+		}
+		if _, found := e1.Schema.EnumValues[own]; found {
 			e1.PrefixTypeName = true
 			enums[i] = e1
 		}
