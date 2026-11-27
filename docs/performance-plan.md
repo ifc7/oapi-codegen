@@ -40,6 +40,7 @@ Same spec and machine, 6 samples after 1 warmup round each. Output is the same G
 | Step 4 (`variantKeys` from the spec for plain objects) | 6.01 s | 35.0 million | 3,105 MB |
 | Step 6 (format in parallel, `pkg/codegen/format.go`) | 3.72 s | 32.9 million | 2,792 MB |
 | Loader (one parse for documents that declare `openapi`) | 2.85 s | 29.1 million | 2,611 MB |
+| Format without a whole-file parse (`cutPoints`, `formatPiece`) | 2.5 s (3.1 s on the same run, same load) | 28.9 million | 2,568 MB |
 
 The loader had parsed the 6.6 MB document two more times, in `declaredSwagger` and `withOpenAPIVersion`, to look for the `swagger` and `openapi` keys. A document that declares an OpenAPI 3 version is now read with the one parse libopenapi makes, and the other paths (Swagger, no version) are unchanged. Load fell from 0.93 s to 0.43 s.
 
@@ -91,3 +92,44 @@ These follow `docs/target-architecture.md`; the profile says which steps pay fir
 Do steps 1 and 2 first: they are small and local. Then step 4, the largest single item, with the equivalence check. Then step 5 or 6 for the formatter. Re-profile after each, because the shares will move (garbage collection falls with allocation). Steps 7 to 9 are the larger refactor; start them once the profile after step 6 shows what is left.
 
 A realistic target, from the profile alone: Stripe generation from about 10 s to 4 to 5 s after steps 1 to 6, and lower again after steps 7 to 9. These are estimates; each step should be measured with the benchmark before it is committed.
+
+## Where it stands, and what is left
+
+Stripe now takes a median of 2.7 s, from 10.3 s. Splitting that wall time (`genbench -skip-fmt` times everything but the formatter):
+
+| Part | Wall time | Notes |
+| --- | --- | --- |
+| Load | 0.4 s | libopenapi parse and build, then conversion to the model |
+| Generation, without formatting | 1.2 s | One thread |
+| Formatting | 1.0 s | Half of it is one thread: parsing the whole file to find declaration boundaries and the imports |
+
+The CPU profile adds: garbage collection is 24% of CPU time, `go/parser` is 11% of CPU and 22% of allocation, and `GenerateEnums` is 8%. Steps 1 to 6 of the plan are done. Most of what the plan said about generating schemas again (step 7) is now done by the targeted caches; `generateGoSchema` is 2.5% of CPU.
+
+Rejected: raising `GOGC`. 400 gives about 7% (2.62 s to 2.44 s) for 400 MB more memory, and 800 gives nothing more. Not worth a default.
+
+### Remaining steps, in the order I would take them
+
+Estimates are from the profile, to be measured as before.
+
+1. **Format without parsing the whole file (about 0.5 to 0.8 s). Done: 3.1 s to 2.5 s in an interleaved A/B on a busy machine (the formatter alone: 0.93 s to 0.4 s).**
+   - `Generate` already holds the types, client, server and boilerplate as separate strings, so format each in parallel and skip the serial parse.
+   - The imports come from a scan of the output for `pkg.Name` selectors; `go/scanner` is much cheaper than `go/parser`.
+   - It also removes the second parse of each piece inside `format.Source`, which is most of the 22% of allocation in the parser.
+   - The existing test, which compares the bytes with `imports.Process`, is the check.
+2. **Enums (about 0.3 s).**
+   - `GenerateEnums` recomputes each enum's constant names several times (`GetValues` in the conflict passes and again in the template) and converts names with `ToCamelCase` without caching.
+   - Compute the names once per enum and memoize the name conversion.
+3. **Run the independent passes at the same time (about 0.4 to 0.5 s).**
+   - After operations are built, the component types, operation types, boilerplate, server, client and client-with-responses passes only read shared state. Their output is joined in a fixed order, so the result stays deterministic.
+   - First, the state they write lazily has to be made safe: the marshal-JSON cache, `componentNames`, `typeMappingImports`, `usedFormatTypes`, `warnedFieldNameCollisions` and the struct-tag generator. Build them before the fan-out, or guard the few that must change, as the struct-tag cache already is.
+   - Replacing `globalState` as a whole (step 8) is the larger change and is not needed for this.
+4. **Loader (about 0.1 to 0.2 s).** Converting libopenapi's model into the generator's model is 0.5 s of CPU and 8% of allocation. Convert lazily, or in parallel by path.
+5. **Allocation in the schema walk, and canonical IDs (steps 7 and 10).** Leave until the profile after steps 1 to 4 shows them as the largest remaining part.
+
+If steps 1 to 3 give what the profile suggests, Stripe would be about 1.6 to 1.8 s.
+
+### Notes on the formatting step
+
+- The first version of the cut scan only recognised a `func` or `type` straight after the blank line. Nearly every declaration has a doc comment, so the scan found almost no cuts in the client and types sections: the 46 pieces included ones of 12.9, 7.3 and 4.3 MB, and the run was no faster. Skipping comment lines before the keyword gave 139 pieces, the largest 1.1 MB. Look at the piece sizes, not only the total, when a parallel step doesn't speed up.
+- A wrong cut cannot slip through: a piece cut inside a declaration doesn't parse, and the whole source then goes to `imports.Process`. The test requires that no fixture falls back.
+- Wall-clock timings here need a quiet machine. Compare binaries interleaved in one session, as `ab.sh`-style loops do, and check the load average.
