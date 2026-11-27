@@ -74,6 +74,16 @@ func generateUnionElement(ctx genContext, outSchema *Schema, element *model.Sche
 	}
 	if element.Ref == "" {
 		elementName := SchemaNameToTypeName(PathToTypeName(elementPath))
+		// The items of an array variant are named after the variant's own
+		// path, so an array of enums has an item type with the variant's
+		// name. The variant then takes another name, as it would declare a
+		// type that is its own element.
+		for _, additional := range elementSchema.AdditionalTypes {
+			if additional.TypeName == elementName && elementSchema.TypeDecl() != elementName {
+				elementName += "Array"
+				break
+			}
+		}
 		if elementSchema.TypeDecl() == elementName {
 			elementSchema.GoType = elementName
 		} else {

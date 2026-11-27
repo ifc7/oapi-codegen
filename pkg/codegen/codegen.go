@@ -1090,7 +1090,16 @@ func GenerateEnums(t *template.Template, types []TypeDefinition) (string, error)
 		}
 	}
 
-	// Now see if enums conflict with any non-enum typenames
+	// A prefixed constant can still match the name of a type, for example the
+	// constant SourceTypeAchDebit of a SourceType enum next to a schema named
+	// source_type_ach_debit. Keep the constants off the type names.
+	reserved := make(map[string]bool, len(types))
+	for _, tp := range types {
+		reserved[tp.TypeName] = true
+	}
+	for i := range enums {
+		enums[i].reservedNames = reserved
+	}
 
 	return GenerateTemplates([]string{"constants.tmpl"}, t, Constants{
 		EnumDefinitions:  enums,

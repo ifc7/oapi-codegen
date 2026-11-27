@@ -2,7 +2,10 @@ package codegen
 
 import (
 	_ "embed"
+	"go/ast"
 	"go/format"
+	"go/parser"
+	"go/token"
 	"strings"
 	"testing"
 
@@ -724,4 +727,99 @@ components:
 	assert.Contains(t, methodBody(t, code, "func (t *Pet) MergeCat("), "oapiJSONMergeForPet(t.union, b)")
 	assert.NotContains(t, code, "runtime.JSONMerge")
 	assert.NotContains(t, code, `"github.com/oapi-codegen/runtime"`)
+}
+
+// declaredNames returns the package-level type and constant names of generated
+// source, in declaration order, with repeats.
+func declaredNames(t *testing.T, src string) []string {
+	t.Helper()
+	file, err := parser.ParseFile(token.NewFileSet(), "gen.go", src, 0)
+	require.NoError(t, err)
+	var names []string
+	for _, decl := range file.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+		for _, spec := range gen.Specs {
+			switch s := spec.(type) {
+			case *ast.TypeSpec:
+				names = append(names, s.Name.Name)
+			case *ast.ValueSpec:
+				for _, n := range s.Names {
+					names = append(names, n.Name)
+				}
+			}
+		}
+	}
+	return names
+}
+
+func requireUniqueDeclarations(t *testing.T, src string) {
+	t.Helper()
+	seen := map[string]bool{}
+	for _, name := range declaredNames(t, src) {
+		require.False(t, seen[name], "%s is declared twice", name)
+		seen[name] = true
+	}
+}
+
+// A prefixed enum constant must not take the name of a type. Here the
+// constants of the prefixed `source_type` enum would be SourceTypeAchDebit and
+// SourceTypeCard, the names of the two schemas.
+func TestEnumConstantsKeepOffTypeNames(t *testing.T) {
+	spec := loadTestSpec(t, []byte(`openapi: 3.0.3
+info: {title: t, version: "1"}
+paths: {}
+components:
+  schemas:
+    source_type:
+      type: string
+      enum: [ach_debit, card]
+    other_type:
+      type: string
+      enum: [ach_debit, other]
+    source_type_ach_debit:
+      type: object
+      properties: {id: {type: string}}
+    source_type_card:
+      type: object
+      properties: {id: {type: string}}
+`))
+	code, err := Generate(spec, Configuration{
+		PackageName:   "api",
+		Generate:      GenerateOptions{Models: true},
+		OutputOptions: OutputOptions{SkipPrune: true},
+	})
+	require.NoError(t, err)
+	requireUniqueDeclarations(t, code)
+	require.Contains(t, code, "SourceTypeAchDebitValue")
+}
+
+// The items of an array variant take the variant's name, so the variant must
+// not declare a type that is its own element.
+func TestUnionArrayVariantOfEnumNames(t *testing.T) {
+	spec := loadTestSpec(t, []byte(`openapi: 3.0.3
+info: {title: t, version: "1"}
+paths: {}
+components:
+  schemas:
+    Holder:
+      type: object
+      properties:
+        allowed:
+          anyOf:
+            - type: array
+              items: {type: string, enum: [address, email]}
+            - type: string
+              enum: [""]
+`))
+	code, err := Generate(spec, Configuration{
+		PackageName:   "api",
+		Generate:      GenerateOptions{Models: true},
+		OutputOptions: OutputOptions{SkipPrune: true},
+	})
+	require.NoError(t, err)
+	requireUniqueDeclarations(t, code)
+	require.NotContains(t, code, "type HolderAllowed0 []HolderAllowed0")
 }
