@@ -138,6 +138,8 @@ var formatTypes = []string{"OpenAPIDate", "OpenAPIDuration", "OpenAPIEmail", "Op
 // useTypeSpec returns spec's Go type, recording what the generated code needs
 // in order to use it: the package to import, or the format type to declare.
 func useTypeSpec(spec SimpleTypeSpec) string {
+	stateMu.Lock()
+	defer stateMu.Unlock()
 	if spec.Import != "" {
 		if globalState.typeMappingImports == nil {
 			globalState.typeMappingImports = map[string]goImport{}
