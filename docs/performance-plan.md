@@ -29,6 +29,19 @@ Loading is under 10% of the run. Everything worth doing is in generation. The sh
 | `strings.NewReplacer` in `template_helpers.go` | 9% of allocation | A replacer is built on every call to a helper |
 | `GenerateEnums` | 4% | |
 
+## Progress
+
+Same spec and machine, 6 samples after 1 warmup round each. Output is the same Go code at every step, checked by the golden files and, for each step that rewrites a pass, by a test that runs the old and new paths side by side.
+
+| After | Median | Allocations per run | Allocated per run |
+| --- | --- | --- | --- |
+| Baseline | 10.27 s | 75.6 million | 6,611 MB |
+| Steps 1 to 3 (replacer, marshal check, struct tags) | 7.76 s | 56.2 million | 4,819 MB |
+| Step 4 (`variantKeys` from the spec for plain objects) | 6.01 s | 35.0 million | 3,105 MB |
+| Step 6 (format in parallel, `pkg/codegen/format.go`) | 3.72 s | 32.9 million | 2,792 MB |
+
+Found while profiling step 6: the loader spends about 0.4 s of its 0.9 s parsing the 6.6 MB document two more times, in `declaredSwagger` and `withOpenAPIVersion`, to look for the `swagger` and `openapi` keys. Reading those keys from the one parse libopenapi already makes would remove most of that.
+
 ## The pattern behind most of it
 
 The generator derives the same facts from a schema several times, by running the whole schema-to-Go-type step again:

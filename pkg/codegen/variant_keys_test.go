@@ -14,6 +14,9 @@ import (
 // The keys a plain object variant gets from its properties must be the ones
 // its generated type gives, for every object in every fixture document.
 func TestPlainObjectKeysMatchGeneratedType(t *testing.T) {
+	// Generate sets the package's state; leave it as found for other tests.
+	prevState := globalState
+	t.Cleanup(func() { globalState = prevState })
 	var compared, skipped int
 	fixtures := enginetest.GenerateFixtures(t)
 	// A large document can be checked as well, such as a fetched Stripe spec:
