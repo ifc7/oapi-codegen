@@ -823,3 +823,45 @@ components:
 	requireUniqueDeclarations(t, code)
 	require.NotContains(t, code, "type HolderAllowed0 []HolderAllowed0")
 }
+
+// An enum whose constant would take the name of a type that isn't an enum
+// prefixes its constants, and one whose constant would take the name of its
+// own type does too.
+func TestEnumConstantsConflictingWithTypesArePrefixed(t *testing.T) {
+	prevState := globalState
+	t.Cleanup(func() { globalState = prevState })
+
+	spec := loadTestSpec(t, []byte(`openapi: 3.0.3
+info: {title: t, version: "1"}
+paths: {}
+components:
+  schemas:
+    Color:
+      type: string
+      enum: [Widget, blue]
+    Widget:
+      type: object
+      properties: {id: {type: string}}
+    Size:
+      type: string
+      enum: [Size, large]
+    Plain:
+      type: string
+      enum: [one, two]
+`))
+	code, err := Generate(spec, Configuration{
+		PackageName:   "api",
+		Generate:      GenerateOptions{Models: true},
+		OutputOptions: OutputOptions{SkipPrune: true},
+	})
+	require.NoError(t, err)
+	requireUniqueDeclarations(t, code)
+	// Conflict with the Widget type, and with its own type name.
+	require.Contains(t, code, "ColorWidget")
+	require.Contains(t, code, "ColorBlue")
+	require.Contains(t, code, "SizeSize")
+	require.Contains(t, code, "SizeLarge")
+	// No conflict: the constants keep their plain names.
+	require.Contains(t, code, "One Plain")
+	require.NotContains(t, code, "PlainOne")
+}

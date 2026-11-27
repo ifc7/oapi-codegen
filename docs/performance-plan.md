@@ -116,9 +116,7 @@ Estimates are from the profile, to be measured as before.
    - The imports come from a scan of the output for `pkg.Name` selectors; `go/scanner` is much cheaper than `go/parser`.
    - It also removes the second parse of each piece inside `format.Source`, which is most of the 22% of allocation in the parser.
    - The existing test, which compares the bytes with `imports.Process`, is the check.
-2. **Enums (about 0.3 s).**
-   - `GenerateEnums` recomputes each enum's constant names several times (`GetValues` in the conflict passes and again in the template) and converts names with `ToCamelCase` without caching.
-   - Compute the names once per enum and memoize the name conversion.
+2. **Enums (about 0.3 s). Done, and the cause was not the one guessed.** `GenerateEnums` compared every enum with every type (a nested loop of `enums × types` map lookups) to find constants named like a type. Looking the constants up in a set of type names built once took `GenerateEnums` from 4.41 s to 0.43 s of CPU over 8 runs, and `renderBoilerplate` from 4.95 s to 0.90 s. Wall-clock A/B runs were too noisy to resolve it (the machine's load average was 10 to 14); the profile is the evidence. Caching `ToCamelCase` and `GetValues`, as proposed here, is no longer worth doing: the whole function is about 50 ms per run.
 3. **Run the independent passes at the same time (about 0.4 to 0.5 s).**
    - After operations are built, the component types, operation types, boilerplate, server, client and client-with-responses passes only read shared state. Their output is joined in a fixed order, so the result stays deterministic.
    - First, the state they write lazily has to be made safe: the marshal-JSON cache, `componentNames`, `typeMappingImports`, `usedFormatTypes`, `warnedFieldNameCollisions` and the struct-tag generator. Build them before the fan-out, or guard the few that must change, as the struct-tag cache already is.
