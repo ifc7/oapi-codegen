@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"text/template"
 )
 
@@ -89,7 +90,15 @@ func (c StructTagsConfig) Merge(other StructTagsConfig) StructTagsConfig {
 // structTagGenerator renders struct tag values from parsed templates.
 type structTagGenerator struct {
 	templates []tagTemplate
+
+	// rendered holds the tags rendered for each StructTagInfo so far. A
+	// document has a handful of distinct infos but a field for each property,
+	// and rendering a template per field per tag dominated the allocations.
+	mu       sync.Mutex
+	rendered map[StructTagInfo][]renderedTag
 }
+
+type renderedTag struct{ name, value string }
 
 type tagTemplate struct {
 	name string
@@ -151,9 +160,30 @@ func jsonTagKey(tag, goFieldName string) (string, bool) {
 // driven overrides (x-go-json-ignore, x-oapi-codegen-extra-tags) are
 // applied by the callers on top of this map.
 func (g *structTagGenerator) generateTagsMap(info StructTagInfo) map[string]string {
+	g.mu.Lock()
+	tags, ok := g.rendered[info]
+	if !ok {
+		tags = g.render(info)
+		if g.rendered == nil {
+			g.rendered = make(map[StructTagInfo][]renderedTag)
+		}
+		g.rendered[info] = tags
+	}
+	g.mu.Unlock()
+
+	// A fresh map each time: callers add and remove tags on it.
 	result := make(map[string]string, len(g.templates))
+	for _, tag := range tags {
+		result[tag.name] = tag.value
+	}
+	return result
+}
+
+func (g *structTagGenerator) render(info StructTagInfo) []renderedTag {
+	var tags []renderedTag
+	var buf bytes.Buffer
 	for _, t := range g.templates {
-		var buf bytes.Buffer
+		buf.Reset()
 		if err := t.tmpl.Execute(&buf, info); err != nil {
 			// Templates are validated at construction time against every
 			// combination of boolean fields, so a failure here is
@@ -163,10 +193,10 @@ func (g *structTagGenerator) generateTagsMap(info StructTagInfo) map[string]stri
 			continue
 		}
 		if value := buf.String(); value != "" {
-			result[t.name] = value
+			tags = append(tags, renderedTag{t.name, value})
 		}
 	}
-	return result
+	return tags
 }
 
 // fieldTagGenerator returns the generator used for struct fields, schema

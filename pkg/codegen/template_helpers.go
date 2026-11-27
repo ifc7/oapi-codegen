@@ -341,9 +341,12 @@ func responsesWithHeaders(responses []ResponseDefinition) []ResponseDefinition {
 // stripNewLines removes newlines so untrusted spec text stays inside a single
 // generated `//` line comment instead of breaking out into real Go source.
 func stripNewLines(s string) string {
-	r := strings.NewReplacer("\n", "", "\r", "")
-	return r.Replace(s)
+	return newlineStripper.Replace(s)
 }
+
+// newlineStripper is built once: building a Replacer costs far more than
+// using it, and stripNewLines runs for every description in the document.
+var newlineStripper = strings.NewReplacer("\n", "", "\r", "")
 
 // httpMethodConstant converts an HTTP method string (e.g. "GET") to the
 // corresponding Go net/http constant (e.g. "http.MethodGet").

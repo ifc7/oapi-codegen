@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"text/tabwriter"
 	"time"
 
@@ -35,6 +36,8 @@ func main() {
 	minSamples := flag.Int("min-samples", 12, "minimum samples when -samples is 0")
 	maxSamples := flag.Int("max-samples", 30, "maximum samples when -samples is 0")
 	ciFrac := flag.Float64("ci", 0.05, "stop when the 95% CI half-width is within this fraction of the mean")
+	cpuProfile := flag.String("cpuprofile", "", "write a CPU profile of the measured samples to this file")
+	memProfile := flag.String("memprofile", "", "write an allocation profile (alloc_space) after the measured samples to this file")
 	flag.Parse()
 
 	if flag.NArg() != 0 {
@@ -80,6 +83,21 @@ func main() {
 	if target == 0 {
 		target = *maxSamples
 	}
+	if *cpuProfile != "" {
+		f, err := os.Create(*cpuProfile)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "cpuprofile: %v\n", err)
+			os.Exit(1)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "cpuprofile: %v\n", err)
+			os.Exit(1)
+		}
+		defer func() {
+			pprof.StopCPUProfile()
+			_ = f.Close()
+		}()
+	}
 	var taken []observation
 	var docPaths, docOps int
 	if *samplesN == 0 {
@@ -104,6 +122,19 @@ func main() {
 		}
 	}
 
+	if *memProfile != "" {
+		f, err := os.Create(*memProfile)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "memprofile: %v\n", err)
+			os.Exit(1)
+		}
+		if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "memprofile: %v\n", err)
+			os.Exit(1)
+		}
+		_ = f.Close()
+	}
+
 	report(os.Stdout, reportInput{
 		path:     path,
 		bytes:    info.Size(),
@@ -121,12 +152,19 @@ type observation struct {
 	generate time.Duration
 	total    time.Duration
 	nBytes   int
-	sum      [sha256.Size]byte
-	doc      *model.Document
+	// mallocs and allocBytes are the heap allocations of the whole sample,
+	// load and generate. They barely vary between samples, so they show a
+	// change that the timing noise would hide.
+	mallocs    uint64
+	allocBytes uint64
+	sum        [sha256.Size]byte
+	doc        *model.Document
 }
 
 func measure(path string, cfg codegen.Configuration) (observation, error) {
 	runtime.GC()
+	var before runtime.MemStats
+	runtime.ReadMemStats(&before)
 	started := time.Now()
 	doc, err := libopenapi.Engine{}.Load(path, engine.LoadOptions{})
 	if err != nil {
@@ -138,13 +176,17 @@ func measure(path string, cfg codegen.Configuration) (observation, error) {
 		return observation{}, fmt.Errorf("generate: %w", err)
 	}
 	total := time.Since(started)
+	var after runtime.MemStats
+	runtime.ReadMemStats(&after)
 	return observation{
-		load:     loaded,
-		generate: total - loaded,
-		total:    total,
-		nBytes:   len(code),
-		sum:      sha256.Sum256([]byte(code)),
-		doc:      doc,
+		mallocs:    after.Mallocs - before.Mallocs,
+		allocBytes: after.TotalAlloc - before.TotalAlloc,
+		load:       loaded,
+		generate:   total - loaded,
+		total:      total,
+		nBytes:     len(code),
+		sum:        sha256.Sum256([]byte(code)),
+		doc:        doc,
 	}, nil
 }
 
@@ -253,6 +295,15 @@ func report(w *os.File, in reportInput) {
 	_ = tw.Flush()
 	_, _ = fmt.Fprintln(w)
 
+	mallocs := make([]float64, len(in.samples))
+	allocMB := make([]float64, len(in.samples))
+	for i, sample := range in.samples {
+		mallocs[i] = float64(sample.mallocs)
+		allocMB[i] = float64(sample.allocBytes) / (1 << 20)
+	}
+	_, _ = fmt.Fprintf(w, "Allocations %.2f million allocs, %.0f MB per run (mean of %d; load and generate)\n",
+		mean(mallocs)/1e6, mean(allocMB), len(in.samples))
+
 	first := in.samples[0]
 	same := true
 	for _, sample := range in.samples[1:] {
@@ -283,4 +334,15 @@ func formatDuration(d time.Duration) string {
 		return fmt.Sprintf("%.1f ms", ms)
 	}
 	return fmt.Sprintf("%.2f s", ms/1000)
+}
+
+func mean(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range values {
+		sum += v
+	}
+	return sum / float64(len(values))
 }
