@@ -14,7 +14,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
+	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
 )
 
 // Fixture is one document the repository generates code from: the spec named
@@ -32,7 +32,7 @@ type Fixture struct {
 // repository's internal/test and examples modules.
 func GenerateFixtures(t *testing.T) []Fixture {
 	t.Helper()
-	root, err := filepath.Abs("../../..")
+	root, err := repoRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,4 +123,25 @@ func parseDirective(dir string, fields []string) (Fixture, error) {
 		}
 	}
 	return fx, nil
+}
+
+// repoRoot returns the nearest directory above the working directory that
+// holds both fixture trees, so tests in any package can use the fixtures.
+func repoRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	for {
+		_, errTest := os.Stat(filepath.Join(dir, "internal", "test"))
+		_, errExamples := os.Stat(filepath.Join(dir, "examples"))
+		if errTest == nil && errExamples == nil {
+			return dir, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", fmt.Errorf("no directory above the working directory holds internal/test and examples")
+		}
+		dir = parent
+	}
 }

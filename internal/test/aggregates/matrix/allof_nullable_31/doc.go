@@ -5,4 +5,4 @@
 // An OpenAPI 3.1 allOf whose inline member declares `type: [object, "null"]`. Failed with "can not merge incompatible types: [object], [object null]".
 package matrixallofnullable31
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

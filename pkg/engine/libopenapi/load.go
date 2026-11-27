@@ -19,8 +19,8 @@ import (
 	"github.com/pb33f/libopenapi/index"
 	"gopkg.in/yaml.v3"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
+	"github.com/ifc7/oapi-codegen/v2/pkg/model"
 )
 
 // Engine loads documents with libopenapi.

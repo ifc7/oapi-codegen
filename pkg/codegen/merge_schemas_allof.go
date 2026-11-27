@@ -12,7 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/v2/pkg/model"
 )
 
 // allOfOptions are what the merge of one allOf needs to know about it, which

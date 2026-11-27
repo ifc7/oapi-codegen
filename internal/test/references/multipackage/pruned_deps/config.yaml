@@ -7,4 +7,4 @@ generate:
   models: true
   client: true
 import-mapping:
-  ./deps/my-deps.json: github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/pruned_deps/deps
+  ./deps/my-deps.json: github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/pruned_deps/deps

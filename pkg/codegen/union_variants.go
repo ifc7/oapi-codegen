@@ -13,7 +13,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/v2/pkg/model"
 )
 
 // generateUnions generates the anyOf and oneOf of an object schema into
@@ -488,7 +488,75 @@ func (ctx genContext) variantKeys(b *model.SchemaRef) ([]string, error) {
 	// it finds no keys while its own are being read: they only feed the
 	// unions of this throwaway generation, and a variant's keys come from
 	// its own fields, which don't depend on them.
+	if keys, ok := plainObjectKeys(b.Value); ok {
+		ctx.composition.variantKeyCache[b.Value] = keys
+		return keys, nil
+	}
 	ctx.composition.variantKeyCache[b.Value] = nil
+	return ctx.variantKeysFromGeneratedType(b)
+}
+
+// plainObjectKeys returns the keys of a variant that is a plain object, from
+// its properties, without generating Go types for them. Generating the type
+// builds the type of every property, and of everything below them, which for
+// a large document is most of the work of closing the unions in it.
+//
+// It answers only for the schemas whose keys it can read exactly as
+// variantKeysFromGeneratedType would: an object, or a schema with no type,
+// that has no composition, no enum, no override of its Go type, and nothing
+// but properties and additional properties. Anything else, and a document
+// with struct tags of its own (a template may rename the json tag), is left
+// to the generated type.
+func plainObjectKeys(s *model.Schema) ([]string, bool) {
+	if len(globalState.options.OutputOptions.StructTags.Tags) > 0 {
+		return nil, false
+	}
+	if len(s.AllOf) > 0 || len(s.OneOf) > 0 || len(s.AnyOf) > 0 || s.Not != nil ||
+		len(s.Enum) > 0 || s.Const != nil || s.Items != nil || len(s.PrefixItems) > 0 ||
+		len(s.PatternProperties) > 0 || len(s.DependentSchemas) > 0 ||
+		s.If != nil || s.Then != nil || s.Else != nil || s.Contains != nil ||
+		s.PropertyNames != nil || s.UnevaluatedProperties != (model.BoolSchema{}) || s.UnevaluatedItems != (model.BoolSchema{}) {
+		return nil, false
+	}
+	if t := schemaPrimaryType(s.Type); t.Slice() != nil && !t.Is("object") {
+		return nil, false
+	}
+	exts := combinedSchemaExtensions(&model.SchemaRef{Value: s})
+	for _, name := range []string{extPropGoType, extGoTypeName} {
+		if _, ok := exts[name]; ok {
+			return nil, false
+		}
+	}
+	if len(s.Properties) == 0 {
+		// An object with no properties is a map or any, with no fields; with
+		// additional properties it is a map. Neither declares a key.
+		return []string{}, true
+	}
+	for _, p := range s.Properties {
+		if p == nil || p.Value == nil {
+			return nil, false
+		}
+	}
+	keys := make([]string, 0, len(s.Properties))
+	for _, name := range SortedSchemaKeys(s.Properties) {
+		if !SchemaHasAdditionalProperties(s) {
+			if key, ok := fieldKey(Property{
+				JsonFieldName: name,
+				Extensions:    combinedSchemaExtensions(s.Properties[name]),
+			}); !ok {
+				continue
+			} else {
+				name = key
+			}
+		}
+		keys = append(keys, name)
+	}
+	return keys, true
+}
+
+// variantKeysFromGeneratedType reads the keys from the Go type the variant
+// generates as.
+func (ctx genContext) variantKeysFromGeneratedType(b *model.SchemaRef) ([]string, error) {
 	generate := func(s *model.Schema) (Schema, error) {
 		fresh := newGenContext(ctx.nameHint)
 		fresh.run = ctx.run

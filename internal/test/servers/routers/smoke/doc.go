@@ -5,5 +5,5 @@
 // issue #1799.
 package serversrouterssmoke
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config-server.yaml spec.yaml
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config-client.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config-server.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config-client.yaml spec.yaml

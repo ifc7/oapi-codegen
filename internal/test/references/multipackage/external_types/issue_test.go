@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/external_types/gen/api"
-	"github.com/oapi-codegen/oapi-codegen/v2/internal/test/references/multipackage/external_types/gen/common"
+	"github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/external_types/gen/api"
+	"github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/external_types/gen/common"
 )
 
 // Compiling this block is the regression check: each body type is spelled the

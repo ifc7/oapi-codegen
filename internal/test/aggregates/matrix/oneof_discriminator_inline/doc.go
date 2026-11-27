@@ -5,4 +5,4 @@
 // A discriminated oneOf whose variants are inline, two pinning their discriminator value with a single-value enum (e05) and one pinning none, which the discriminator doesn't lead to. An inline variant has no name for the mapping, so these failed with "not all schemas were mapped".
 package matrixoneofdiscriminatorinline
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

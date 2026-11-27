@@ -5,4 +5,4 @@
 // allOf over a $ref to an untyped schema, a $ref to a map (an object with only additionalProperties) and an annotation. The untyped member places no constraint and carries no value of its own, so the composition is the map's type. v1 used to embed both members in a struct, which encodes the value under keys named after their types ({"Untyped": ..., "Labels": {...}}) and leaves the map empty on decoding (#2590).
 package matrixallofuntypedrefmap
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

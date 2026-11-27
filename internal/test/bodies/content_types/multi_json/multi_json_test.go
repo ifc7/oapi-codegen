@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	multijson "github.com/oapi-codegen/oapi-codegen/v2/internal/test/bodies/content_types/multi_json"
+	multijson "github.com/ifc7/oapi-codegen/v2/internal/test/bodies/content_types/multi_json"
 	"github.com/stretchr/testify/assert"
 )
 

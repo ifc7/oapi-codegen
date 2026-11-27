@@ -5,4 +5,4 @@
 // allOf with a oneOf next to it on the same schema. The oneOf used to be dropped, leaving an alias of the allOf member.
 package matrixallofoneofsiblings
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

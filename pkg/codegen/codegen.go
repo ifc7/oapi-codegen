@@ -36,7 +36,7 @@ import (
 
 	"golang.org/x/tools/imports"
 
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/v2/pkg/model"
 )
 
 // Embed the templates directory

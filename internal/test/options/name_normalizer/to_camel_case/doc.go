@@ -6,4 +6,4 @@
 // outputoptions/name-normalizer/to-camel-case
 package optionsnamenormalizertocamelcase
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml ../spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml ../spec.yaml

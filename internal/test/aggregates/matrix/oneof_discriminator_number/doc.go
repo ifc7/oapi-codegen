@@ -5,4 +5,4 @@
 // A discriminated oneOf with a number discriminator whose inline variants pin their values. JSON can write one number several ways, such as 1, 1.0 and 1e0; dispatch compares them as numbers.
 package matrixoneofdiscriminatornumber
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml

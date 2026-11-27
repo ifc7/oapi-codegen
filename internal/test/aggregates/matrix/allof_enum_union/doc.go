@@ -5,4 +5,4 @@
 // allOf that adds a value to an enum, asking with x-oapi-codegen-enum-merge: union for the values of either enum rather than those of both. v2 always merges enums into their union.
 package matrixallofenumunion
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
