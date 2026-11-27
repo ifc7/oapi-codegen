@@ -1,0 +1,7 @@
+## yaml-language-server: $schema=../../configuration-schema.json
+package: stripe
+generate:
+  models: true
+  client: true
+  server: true
+output: stripe.gen.go

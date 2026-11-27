@@ -350,6 +350,10 @@ type EnumDefinition struct {
 	// TypeNames or when explicitly requested via the
 	// `output-options.always-prefix-enum-values` option.
 	PrefixTypeName bool
+	// reservedNames holds the names of the types in the generated package. A
+	// prefixed constant that would take one of them gets a suffix instead, so
+	// that it cannot redeclare the type.
+	reservedNames map[string]bool
 }
 
 // GetValues generates enum names in a way to minimize global conflicts
@@ -362,9 +366,17 @@ func (e *EnumDefinition) GetValues() map[string]string {
 	newValues := make(map[string]string, len(e.Schema.EnumValues))
 	for k, v := range e.Schema.EnumValues {
 		newName := e.TypeName + UppercaseFirstCharacter(k)
+		for e.reservedNames[newName] || hasKey(newValues, newName) {
+			newName += "Value"
+		}
 		newValues[newName] = v
 	}
 	return newValues
+}
+
+func hasKey(m map[string]string, k string) bool {
+	_, ok := m[k]
+	return ok
 }
 
 type Constants struct {

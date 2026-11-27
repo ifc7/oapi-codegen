@@ -5,3 +5,4 @@ bin/
 
 # large generated example, built on demand
 examples/twilio/twilio.gen.go
+examples/stripe/stripe.gen.go
