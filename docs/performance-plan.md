@@ -39,8 +39,9 @@ Same spec and machine, 6 samples after 1 warmup round each. Output is the same G
 | Steps 1 to 3 (replacer, marshal check, struct tags) | 7.76 s | 56.2 million | 4,819 MB |
 | Step 4 (`variantKeys` from the spec for plain objects) | 6.01 s | 35.0 million | 3,105 MB |
 | Step 6 (format in parallel, `pkg/codegen/format.go`) | 3.72 s | 32.9 million | 2,792 MB |
+| Loader (one parse for documents that declare `openapi`) | 2.85 s | 29.1 million | 2,611 MB |
 
-Found while profiling step 6: the loader spends about 0.4 s of its 0.9 s parsing the 6.6 MB document two more times, in `declaredSwagger` and `withOpenAPIVersion`, to look for the `swagger` and `openapi` keys. Reading those keys from the one parse libopenapi already makes would remove most of that.
+The loader had parsed the 6.6 MB document two more times, in `declaredSwagger` and `withOpenAPIVersion`, to look for the `swagger` and `openapi` keys. A document that declares an OpenAPI 3 version is now read with the one parse libopenapi makes, and the other paths (Swagger, no version) are unchanged. Load fell from 0.93 s to 0.43 s.
 
 ## The pattern behind most of it
 

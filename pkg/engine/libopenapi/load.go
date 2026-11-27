@@ -17,6 +17,7 @@ import (
 	openapi "github.com/pb33f/libopenapi"
 	"github.com/pb33f/libopenapi/datamodel"
 	"github.com/pb33f/libopenapi/index"
+	"github.com/pb33f/libopenapi/utils"
 	"gopkg.in/yaml.v3"
 
 	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
@@ -57,20 +58,28 @@ func load(raw []byte, specPath string, remote *url.URL, opts engine.LoadOptions)
 	if err != nil {
 		return nil, err
 	}
-	// libopenapi builds OpenAPI 3 only. A Swagger document comes back as an
-	// empty one that records the version it declared, so the generator can say
-	// that OpenAPI 2.0 is not supported (see codegen.ValidateOpenAPIVersion).
-	if swagger, ok := declaredSwagger(raw); ok {
-		return &model.Document{Extensions: map[string]any{"swagger": swagger}}, nil
-	}
-	// libopenapi will not build a document that has no openapi version.
-	// Some specs this repository generates from omit it (or misspell it).
-	// Parse those as 3.0.3, then keep the version the file actually declared.
-	raw, declared := withOpenAPIVersion(raw)
-
+	// A document that declares an OpenAPI 3 version is read as it is, with one
+	// parse of the file: this is nearly every document, and what it is parsed
+	// with is what finds the version.
 	doc, err := openapi.NewDocumentWithConfiguration(raw, documentConfig(specPath, remote))
-	if err != nil {
-		return nil, fmt.Errorf("failed to load OpenAPI specification: %w", err)
+	var declared *string
+	if err != nil || doc.GetSpecInfo() == nil || doc.GetSpecInfo().SpecType != utils.OpenApi3 {
+		// Anything else is looked at more closely. libopenapi builds OpenAPI 3
+		// only. A Swagger document comes back as an empty one that records the
+		// version it declared, so the generator can say that OpenAPI 2.0 is
+		// not supported (see codegen.ValidateOpenAPIVersion).
+		if swagger, ok := declaredSwagger(raw); ok {
+			return &model.Document{Extensions: map[string]any{"swagger": swagger}}, nil
+		}
+		// libopenapi will not build a document that has no openapi version.
+		// Some specs this repository generates from omit it (or misspell it).
+		// Parse those as 3.0.3, then keep the version the file actually
+		// declared.
+		raw, declared = withOpenAPIVersion(raw)
+		doc, err = openapi.NewDocumentWithConfiguration(raw, documentConfig(specPath, remote))
+		if err != nil {
+			return nil, fmt.Errorf("failed to load OpenAPI specification: %w", err)
+		}
 	}
 	built, err := doc.BuildV3Model()
 	if built == nil {

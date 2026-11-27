@@ -6,8 +6,8 @@ replace github.com/ifc7/oapi-codegen/v2 => ../
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/lestrrat-go/jwx/v3 v3.1.0
 	github.com/ifc7/oapi-codegen/v2 v2.0.0-00010101000000-000000000000
+	github.com/lestrrat-go/jwx/v3 v3.1.0
 	github.com/oapi-codegen/testutil v1.1.0
 	github.com/pb33f/libopenapi v0.43.2
 	github.com/pb33f/libopenapi-validator v0.16.5
