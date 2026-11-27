@@ -94,6 +94,10 @@ func load(raw []byte, specPath string, remote *url.URL, opts engine.LoadOptions)
 		return nil, fmt.Errorf("failed to load OpenAPI specification: %w", err)
 	}
 	out := Convert(&built.Model)
+	// Nothing reads the libopenapi document once it is converted.
+	built.Model.Index.Release()
+	built.Model.Rolodex.Release()
+	doc.Release()
 	if declared != nil {
 		out.OpenAPI = *declared
 	}

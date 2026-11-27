@@ -28,6 +28,7 @@ func TestFormatInPiecesMatchesImportsProcess(t *testing.T) {
 	t.Cleanup(func() { parallelFormatMin, formatChunkSize = minSize, chunkSize })
 
 	var compared, fallbacks int
+	slowHeaderFixes.Store(0)
 	for _, fx := range fixtures {
 		doc, err := libopenapi.Engine{}.Load(fx.Spec, fx.Opts)
 		if err != nil {
@@ -63,6 +64,7 @@ func TestFormatInPiecesMatchesImportsProcess(t *testing.T) {
 	}
 	require.NotZero(t, compared)
 	require.Zero(t, fallbacks, "sources the split could not handle")
+	require.Zero(t, slowHeaderFixes.Load(), "headers left to imports.Process")
 	t.Logf("compared %d documents", compared)
 }
 
@@ -77,4 +79,89 @@ func TestFormatGoSourceReportsSyntaxErrors(t *testing.T) {
 	require.Error(t, want)
 	_, got := formatGoSource("api.go", src)
 	require.EqualError(t, got, want.Error())
+}
+
+func TestWithStandardImports(t *testing.T) {
+	header := []byte("package api\n\nimport (\n\t\"fmt\"\n\t\"sort\"\n)")
+	refs := func(names ...string) map[string]map[string]bool {
+		m := map[string]map[string]bool{}
+		for _, n := range names {
+			m[n] = map[string]bool{"X": true}
+		}
+		return m
+	}
+
+	// Used and missing: added, in order, inside the block.
+	got := withStandardImports([]byte("package api\n\nimport (\n\t\"fmt\"\n)"), refs("sort", "math", "fmt", "base64"))
+	require.Equal(t, "package api\n\nimport (\n\t\"fmt\"\n\t\"encoding/base64\"\n\t\"math\"\n\t\"sort\"\n)", string(got))
+
+	// Into the first group of the block, before the others.
+	grouped := []byte("package api\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/x/y\"\n)")
+	require.Equal(t, "package api\n\nimport (\n\t\"fmt\"\n\t\"sort\"\n\n\t\"github.com/x/y\"\n)",
+		string(withStandardImports(grouped, refs("sort"))))
+
+	// Already imported, or not used: unchanged.
+	require.Equal(t, string(header), string(withStandardImports(header, refs("sort", "fmt"))))
+	require.Equal(t, string(header), string(withStandardImports(header, refs("fmt"))))
+
+	// An ambiguous name is left to goimports.
+	require.Equal(t, string(header), string(withStandardImports(header, refs("template", "rand"))))
+
+	// No import block to add to.
+	require.Equal(t, "package api", string(withStandardImports([]byte("package api"), refs("sort"))))
+}
+
+func TestWithoutUnusedThirdPartyImports(t *testing.T) {
+	header := []byte("package api\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/oapi-codegen/nullable\"\n\t\"go.yaml.in/yaml/v3\"\n\t\"github.com/x/y\"\n)")
+	refs := func(names ...string) map[string]map[string]bool {
+		m := map[string]map[string]bool{}
+		for _, n := range names {
+			m[n] = map[string]bool{"X": true}
+		}
+		return m
+	}
+	// Unused ones are removed, others, and imports not of the template, stay.
+	require.Equal(t, "package api\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/x/y\"\n)",
+		string(withoutUnusedThirdPartyImports(header, refs("fmt"))))
+	require.Equal(t, "package api\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/oapi-codegen/nullable\"\n\t\"github.com/x/y\"\n)",
+		string(withoutUnusedThirdPartyImports(header, refs("nullable"))))
+	// The input is not changed.
+	require.Contains(t, string(header), "go.yaml.in/yaml/v3")
+}
+
+func TestFixHeaderImports(t *testing.T) {
+	refs := func(names ...string) map[string]map[string]bool {
+		m := map[string]map[string]bool{}
+		for _, n := range names {
+			m[n] = map[string]bool{"X": true}
+		}
+		return m
+	}
+	const block = "package api\n\nimport (\n\t\"os\"\n\t\"fmt\"\n\t\"go.yaml.in/yaml/v3\"\n\t\"mime/multipart\"\n\n\t\"github.com/oapi-codegen/nullable\"\n\text \"github.com/x/ext\"\n)"
+
+	// Unused imports go, missing known ones are added, the rest is sorted and
+	// grouped as goimports does.
+	got, ok := fixHeaderImports("api.go", []byte(block), refs("fmt", "multipart", "sort", "ext"))
+	require.True(t, ok)
+	require.Equal(t, "package api\n\nimport (\n\t\"fmt\"\n\t\"mime/multipart\"\n\t\"sort\"\n\n\text \"github.com/x/ext\"\n)\n", string(got))
+
+	// Everything unused leaves no import block entries to keep, and none of
+	// the groups left empty.
+	got, ok = fixHeaderImports("api.go", []byte(block), refs("nullable"))
+	require.True(t, ok)
+	require.Equal(t, "package api\n\nimport (\n\t\"github.com/oapi-codegen/nullable\"\n)\n", string(got))
+
+	// What it can't be sure of is left to imports.Process.
+	for name, header := range map[string]string{
+		"unnamed third-party":   "package api\n\nimport (\n\t\"fmt\"\n\t\"github.com/x/unknown\"\n)",
+		"comment in the block":  "package api\n\nimport (\n\t\"fmt\" // used\n)",
+		"no import block":       "package api\n",
+		"a line comment inside": "package api\n\nimport (\n\t// fmt is used\n\t\"fmt\"\n)",
+	} {
+		_, ok := fixHeaderImports("api.go", []byte(header), refs("fmt"))
+		require.False(t, ok, name)
+	}
+	// A use of a package that is neither imported nor known.
+	_, ok = fixHeaderImports("api.go", []byte(block), refs("fmt", "template"))
+	require.False(t, ok)
 }

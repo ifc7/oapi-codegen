@@ -38,6 +38,7 @@ func main() {
 	ciFrac := flag.Float64("ci", 0.05, "stop when the 95% CI half-width is within this fraction of the mean")
 	cpuProfile := flag.String("cpuprofile", "", "write a CPU profile of the measured samples to this file")
 	memProfile := flag.String("memprofile", "", "write an allocation profile (alloc_space) after the measured samples to this file")
+	liveProfile = flag.String("liveprofile", "", "write heap profiles of what is live after loading (FILE.load) and after generating (FILE.generate), for the first run")
 	skipFmt := flag.Bool("skip-fmt", false, "skip formatting the output, to time the rest of generation on its own")
 	flag.Parse()
 
@@ -163,6 +164,27 @@ type observation struct {
 	doc        *model.Document
 }
 
+// liveProfile is the -liveprofile flag; liveWritten records that the first run
+// has written its profiles.
+var (
+	liveProfile *string
+	liveWritten bool
+)
+
+// writeLive writes a profile of the heap that is live now, after a collection.
+func writeLive(name string) {
+	runtime.GC()
+	f, err := os.Create(name)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "liveprofile: %v\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
+	if err := pprof.Lookup("heap").WriteTo(f, 0); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "liveprofile: %v\n", err)
+	}
+}
+
 func measure(path string, cfg codegen.Configuration) (observation, error) {
 	runtime.GC()
 	var before runtime.MemStats
@@ -173,11 +195,21 @@ func measure(path string, cfg codegen.Configuration) (observation, error) {
 		return observation{}, fmt.Errorf("load: %w", err)
 	}
 	loaded := time.Since(started)
+	writeLiveNow := *liveProfile != "" && !liveWritten
+	if writeLiveNow {
+		writeLive(*liveProfile + ".load")
+	}
 	code, err := codegen.Generate(doc, cfg)
 	if err != nil {
 		return observation{}, fmt.Errorf("generate: %w", err)
 	}
 	total := time.Since(started)
+	if writeLiveNow {
+		writeLive(*liveProfile + ".generate")
+		liveWritten = true
+		runtime.KeepAlive(code)
+		runtime.KeepAlive(doc)
+	}
 	var after runtime.MemStats
 	runtime.ReadMemStats(&after)
 	return observation{

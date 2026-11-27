@@ -10,7 +10,9 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
+	"sync/atomic"
 
 	"golang.org/x/tools/imports"
 )
@@ -121,7 +123,12 @@ func formatInPieces(filename string, src []byte) ([]byte, bool) {
 	if !ok {
 		return nil, false
 	}
+	total := len(fixed)
+	for _, r := range results {
+		total += len(r.text) + 2
+	}
 	var out bytes.Buffer
+	out.Grow(total)
 	out.Write(fixed)
 	for _, r := range results {
 		if len(r.text) == 0 {
@@ -204,6 +211,9 @@ func formatPiece(piece []byte) pieceResult {
 	})
 
 	var out bytes.Buffer
+	// The printer writes in small pieces, which would grow the buffer by
+	// doubling it; the output is a little longer than the input.
+	out.Grow(len(src) + len(src)/4)
 	cfg := printer.Config{Mode: printerMode, Tabwidth: 8}
 	if err := cfg.Fprint(&out, fset, file); err != nil {
 		return pieceResult{}
@@ -273,6 +283,11 @@ func startsDeclaration(rest []byte) bool {
 // leave it. The block is fixed against a stand-in for the rest of the file
 // that makes the same package references, which is all the fix reads.
 func fixedHeader(filename string, header []byte, refs map[string]map[string]bool) ([]byte, bool) {
+	if out, ok := fixHeaderImports(filename, header, refs); ok {
+		return out, true
+	}
+	slowHeaderFixes.Add(1)
+	header = withoutUnusedThirdPartyImports(withStandardImports(header, refs), refs)
 	var stub bytes.Buffer
 	stub.Write(header)
 	stub.WriteString("\n\n")
@@ -307,4 +322,217 @@ func fixedHeader(filename string, header []byte, refs map[string]map[string]bool
 	}
 	end := fset.Position(first.End()).Offset
 	return append(bytes.TrimRight(fixed[:end], "\n"), '\n'), true
+}
+
+// standardImports are the standard library packages the generated code can use
+// that the import block does not list, by the name the code refers to them by.
+// goimports adds a missing import itself, and to do that it reads an index of
+// the module cache, which allocates hundreds of megabytes and takes tens of
+// milliseconds. The names here are unambiguous (not "template" or "rand", which
+// name two packages), and a package the code does not use is dropped again, so
+// the import block comes out as it would have.
+var standardImports = map[string]string{
+	"base64":  "encoding/base64",
+	"bufio":   "bufio",
+	"cmp":     "cmp",
+	"hex":     "encoding/hex",
+	"iter":    "iter",
+	"maps":    "maps",
+	"math":    "math",
+	"regexp":  "regexp",
+	"slices":  "slices",
+	"sort":    "sort",
+	"sync":    "sync",
+	"unicode": "unicode",
+	"utf8":    "unicode/utf8",
+}
+
+// withStandardImports adds to the import block of header the standard library
+// packages in standardImports that refs use and the block does not import.
+func withStandardImports(header []byte, refs map[string]map[string]bool) []byte {
+	closing := bytes.LastIndex(header, []byte("\n)"))
+	if closing < 0 {
+		return header
+	}
+	// The packages go in the first group of the block, the standard library
+	// ones, which ends at the first empty line, or at the end of the block.
+	at := closing + 1
+	if open := bytes.Index(header, []byte("import (\n")); open >= 0 && open < closing {
+		if blank := bytes.Index(header[open:closing], []byte("\n\n")); blank >= 0 {
+			at = open + blank + 1
+		}
+	}
+	var missing []string
+	for name, path := range standardImports {
+		if _, used := refs[name]; !used {
+			continue
+		}
+		// Imported already, by this path or under this name.
+		if bytes.Contains(header, []byte(`"`+path+`"`)) || bytes.Contains(header, []byte("\t"+name+" \"")) {
+			continue
+		}
+		missing = append(missing, path)
+	}
+	if len(missing) == 0 {
+		return header
+	}
+	sort.Strings(missing)
+	out := make([]byte, 0, len(header)+len(missing)*24)
+	out = append(out, header[:at]...)
+	for _, path := range missing {
+		out = append(out, "\t\""+path+"\"\n"...)
+	}
+	return append(out, header[at:]...)
+}
+
+// templateThirdPartyImports are the imports of the import block that are not
+// from the standard library, by the name the code refers to them by: the ones
+// the template lists, and the one the default type mapping adds.
+var templateThirdPartyImports = []struct{ name, path string }{
+	{"nullable", "github.com/oapi-codegen/nullable"},
+	{"yaml", "go.yaml.in/yaml/v3"},
+	{"uuid", "github.com/google/uuid"},
+}
+
+// withoutUnusedThirdPartyImports removes from the import block of header the
+// third-party imports of the template that refs do not use. goimports removes
+// them too, but to be sure that an unused import is unused, it reads an index
+// of the module cache to find out what the package is really called, which
+// allocates hundreds of megabytes. The names of these packages are known.
+func withoutUnusedThirdPartyImports(header []byte, refs map[string]map[string]bool) []byte {
+	for _, imp := range templateThirdPartyImports {
+		if _, used := refs[imp.name]; used {
+			continue
+		}
+		line := []byte("\t\"" + imp.path + "\"\n")
+		if i := bytes.Index(header, line); i >= 0 {
+			header = append(append([]byte{}, header[:i]...), header[i+len(line):]...)
+		}
+	}
+	return header
+}
+
+// slowHeaderFixes counts the headers that fixHeaderImports could not handle
+// and so were fixed by imports.Process. Tests require none for the fixtures.
+var slowHeaderFixes atomic.Int64
+
+// fixHeaderImports removes the imports of the header's import block that refs
+// do not use, adds the standard library packages in standardImports that it
+// does and the block lacks, and formats the result, which is what
+// imports.Process does to the whole file, without its cost: every call of
+// imports.Process reads an index of the module cache first, hundreds of
+// megabytes of allocation, whatever the file. The formatting is still
+// goimports': with FormatOnly it sorts and groups the imports, and does not
+// fix them.
+//
+// It only answers when it is sure which imports are used: an import without a
+// name whose package name it can't know, such as one outside the standard
+// library that the template does not list, or a use of a package that is not
+// imported and not in standardImports, is left to imports.Process, which looks
+// them up.
+func fixHeaderImports(filename string, header []byte, refs map[string]map[string]bool) ([]byte, bool) {
+	const open = "import (\n"
+	start := bytes.Index(header, []byte(open))
+	closing := bytes.LastIndex(header, []byte("\n)"))
+	if start < 0 || closing < start {
+		return nil, false
+	}
+	block := string(header[start+len(open) : closing])
+
+	type spec struct{ line, name, path string }
+	var groups [][]spec
+	groups = append(groups, nil)
+	provided := make(map[string]bool)
+	for _, line := range strings.Split(block, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			if len(groups[len(groups)-1]) > 0 {
+				groups = append(groups, nil)
+			}
+			continue
+		}
+		alias, quoted, hasAlias := strings.Cut(trimmed, " ")
+		if !hasAlias {
+			alias, quoted = "", trimmed
+		}
+		if len(quoted) < 2 || quoted[0] != '"' || quoted[len(quoted)-1] != '"' || strings.ContainsAny(quoted[1:len(quoted)-1], "\" \t") {
+			return nil, false // a comment, or a form this does not handle
+		}
+		path := quoted[1 : len(quoted)-1]
+		name := alias
+		if name == "" {
+			var ok bool
+			if name, ok = packageName(path); !ok {
+				return nil, false
+			}
+		}
+		keep := name == "_" || name == "." || refs[name] != nil
+		if !keep {
+			continue
+		}
+		provided[name] = true
+		groups[len(groups)-1] = append(groups[len(groups)-1], spec{line: line, name: name, path: path})
+	}
+
+	var added []spec
+	for pkg := range refs {
+		if provided[pkg] {
+			continue
+		}
+		path, ok := standardImports[pkg]
+		if !ok {
+			return nil, false
+		}
+		added = append(added, spec{line: "\t\"" + path + "\"", name: pkg, path: path})
+	}
+	sort.Slice(added, func(i, j int) bool { return added[i].path < added[j].path })
+	if len(added) > 0 {
+		// Into the first group, which is the standard library's.
+		groups[0] = append(groups[0], added...)
+	}
+
+	var out bytes.Buffer
+	out.Write(header[:start+len(open)])
+	wrote := false
+	for _, group := range groups {
+		if len(group) == 0 {
+			continue
+		}
+		if wrote {
+			out.WriteString("\n")
+		}
+		for _, sp := range group {
+			out.WriteString(sp.line)
+			out.WriteString("\n")
+		}
+		wrote = true
+	}
+	out.Write(header[closing+1:])
+
+	formatted, err := imports.Process(filename, out.Bytes(), &imports.Options{Comments: true, TabIndent: true, TabWidth: 8, FormatOnly: true})
+	if err != nil {
+		return nil, false
+	}
+	return append(bytes.TrimRight(formatted, "\n"), '\n'), true
+}
+
+// packageName returns the name the package at path is imported under without
+// an alias, for the packages whose name is known: those of the standard
+// library, which are named by the last element of the path (not counting a
+// version), and the third-party ones in templateThirdPartyImports.
+func packageName(path string) (string, bool) {
+	for _, imp := range templateThirdPartyImports {
+		if imp.path == path {
+			return imp.name, true
+		}
+	}
+	elements := strings.Split(path, "/")
+	if strings.Contains(elements[0], ".") {
+		return "", false
+	}
+	name := elements[len(elements)-1]
+	if len(elements) > 1 && len(name) > 1 && name[0] == 'v' && strings.Trim(name[1:], "0123456789") == "" {
+		name = elements[len(elements)-2]
+	}
+	return name, true
 }
