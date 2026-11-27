@@ -135,3 +135,64 @@ If steps 1 to 3 give what the profile suggests, Stripe would be about 1.6 to 1.8
 - The first version of the cut scan only recognised a `func` or `type` straight after the blank line. Nearly every declaration has a doc comment, so the scan found almost no cuts in the client and types sections: the 46 pieces included ones of 12.9, 7.3 and 4.3 MB, and the run was no faster. Skipping comment lines before the keyword gave 139 pieces, the largest 1.1 MB. Look at the piece sizes, not only the total, when a parallel step doesn't speed up.
 - A wrong cut cannot slip through: a piece cut inside a declaration doesn't parse, and the whole source then goes to `imports.Process`. The test requires that no fixture falls back.
 - Wall-clock timings here need a quiet machine. Compare binaries interleaved in one session, as `ab.sh`-style loops do, and check the load average.
+
+## Fresh profile after the concurrent passes
+
+Measured from an empty working directory. An earlier stretch of measurements was taken from a directory that held a 38 MB Go file: `imports.Process` parses the other `.go` files next to the file name it is given (here `api.go`, so the working directory), and that cost a further 0.3 to 0.4 s and about 7 million allocations per run. The comparisons between binaries in that stretch were made side by side under the same condition and stand, but the absolute times and allocation counts in the rows after "Format without a whole-file parse" above are too high. The numbers below are clean.
+
+| | Value |
+| --- | --- |
+| Median total | 1.61 s (load 0.44 s, generation 1.19 s) |
+| Allocations per run | 21.9 million, 2,286 MB |
+| Without formatting (`-skip-fmt`) | 0.90 s |
+
+Where the wall time goes, from a temporary build that timed each phase of `Generate`:
+
+| Phase | Wall time | Share of 1.6 s |
+| --- | --- | --- |
+| Load (libopenapi parse, build, conversion) | 0.44 s | 27% |
+| Filter, prune, validate, set up | about 35 ms | 2% |
+| `OperationDefinitions` (one thread) | 0.19 to 0.22 s | 12% |
+| The concurrent passes | 0.24 to 0.26 s | 15% |
+| Format types, imports, assemble, sanitize | about 35 ms | 2% |
+| Formatting | 0.52 to 0.60 s | 34% |
+
+CPU profile: formatting (`formatPiece`) is 35% of CPU and 33% of allocation (parsing 11%, printing 23%), and garbage collection is 27%. The longest concurrent pass is the type pass at about 240 ms; the server and client passes finish in about 150 ms.
+
+### What is left, in the order I would take it
+
+1. **Formatting, 0.55 s.** Parse and print are inherent to gofmt, so the room is in using the cores better, not in doing less.
+   - Overlap it with generation: the pieces are independent and the imports are only needed at the end, so the server and client output could be formatted while the type pass is still running.
+   - Balance the pieces: the largest is 1.1 MB against a 256 KB median. Smaller pieces, and reusing buffers, cut the idle time and the allocation.
+   - Estimated gain: 0.15 to 0.25 s.
+2. **`OperationDefinitions`, 0.2 s on one thread.** Build the operations of each path item concurrently and join them in path order. The shared state they write is already guarded. Estimated gain: about 0.1 to 0.15 s.
+3. **Loader, 0.44 s.** Converting libopenapi's model into the generator's model is 0.5 s of CPU and 9% of allocation, and can run by path in parallel. Estimated gain: about 0.1 s.
+4. **Sibling files in goimports (a decision, not just a speed-up).** `imports.Process` parsing the other Go files in the output directory means regenerating next to a large earlier output, such as `examples/stripe/stripe.gen.go`, pays for parsing it each time. Giving it a file name with no siblings would skip that, but goimports then can't see names those files declare, which in rare cases changes which imports it keeps. The generator's own imports all come from its template, so the risk is low, but it is a behaviour change.
+5. The rest (allocation in the schema walk, canonical IDs, replacing `globalState`) only if the profile after 1 to 3 points there; `generateGoSchema` is 2% of CPU.
+
+If 1 to 3 give what the profile suggests, Stripe would be about 1.1 to 1.3 s.
+
+## Allocations and memory footprint
+
+Measured from an empty working directory, Stripe, one run in a fresh process for peak memory (`/usr/bin/time -l`, five runs each, median), and `genbench` for allocations.
+
+| | Allocations per run | Allocated per run | Peak memory |
+| --- | --- | --- | --- |
+| Start of this round | 21.9 million | 2,286 MB | 973 MB |
+| Buffers sized in advance, output joined in one step | 21.9 million | 2,067 MB | 906 MB |
+| goimports only formats, imports fixed beforehand | 19.7 million | 1,823 MB | 893 MB |
+| `Release()` on the libopenapi document after conversion | 19.7 million | 1,823 MB | 753 MB |
+
+In the last step the live heap after loading went from 176 MB to 40 MB, and the peak live heap from 377 MB to 298 MB (peak heap 654 MB to 515 MB). Timing is unchanged, within noise.
+
+What each step was:
+
+- **Buffers.** `bytes.Buffer` growth was 18% of all bytes allocated: the final output (38 MB) was copied several times, and the formatter's piece and join buffers grew by doubling. They are sized in advance now, and the output is assembled with one `strings.Join`.
+- **goimports.** Every call of `imports.Process` allocates about 245 MB, even for an empty file, because it reads an index of the module cache first (`modindex.readIndexFrom`, 10% of bytes and 8% of objects). `FormatOnly` skips that. `fixHeaderImports` now removes the unused imports of the generated file's header and adds the standard library ones it uses (`sort`, `math`, `base64`, ...) itself, then lets goimports only sort and format the header. It answers only when it is sure which imports are used; an unnamed third-party import it doesn't know, or a use of a package it can't place, goes to the full `imports.Process` as before (`slowHeaderFixes` counts those, and the test requires none for the fixtures). The output matches `imports.Process` byte for byte on every fixture and on Stripe.
+- **`Release()`.** After conversion the libopenapi document, index and rolodex, with their YAML node trees and schema caches, stayed reachable from something the converted model does not point to (nothing visible by reflection, and the converted model is only about 30 MB in a faithful copy). libopenapi documents `SpecIndex.Release` and `Rolodex.Release` for this case, and calling them with `Document.Release` once conversion is done frees about 135 MB. The cause of the pinning is not understood; it may be one of libopenapi's global weak-keyed caches. Worth reporting upstream.
+
+Not done, and what is left:
+
+- Parsing and printing the generated code in `formatPiece` is a third of the bytes allocated and 45% of the objects (syntax trees; 7 million of them are the scopes and objects the parser resolves). Skipping object resolution would need our own scope handling to tell packages from local variables, which is where a mistake leaves an unused import. Not worth it for about 5%.
+- Peak live heap is now 298 MB, reached while formatting. Smaller pieces and fewer pieces in flight would lower it a little.
+- Garbage collection headroom doubles the live set by default. A memory limit would trade time for memory; not changed.

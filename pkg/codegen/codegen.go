@@ -15,8 +15,6 @@
 package codegen
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"embed"
 	"errors"
@@ -530,9 +528,6 @@ func Generate(spec *model.Document, opts Configuration) (string, error) {
 		return "", err
 	}
 
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-
 	// Format types are declared with the models, which every other part of
 	// the generated code in the package refers to.
 	var formatTypesOut string
@@ -555,69 +550,19 @@ func Generate(spec *model.Document, opts Configuration) (string, error) {
 		return "", fmt.Errorf("error generating imports: %w", err)
 	}
 
-	_, err = w.WriteString(importsOut)
-	if err != nil {
-		return "", fmt.Errorf("error writing imports: %w", err)
-	}
-
-	_, err = w.WriteString(typeDefinitions)
-	if err != nil {
-		return "", fmt.Errorf("error writing type definitions: %w", err)
-	}
-	_, err = w.WriteString(formatTypesOut)
-	if err != nil {
-		return "", fmt.Errorf("error writing format types: %w", err)
-	}
-
+	// The parts in the order they have always had. They are joined in one step,
+	// into a string of exactly the size needed: the output of a large document
+	// is tens of megabytes, which a growing buffer would copy several times.
+	parts := []string{importsOut, typeDefinitions, formatTypesOut}
 	if opts.Generate.Client {
-		_, err = w.WriteString(clientOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing client: %w", err)
-		}
-		_, err = w.WriteString(clientWithResponsesOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing client: %w", err)
-		}
-		if webhookInitiatorOut != "" {
-			_, err = w.WriteString(webhookInitiatorOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing webhook initiator: %w", err)
-			}
-		}
-		if callbackInitiatorOut != "" {
-			_, err = w.WriteString(callbackInitiatorOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing callback initiator: %w", err)
-			}
-		}
+		parts = append(parts, clientOut, clientWithResponsesOut, webhookInitiatorOut, callbackInitiatorOut)
 	}
-
 	if opts.Generate.Server {
-		_, err = w.WriteString(serverOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
-		}
-		if stdHTTPWebhookReceiverOut != "" {
-			_, err = w.WriteString(stdHTTPWebhookReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing stdhttp webhook receiver: %w", err)
-			}
-		}
-		if stdHTTPCallbackReceiverOut != "" {
-			_, err = w.WriteString(stdHTTPCallbackReceiverOut)
-			if err != nil {
-				return "", fmt.Errorf("error writing stdhttp callback receiver: %w", err)
-			}
-		}
-	}
-
-	err = w.Flush()
-	if err != nil {
-		return "", fmt.Errorf("error flushing output buffer: %w", err)
+		parts = append(parts, serverOut, stdHTTPWebhookReceiverOut, stdHTTPCallbackReceiverOut)
 	}
 
 	// remove any byte-order-marks which break Go-Code
-	goCode := SanitizeCode(buf.String())
+	goCode := SanitizeCode(strings.Join(parts, ""))
 
 	// The generation code produces unindented horrors. Use the Go Imports
 	// to make it all pretty.
