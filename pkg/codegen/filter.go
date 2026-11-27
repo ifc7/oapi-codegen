@@ -1,6 +1,6 @@
 package codegen
 
-import "github.com/ifc7/oapi-codegen/v2/pkg/model"
+import "github.com/ifc7/oapi-codegen/pkg/model"
 
 func sliceToMap(items []string) map[string]bool {
 	m := make(map[string]bool, len(items))

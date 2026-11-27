@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/codegen"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine/libopenapi"
+	"github.com/ifc7/oapi-codegen/pkg/codegen"
+	"github.com/ifc7/oapi-codegen/pkg/engine"
+	"github.com/ifc7/oapi-codegen/pkg/engine/libopenapi"
 )
 
 func TestIssue(t *testing.T) {
@@ -21,7 +21,7 @@ func TestIssue(t *testing.T) {
 			Models: true,
 		},
 		ImportMapping: map[string]string{
-			"parent.api.yaml": "github.com/ifc7/oapi-codegen/v2/internal/test/references/multipackage/parent_child/api/parent",
+			"parent.api.yaml": "github.com/ifc7/oapi-codegen/internal/test/references/multipackage/parent_child/api/parent",
 		},
 	}
 

@@ -3,4 +3,4 @@
 // unions and nulls as JSON, and untyped text and form bodies.
 package serversresponsebody
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml

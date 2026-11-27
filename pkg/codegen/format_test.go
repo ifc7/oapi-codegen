@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/imports"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine/enginetest"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine/libopenapi"
+	"github.com/ifc7/oapi-codegen/pkg/engine/enginetest"
+	"github.com/ifc7/oapi-codegen/pkg/engine/libopenapi"
 )
 
 // Splitting the file must give the bytes imports.Process gives, whatever the

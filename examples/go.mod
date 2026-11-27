@@ -1,12 +1,12 @@
-module github.com/ifc7/oapi-codegen/v2/examples
+module github.com/ifc7/oapi-codegen/examples
 
 go 1.26.0
 
-replace github.com/ifc7/oapi-codegen/v2 => ../
+replace github.com/ifc7/oapi-codegen => ../
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/ifc7/oapi-codegen/v2 v2.0.0-00010101000000-000000000000
+	github.com/ifc7/oapi-codegen v0.0.0-00010101000000-000000000000
 	github.com/lestrrat-go/jwx/v3 v3.1.0
 	github.com/oapi-codegen/testutil v1.1.0
 	github.com/pb33f/libopenapi v0.43.2
@@ -47,4 +47,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-tool github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen
+tool github.com/ifc7/oapi-codegen/cmd/oapi-codegen

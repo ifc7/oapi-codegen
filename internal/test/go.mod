@@ -1,12 +1,12 @@
-module github.com/ifc7/oapi-codegen/v2/internal/test
+module github.com/ifc7/oapi-codegen/internal/test
 
 go 1.26.0
 
-replace github.com/ifc7/oapi-codegen/v2 => ../../
+replace github.com/ifc7/oapi-codegen => ../../
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/ifc7/oapi-codegen/v2 v2.0.0-00010101000000-000000000000
+	github.com/ifc7/oapi-codegen v0.0.0-00010101000000-000000000000
 	github.com/oapi-codegen/nullable v1.1.0
 	github.com/oapi-codegen/testutil v1.1.0
 	github.com/stretchr/testify v1.12.1

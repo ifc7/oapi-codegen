@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ifc7/oapi-codegen/v2/examples/petstore-expanded/common/client/testclient"
+	"github.com/ifc7/oapi-codegen/examples/petstore-expanded/common/client/testclient"
 )
 
 func main() {

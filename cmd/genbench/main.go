@@ -22,10 +22,10 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/codegen"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine/libopenapi"
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/codegen"
+	"github.com/ifc7/oapi-codegen/pkg/engine"
+	"github.com/ifc7/oapi-codegen/pkg/engine/libopenapi"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 func main() {

@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine/enginetest"
-	"github.com/ifc7/oapi-codegen/v2/pkg/engine/libopenapi"
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/engine/enginetest"
+	"github.com/ifc7/oapi-codegen/pkg/engine/libopenapi"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 // The keys a plain object variant gets from its properties must be the ones

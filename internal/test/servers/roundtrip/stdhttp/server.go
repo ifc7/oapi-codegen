@@ -1,7 +1,7 @@
 //go:build go1.22
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=server.cfg.yaml ../spec.yaml
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=types.cfg.yaml ../spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=server.cfg.yaml ../spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=types.cfg.yaml ../spec.yaml
 
 package api
 

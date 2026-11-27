@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/ifc7/oapi-codegen/v2/pkg/model"
+	"github.com/ifc7/oapi-codegen/pkg/model"
 )
 
 type RefWrapper struct {

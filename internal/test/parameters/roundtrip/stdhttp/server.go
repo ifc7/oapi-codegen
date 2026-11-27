@@ -1,5 +1,5 @@
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=server.cfg.yaml ../parameters.yaml
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=types.cfg.yaml ../parameters.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=server.cfg.yaml ../parameters.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=types.cfg.yaml ../parameters.yaml
 
 package stdhttpparams
 
@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	gen "github.com/ifc7/oapi-codegen/v2/internal/test/parameters/roundtrip/stdhttp/gen"
+	gen "github.com/ifc7/oapi-codegen/internal/test/parameters/roundtrip/stdhttp/gen"
 )
 
 // Server echoes every bound parameter back as JSON text, so the roundtrip test

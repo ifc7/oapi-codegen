@@ -1,4 +1,4 @@
-module github.com/ifc7/oapi-codegen/v2
+module github.com/ifc7/oapi-codegen
 
 go 1.26.0
 

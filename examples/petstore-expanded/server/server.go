@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ifc7/oapi-codegen/v2/examples/petstore-expanded/api"
+	"github.com/ifc7/oapi-codegen/examples/petstore-expanded/api"
 )
 
 type PetStore struct {

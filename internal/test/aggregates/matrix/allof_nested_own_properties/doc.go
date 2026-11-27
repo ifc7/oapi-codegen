@@ -5,4 +5,4 @@
 // allOf over a $ref to a schema that has properties of its own next to an allOf of its own. Merging it has to keep both.
 package matrixallofnestedownproperties
 
-//go:generate go run github.com/ifc7/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml spec.yaml
+//go:generate go run github.com/ifc7/oapi-codegen/cmd/oapi-codegen --config=config.yaml spec.yaml
