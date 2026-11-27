@@ -17,7 +17,6 @@ import (
 	openapi "github.com/pb33f/libopenapi"
 	"github.com/pb33f/libopenapi/datamodel"
 	"github.com/pb33f/libopenapi/index"
-	"github.com/speakeasy-api/openapi/overlay/loader"
 	"gopkg.in/yaml.v3"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
@@ -168,17 +167,7 @@ func applyOverlay(spec []byte, opts engine.LoadOptions) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Overlay from %q: %w", opts.OverlayPath, err)
 	}
-	applied, err := applyLibopenapiOverlay(spec, overlayBytes, opts)
-	if err == nil {
-		return applied, nil
-	}
-	// libopenapi rejects an update whose JSONPath matches nodes of more than
-	// one YAML kind. The repository's overlay example does that, and the
-	// speakeasy implementation applies it, so fall back to that.
-	if !strings.Contains(err.Error(), "mixed target types") {
-		return nil, err
-	}
-	return applySpeakeasyOverlay(spec, opts)
+	return applyLibopenapiOverlay(spec, overlayBytes, opts)
 }
 
 func applyLibopenapiOverlay(spec, overlayBytes []byte, opts engine.LoadOptions) ([]byte, error) {
@@ -198,33 +187,6 @@ func applyLibopenapiOverlay(spec, overlayBytes []byte, opts engine.LoadOptions) 
 		return nil, fmt.Errorf("failed to apply Overlay %q:\n- %s", opts.OverlayPath, strings.Join(msgs, "\n- "))
 	}
 	return result.Bytes, nil
-}
-
-func applySpeakeasyOverlay(spec []byte, opts engine.LoadOptions) ([]byte, error) {
-	var node yaml.Node
-	if err := yaml.Unmarshal(spec, &node); err != nil {
-		return nil, fmt.Errorf("failed to parse specification for Overlay %q: %w", opts.OverlayPath, err)
-	}
-	overlayDoc, err := loader.LoadOverlay(opts.OverlayPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load Overlay from %q: %w", opts.OverlayPath, err)
-	}
-	if err := overlayDoc.Validate(); err != nil {
-		return nil, fmt.Errorf("the Overlay in %q was not valid: %w", opts.OverlayPath, err)
-	}
-	if opts.OverlayStrict {
-		vs, err := overlayDoc.ApplyToStrict(&node)
-		if err != nil {
-			return nil, fmt.Errorf("failed to apply Overlay %q: %w\n- %s", opts.OverlayPath, err, strings.Join(vs, "\n- "))
-		}
-	} else if err := overlayDoc.ApplyTo(&node); err != nil {
-		return nil, fmt.Errorf("failed to apply Overlay %q: %w", opts.OverlayPath, err)
-	}
-	out, err := yaml.Marshal(&node)
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize Overlay'd specification %q: %w", opts.OverlayPath, err)
-	}
-	return out, nil
 }
 
 // declaredSwagger returns the version of a document that declares `swagger`

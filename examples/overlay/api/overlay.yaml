@@ -20,8 +20,8 @@ actions:
 ####################################################################################################
 # Wildcard/Targeted overlays, via https://github.com/OAI/Overlay-Specification/blob/main/versions/1.0.0.md#examples
 #
-- target: $.paths.*.*[?(!@.servers)]
-  description: Override the servers
+- target: $.paths.*[?(@.responses && !@.servers)]
+  description: Override the servers of every operation that does not set its own
   update:
     servers:
       - url: http://localhost:35123
@@ -40,26 +40,26 @@ actions:
   description: Hide information about the Seed parameter
   remove: true
 
-- target: $.components.schemas.*.*.*[?(@.x-internal)]
+- target: $.components.schemas.*.properties[?(@['x-internal'])]
   description: Remove any internal fields on Schemas (noted by x-internal)
   remove: true
 
-- target: $.paths.*.*.requestBody.*.*.schema..[?(@.x-internal)]
+- target: $.paths.*.*.requestBody.*.*.schema..[?(@['x-internal'])]
   description: Remove any internal fields on request bodies (noted by x-internal)
   remove: true
 
-- target: $.paths.*.*.responses.*.*.*.schema..[?(@.x-internal)]
+- target: $.paths.*.*.responses.*.*.*.schema..[?(@['x-internal'])]
   description: Remove any internal fields on responses (noted by x-internal)
   remove: true
 
-- target: $.paths.*[?(@.x-internal)]
+- target: $.paths[?(@['x-internal'])]
   description: Remove internal endpoints (noted by x-internal)
   remove: true
 
-- target: $.paths.*.*[?(@.x-internal)]
+- target: $.paths.*[?(@['x-internal'])]
   description: Remove internal endpoints (noted by x-internal)
   remove: true
 
-- target: $.paths.*.*[?(@.tags[*] == 'internal')]
+- target: $.paths.*[?(@.tags[?(@ == 'internal')])]
   description: Remove internal endpoints (noted by internal tag)
   remove: true
