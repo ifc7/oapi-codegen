@@ -135,11 +135,29 @@ func (s Schema) generatesMarshalJSON() bool {
 	if s.OAPISchema == nil {
 		return false
 	}
-	target, err := GenerateGoSchema(&model.SchemaRef{Value: s.OAPISchema}, []string{s.TypeDecl()})
-	if err != nil {
-		return false
+	// The answer is a property of the schema and the name it is generated
+	// under, and templates ask for every type several times, so keep it for
+	// the rest of the run: generating the schema again is what made this
+	// the second largest cost of a large document.
+	key := marshalKey{s.OAPISchema, s.TypeDecl()}
+	if known, ok := globalState.marshalJSON[key]; ok {
+		return known
 	}
-	return target.aliasGeneratesMarshalJSON(s.TypeDecl())
+	generates := false
+	if target, err := GenerateGoSchema(&model.SchemaRef{Value: s.OAPISchema}, []string{s.TypeDecl()}); err == nil {
+		generates = target.aliasGeneratesMarshalJSON(s.TypeDecl())
+	}
+	if globalState.marshalJSON == nil {
+		globalState.marshalJSON = make(map[marshalKey]bool)
+	}
+	globalState.marshalJSON[key] = generates
+	return generates
+}
+
+// marshalKey identifies a question to generatesMarshalJSON.
+type marshalKey struct {
+	schema   *model.Schema
+	typeDecl string
 }
 
 // aliasGeneratesMarshalJSON reports whether s, or the type it is an alias of,

@@ -163,3 +163,21 @@ func TestJSONTagKey(t *testing.T) {
 		assert.Equal(t, want != "", ok, tag)
 	}
 }
+
+// Callers add and remove tags on the map they get, so a cached rendering must
+// not be shared between calls.
+func TestGenerateTagsMapIsNotShared(t *testing.T) {
+	g, err := newStructTagGenerator(defaultStructTagsConfig())
+	require.NoError(t, err)
+
+	info := StructTagInfo{FieldName: "name", OmitEmpty: true}
+	first := g.generateTagsMap(info)
+	require.Equal(t, map[string]string{"json": "name,omitempty"}, first)
+	first["json"] = "changed"
+	first["extra"] = "x"
+	delete(first, "json")
+
+	require.Equal(t, map[string]string{"json": "name,omitempty"}, g.generateTagsMap(info))
+	require.Equal(t, map[string]string{"json": "other", "form": "other"},
+		g.generateTagsMap(StructTagInfo{FieldName: "other", NeedsFormTag: true}))
+}
