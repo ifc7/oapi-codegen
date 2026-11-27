@@ -34,8 +34,6 @@ import (
 	"text/template"
 	"time"
 
-	"golang.org/x/tools/imports"
-
 	"github.com/ifc7/oapi-codegen/v2/pkg/model"
 )
 
@@ -564,7 +562,7 @@ func Generate(spec *model.Document, opts Configuration) (string, error) {
 		return goCode, nil
 	}
 
-	outBytes, err := imports.Process(opts.PackageName+".go", []byte(goCode), nil)
+	outBytes, err := formatGoSource(opts.PackageName+".go", []byte(goCode))
 	if err != nil {
 		errLine := -1
 		var scanErr scanner.ErrorList
