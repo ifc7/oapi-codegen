@@ -36,18 +36,10 @@ jobs:
           # A combination of our GitHub Actions setup, with the Go toolchain, leads to inconsistencies in calling `go env`, in particular with Go 1.21, where having (the default) `GOTOOLCHAIN=auto` results in build failures
           GOTOOLCHAIN: local
 
-  # Runs beside the default kin CI. fail-fast is off so a libopenapi
-  # regression is still reported when kin is green.
-  parity:
+  # Regenerates every generated file and runs the tests of every module.
+  generate:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        engine:
-          - kin
-          - libopenapi
     env:
-      OAPI_CODEGEN_ENGINE: ${{ matrix.engine }}
       GOTOOLCHAIN: local
     steps:
       - name: Check out source code

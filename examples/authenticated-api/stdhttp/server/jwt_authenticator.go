@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/pb33f/libopenapi-validator/config"
 )
 
 // JWSValidator is used to validate JWS payloads and return a JWT if they're
@@ -41,15 +41,15 @@ func GetJWSFromRequest(req *http.Request) (string, error) {
 	return strings.TrimPrefix(authHdr, prefix), nil
 }
 
-func NewAuthenticator(v JWSValidator) openapi3filter.AuthenticationFunc {
-	return func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+func NewAuthenticator(v JWSValidator) config.AuthenticationFunc {
+	return func(ctx context.Context, input *config.AuthenticationInput) error {
 		return Authenticate(v, ctx, input)
 	}
 }
 
 // Authenticate uses the specified validator to ensure a JWT is valid, then makes
 // sure that the claims provided by the JWT match the scopes as required in the API.
-func Authenticate(v JWSValidator, ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+func Authenticate(v JWSValidator, ctx context.Context, input *config.AuthenticationInput) error {
 	// Our security scheme is named BearerAuth, ensure this is the case
 	if input.SecuritySchemeName != "BearerAuth" {
 		return fmt.Errorf("security scheme %s != 'BearerAuth'", input.SecuritySchemeName)
@@ -57,7 +57,7 @@ func Authenticate(v JWSValidator, ctx context.Context, input *openapi3filter.Aut
 
 	// Now, we need to get the JWS from the request, to match the request expectations
 	// against request contents.
-	jws, err := GetJWSFromRequest(input.RequestValidationInput.Request)
+	jws, err := GetJWSFromRequest(input.Request)
 	if err != nil {
 		return fmt.Errorf("getting jws: %w", err)
 	}

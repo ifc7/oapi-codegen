@@ -14,7 +14,7 @@ func isURL(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }
 
-// download fetches url into dir so both engines read the same local bytes
+// download fetches url into dir so every sample reads the same local bytes
 // and the network stays outside the timer.
 func download(dir, url string) (string, error) {
 	client := &http.Client{Timeout: 2 * time.Minute}

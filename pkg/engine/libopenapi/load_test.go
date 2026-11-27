@@ -81,3 +81,18 @@ func TestOverlayExample(t *testing.T) {
 	}
 	require.True(t, found, "overlay example fixture was not found")
 }
+
+func TestLoadDataKeepsContentAfterDocumentMarker(t *testing.T) {
+	doc, err := Engine{}.LoadData([]byte("---\n# shared definitions\ncomponents:\n  schemas:\n    Pet: {type: object}\n"), "", engine.LoadOptions{})
+	require.NoError(t, err)
+	require.NotNil(t, doc.Components)
+	assert.Contains(t, doc.Components.Schemas, "Pet")
+	assert.Empty(t, doc.OpenAPI, "the file declared no version")
+}
+
+func TestLoadDataSwaggerDocument(t *testing.T) {
+	doc, err := Engine{}.LoadData([]byte("swagger: \"2.0\"\ninfo: {title: t, version: \"1\"}\npaths: {}\n"), "", engine.LoadOptions{})
+	require.NoError(t, err)
+	assert.Empty(t, doc.OpenAPI)
+	assert.Equal(t, "2.0", doc.Extensions["swagger"])
+}

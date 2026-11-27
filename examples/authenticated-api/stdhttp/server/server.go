@@ -3,17 +3,14 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"sync"
 
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3filter"
-	middleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/oapi-codegen/oapi-codegen/v2/examples/authenticated-api/stdhttp/api"
+	"github.com/oapi-codegen/oapi-codegen/v2/examples/internal/requestvalidator"
 )
 
 type server struct {
@@ -31,21 +28,7 @@ func NewServer() *server {
 
 func CreateMiddleware(v JWSValidator) (func(next http.Handler) http.Handler, error) {
 	_, thisFile, _, _ := runtime.Caller(0)
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	spec, err := loader.LoadFromFile(filepath.Join(filepath.Dir(thisFile), "..", "..", "api.yaml"))
-	if err != nil {
-		return nil, fmt.Errorf("loading spec: %w", err)
-	}
-
-	validator := middleware.OapiRequestValidatorWithOptions(spec,
-		&middleware.Options{
-			Options: openapi3filter.Options{
-				AuthenticationFunc: NewAuthenticator(v),
-			},
-		})
-
-	return validator, nil
+	return requestvalidator.New(filepath.Join(filepath.Dir(thisFile), "..", "..", "api.yaml"), NewAuthenticator(v))
 }
 
 // Ensure that we implement the server interface

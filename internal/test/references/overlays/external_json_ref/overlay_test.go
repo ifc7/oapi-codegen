@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/engines"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
 )
 
 func TestOverlayApply(t *testing.T) {
-	spec, err := engines.Load("", "spec/spec.yaml", engine.LoadOptions{
+	spec, err := libopenapi.Engine{}.Load("spec/spec.yaml", engine.LoadOptions{
 		OverlayPath:   "overlay.yaml",
 		OverlayStrict: true,
 	})

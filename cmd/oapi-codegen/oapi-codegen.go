@@ -29,7 +29,7 @@ import (
 
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine"
-	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/engines"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/engine/libopenapi"
 )
 
 func errExit(format string, args ...any) {
@@ -181,7 +181,7 @@ func main() {
 		strict = *opts.OutputOptions.Overlay.Strict
 	}
 
-	swagger, err := engines.Load(opts.Engine, flag.Arg(0), engine.LoadOptions{
+	swagger, err := libopenapi.Engine{}.Load(flag.Arg(0), engine.LoadOptions{
 		OverlayPath:   opts.OutputOptions.Overlay.Path,
 		OverlayStrict: strict,
 	})
