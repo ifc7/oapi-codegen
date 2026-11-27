@@ -49,6 +49,8 @@ func dedupeGoFieldNames(names []string) []goFieldRename {
 func warnGoFieldNameCollision(structName, firstSpecName, specName string, r goFieldRename) {
 	msg := fmt.Sprintf("Warning: %s: %q and %q both map to Go field name %s; generating %s for %q. Set x-go-name to choose the name.\n",
 		structName, firstSpecName, specName, r.name, r.newName, specName)
+	stateMu.Lock()
+	defer stateMu.Unlock()
 	if globalState.warnedFieldNameCollisions[msg] {
 		return
 	}

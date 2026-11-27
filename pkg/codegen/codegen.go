@@ -31,6 +31,7 @@ import (
 	"runtime/debug"
 	"slices"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -92,6 +93,13 @@ var globalState struct {
 	// reported, so a struct generated more than once is only warned about once.
 	warnedFieldNameCollisions map[string]bool
 }
+
+// stateMu guards what the passes of a run write to globalState while they
+// run at the same time: the caches and the records of what the output needs
+// (marshalJSON, componentNames, typeMappingImports, usedFormatTypes,
+// warnedFieldNameCollisions and the lazily built fieldTagGenerator). It is not
+// in globalState so that globalState can still be copied.
+var stateMu sync.Mutex
 
 // goImport represents a go package to be imported in the generated code
 type goImport struct {
@@ -340,131 +348,186 @@ func Generate(spec *model.Document, opts Configuration) (string, error) {
 		return "", fmt.Errorf("error getting operation imports: %w", err)
 	}
 
+	// The passes below read the document and the options and write only to
+	// what they return, apart from the records stateMu guards. They run at
+	// the same time, which is most of what generating a large document costs.
+	// What they return is joined in the order it always was, and an error is
+	// the first one of the passes in that order, so output and errors do not
+	// depend on which finished first.
+	var (
+		typeDefinitions            string
+		serverOut                  string
+		clientOut                  string
+		clientWithResponsesOut     string
+		webhookInitiatorOut        string
+		stdHTTPWebhookReceiverOut  string
+		callbackInitiatorOut       string
+		stdHTTPCallbackReceiverOut string
+	)
+	var passes []func() error
+
 	// Type emission is gated by Generate.Models. Both component-derived
 	// types (from #/components) and op-derived types
 	// (Params/RequestBody/hoisted-ResponseBody) are models.
-	var typeDefinitions string
 	if opts.Generate.Models {
-		componentTypes, err := collectComponentTypes(t, spec, opts.OutputOptions.ExcludeSchemas)
-		if err != nil {
-			return "", fmt.Errorf("error collecting component types: %w", err)
-		}
-		componentDecls, err := GenerateTypes(t, componentTypes)
-		if err != nil {
-			return "", fmt.Errorf("error generating code for type definitions: %w", err)
-		}
-
-		// Pass allOps (regular paths + webhooks + callbacks) so op-derived
-		// types from webhook/callback operations are emitted too.
-		opTypes, err := collectOperationTypes(allOps)
-		if err != nil {
-			return "", fmt.Errorf("error collecting operation types: %w", err)
-		}
-		if err := checkOperationTypeNames(componentTypes, allOps); err != nil {
-			return "", fmt.Errorf("error generating code for type definitions: %w", err)
-		}
-		opDecls, err := GenerateTypesForOperations(t, allOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go types for operations: %w", err)
-		}
-
-		imprts, err := GetTypeDefinitionsImports(spec, opts.OutputOptions.ExcludeSchemas)
-		if err != nil {
-			return "", fmt.Errorf("error getting type definition imports: %w", err)
-		}
-		maps.Copy(xGoTypeImports, imprts)
-
-		// Boilerplate (enum Valid(), union accessors, additionalProperties
-		// marshalers) scans the union of all declared types so methods are
-		// emitted for inline types living inside operations too.
-		allEmitted := slices.Concat(componentTypes, opTypes)
-		enumsOut, allOfOut, unionOut, unionAndAdditionalOut, err := renderBoilerplate(t, allEmitted)
-		if err != nil {
-			return "", err
-		}
-		// Preserve historical concatenation order:
-		// enums, component decls, op decls, allOf, union, union+additional.
-		typeDefinitions = strings.Join([]string{enumsOut, componentDecls, opDecls, allOfOut, unionOut, unionAndAdditionalOut}, "")
-	}
-
-	var serverOut string
-	if opts.Generate.Server {
-		var responses []ResponseDefinition
-		if spec.Components != nil {
-			responses, err = GenerateResponseDefinitions("", spec.Components.Responses, "")
+		passes = append(passes, func() error {
+			componentTypes, err := collectComponentTypes(t, spec, opts.OutputOptions.ExcludeSchemas)
 			if err != nil {
-				return "", fmt.Errorf("error generation response definitions for schema: %w", err)
+				return fmt.Errorf("error collecting component types: %w", err)
 			}
-		}
-		serverResponses, err := GenerateServerResponses(t, responses)
-		if err != nil {
-			return "", fmt.Errorf("error generation response definitions for schema: %w", err)
-		}
-		serverOut, err = GenerateServer(t, ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-		serverOut = serverResponses + serverOut
+			// Pass allOps (regular paths + webhooks + callbacks) so op-derived
+			// types from webhook/callback operations are emitted too.
+			opTypes, err := collectOperationTypes(allOps)
+			if err != nil {
+				return fmt.Errorf("error collecting operation types: %w", err)
+			}
+			if err := checkOperationTypeNames(componentTypes, allOps); err != nil {
+				return fmt.Errorf("error generating code for type definitions: %w", err)
+			}
+
+			var (
+				componentDecls, opDecls                             string
+				enumsOut, allOfOut, unionOut, unionAndAdditionalOut string
+				imprts                                              map[string]goImport
+			)
+			// Boilerplate (enum Valid(), union accessors, additionalProperties
+			// marshalers) scans the union of all declared types so methods are
+			// emitted for inline types living inside operations too.
+			allEmitted := slices.Concat(componentTypes, opTypes)
+			err = runPasses(
+				func() (err error) {
+					componentDecls, err = GenerateTypes(t, componentTypes)
+					if err != nil {
+						err = fmt.Errorf("error generating code for type definitions: %w", err)
+					}
+					return err
+				},
+				func() (err error) {
+					opDecls, err = GenerateTypesForOperations(t, allOps)
+					if err != nil {
+						err = fmt.Errorf("error generating Go types for operations: %w", err)
+					}
+					return err
+				},
+				func() (err error) {
+					imprts, err = GetTypeDefinitionsImports(spec, opts.OutputOptions.ExcludeSchemas)
+					if err != nil {
+						err = fmt.Errorf("error getting type definition imports: %w", err)
+					}
+					return err
+				},
+				func() (err error) {
+					enumsOut, allOfOut, unionOut, unionAndAdditionalOut, err = renderBoilerplate(t, allEmitted)
+					return err
+				},
+			)
+			if err != nil {
+				return err
+			}
+			maps.Copy(xGoTypeImports, imprts)
+			// Preserve historical concatenation order:
+			// enums, component decls, op decls, allOf, union, union+additional.
+			typeDefinitions = strings.Join([]string{enumsOut, componentDecls, opDecls, allOfOut, unionOut, unionAndAdditionalOut}, "")
+			return nil
+		})
 	}
 
-	var clientOut string
-	if opts.Generate.Client {
-		clientOut, err = GenerateClient(t, ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating client: %w", err)
-		}
+	if opts.Generate.Server {
+		passes = append(passes, func() error {
+			var responses []ResponseDefinition
+			var err error
+			if spec.Components != nil {
+				responses, err = GenerateResponseDefinitions("", spec.Components.Responses, "")
+				if err != nil {
+					return fmt.Errorf("error generation response definitions for schema: %w", err)
+				}
+			}
+			serverResponses, err := GenerateServerResponses(t, responses)
+			if err != nil {
+				return fmt.Errorf("error generation response definitions for schema: %w", err)
+			}
+			serverOut, err = GenerateServer(t, ops)
+			if err != nil {
+				return fmt.Errorf("error generating Go handlers for Paths: %w", err)
+			}
+			serverOut = serverResponses + serverOut
+			return nil
+		})
 	}
 
-	var clientWithResponsesOut string
 	if opts.Generate.Client {
-		clientWithResponsesOut, err = GenerateClientWithResponses(t, ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating client with responses: %w", err)
-		}
+		passes = append(passes,
+			func() (err error) {
+				clientOut, err = GenerateClient(t, ops)
+				if err != nil {
+					err = fmt.Errorf("error generating client: %w", err)
+				}
+				return err
+			},
+			func() (err error) {
+				clientWithResponsesOut, err = GenerateClientWithResponses(t, ops)
+				if err != nil {
+					err = fmt.Errorf("error generating client with responses: %w", err)
+				}
+				return err
+			},
+		)
 	}
 
 	// Webhook initiator pairs with the path Client. Emitted only when
 	// Generate.Client is on AND the spec has webhooks (3.1+).
-	var webhookInitiatorOut string
 	if opts.Generate.Client && len(webhookOps) > 0 {
-		webhookInitiatorOut, err = GenerateWebhookInitiator(t, webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating webhook initiator: %w", err)
-		}
+		passes = append(passes, func() (err error) {
+			webhookInitiatorOut, err = GenerateWebhookInitiator(t, webhookOps)
+			if err != nil {
+				err = fmt.Errorf("error generating webhook initiator: %w", err)
+			}
+			return err
+		})
 	}
 
 	// Webhook receiver (stdhttp) pairs with the path server.
 	// Emitted only when Generate.Server is on AND the spec has
 	// webhooks (3.1+). Uses the unified stdhttp receiver template,
 	// parameterized with prefix "Webhook".
-	var stdHTTPWebhookReceiverOut string
 	if opts.Generate.Server && len(webhookOps) > 0 {
-		stdHTTPWebhookReceiverOut, err = GenerateStdHTTPReceiver(t, "Webhook", webhookOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating stdhttp webhook receiver: %w", err)
-		}
+		passes = append(passes, func() (err error) {
+			stdHTTPWebhookReceiverOut, err = GenerateStdHTTPReceiver(t, "Webhook", webhookOps)
+			if err != nil {
+				err = fmt.Errorf("error generating stdhttp webhook receiver: %w", err)
+			}
+			return err
+		})
 	}
 
 	// Callback initiator pairs with the path Client. Emitted whenever
 	// Generate.Client is on and the spec declares any callbacks --
 	// callbacks predate 3.1 so this is not version-gated.
-	var callbackInitiatorOut string
 	if opts.Generate.Client && len(callbackOps) > 0 {
-		callbackInitiatorOut, err = GenerateCallbackInitiator(t, callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating callback initiator: %w", err)
-		}
+		passes = append(passes, func() (err error) {
+			callbackInitiatorOut, err = GenerateCallbackInitiator(t, callbackOps)
+			if err != nil {
+				err = fmt.Errorf("error generating callback initiator: %w", err)
+			}
+			return err
+		})
 	}
 
 	// Callback receiver (stdhttp) pairs with the path server.
 	// Same reasoning as the initiator: not version-gated. Uses the
 	// unified stdhttp receiver template with prefix "Callback".
-	var stdHTTPCallbackReceiverOut string
 	if opts.Generate.Server && len(callbackOps) > 0 {
-		stdHTTPCallbackReceiverOut, err = GenerateStdHTTPReceiver(t, "Callback", callbackOps)
-		if err != nil {
-			return "", fmt.Errorf("error generating stdhttp callback receiver: %w", err)
-		}
+		passes = append(passes, func() (err error) {
+			stdHTTPCallbackReceiverOut, err = GenerateStdHTTPReceiver(t, "Callback", callbackOps)
+			if err != nil {
+				err = fmt.Errorf("error generating stdhttp callback receiver: %w", err)
+			}
+			return err
+		})
+	}
+
+	if err := runPasses(passes...); err != nil {
+		return "", err
 	}
 
 	var buf bytes.Buffer
@@ -1632,4 +1695,22 @@ func GetParametersImports(params map[string]*model.ParameterRef) (map[string]goI
 
 func SetGlobalStateSpec(spec *model.Document) {
 	globalState.spec = spec
+}
+
+// runPasses runs the passes at the same time and waits for all of them. It
+// returns the error of the first pass, in the order given, that failed, which
+// is the error running them one after another would have stopped at.
+func runPasses(passes ...func() error) error {
+	errs := make([]error, len(passes))
+	var wg sync.WaitGroup
+	for i, pass := range passes {
+		wg.Go(func() { errs[i] = pass() })
+	}
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

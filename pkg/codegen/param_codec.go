@@ -1008,6 +1008,8 @@ func componentNamed(spec *model.Schema) string {
 	if spec == nil || globalState.spec == nil || globalState.spec.Components == nil {
 		return ""
 	}
+	stateMu.Lock()
+	defer stateMu.Unlock()
 	if globalState.componentNames == nil {
 		schemas := globalState.spec.Components.Schemas
 		names := make(map[*model.Schema]string, len(schemas))

@@ -788,17 +788,15 @@ func NewInitiatorTemplateData(prefix string, ops []OperationDefinition) (Initiat
 // Params returns the list of all parameters except Path parameters. Path parameters
 // are handled differently from the rest, since they're mandatory.
 func (o *OperationDefinition) Params() []ParameterDefinition {
-	result := append(o.QueryParams, o.HeaderParams...)
-	result = append(result, o.CookieParams...)
-	return result
+	// A new slice: appending to QueryParams would write into its backing
+	// array when that has room, which the passes that call this at the same
+	// time share.
+	return slices.Concat(o.QueryParams, o.HeaderParams, o.CookieParams)
 }
 
 // AllParams returns all parameters
 func (o *OperationDefinition) AllParams() []ParameterDefinition {
-	result := append(o.QueryParams, o.HeaderParams...)
-	result = append(result, o.CookieParams...)
-	result = append(result, o.PathParams...)
-	return result
+	return slices.Concat(o.QueryParams, o.HeaderParams, o.CookieParams, o.PathParams)
 }
 
 // If we have parameters other than path parameters, they're bundled into an

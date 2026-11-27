@@ -41,6 +41,8 @@ Same spec and machine, 6 samples after 1 warmup round each. Output is the same G
 | Step 6 (format in parallel, `pkg/codegen/format.go`) | 3.72 s | 32.9 million | 2,792 MB |
 | Loader (one parse for documents that declare `openapi`) | 2.85 s | 29.1 million | 2,611 MB |
 | Format without a whole-file parse (`cutPoints`, `formatPiece`) | 2.5 s (3.1 s on the same run, same load) | 28.9 million | 2,568 MB |
+| Enums by lookup in a set | about 2.1 to 2.4 s | 28.8 million | 2,564 MB |
+| Independent passes run concurrently (`runPasses`) | 1.8 to 1.9 s (2.1 to 2.4 s in the same interleaved runs) | 28.8 million | 2,569 MB |
 
 The loader had parsed the 6.6 MB document two more times, in `declaredSwagger` and `withOpenAPIVersion`, to look for the `swagger` and `openapi` keys. A document that declares an OpenAPI 3 version is now read with the one parse libopenapi makes, and the other paths (Swagger, no version) are unchanged. Load fell from 0.93 s to 0.43 s.
 
@@ -117,10 +119,12 @@ Estimates are from the profile, to be measured as before.
    - It also removes the second parse of each piece inside `format.Source`, which is most of the 22% of allocation in the parser.
    - The existing test, which compares the bytes with `imports.Process`, is the check.
 2. **Enums (about 0.3 s). Done, and the cause was not the one guessed.** `GenerateEnums` compared every enum with every type (a nested loop of `enums × types` map lookups) to find constants named like a type. Looking the constants up in a set of type names built once took `GenerateEnums` from 4.41 s to 0.43 s of CPU over 8 runs, and `renderBoilerplate` from 4.95 s to 0.90 s. Wall-clock A/B runs were too noisy to resolve it (the machine's load average was 10 to 14); the profile is the evidence. Caching `ToCamelCase` and `GetValues`, as proposed here, is no longer worth doing: the whole function is about 50 ms per run.
-3. **Run the independent passes at the same time (about 0.4 to 0.5 s).**
-   - After operations are built, the component types, operation types, boilerplate, server, client and client-with-responses passes only read shared state. Their output is joined in a fixed order, so the result stays deterministic.
-   - First, the state they write lazily has to be made safe: the marshal-JSON cache, `componentNames`, `typeMappingImports`, `usedFormatTypes`, `warnedFieldNameCollisions` and the struct-tag generator. Build them before the fan-out, or guard the few that must change, as the struct-tag cache already is.
-   - Replacing `globalState` as a whole (step 8) is the larger change and is not needed for this.
+3. **Run the independent passes at the same time (about 0.4 to 0.5 s). Done: 2.1 to 2.4 s down to 1.8 to 1.9 s.**
+   - `Generate` now runs the type, server, client, client-with-responses, webhook and callback passes with `runPasses`, and the type pass runs its four parts (component types, operation types, imports, boilerplate) the same way. Output is joined in the old order, and an error is the first one in that order.
+   - The state they write is guarded by `stateMu` (kept outside `globalState`, which tests copy): the marshal cache, `componentNames`, the type-mapping imports, the format types, the field-name warnings and the lazy struct-tag generator.
+   - The race detector found one real bug the guards did not cover: `OperationDefinition.Params()` and `AllParams()` appended to `QueryParams`, writing into its backing array when it had room, which the passes share. They now build a new slice with `slices.Concat`.
+   - `go test -race ./pkg/codegen` is clean, and so is a race-enabled generation of the Stripe spec. CI does not run the race detector; running it on `./pkg/codegen` would keep this safe.
+   - The warnings about colliding field names are still printed once each, but their order on stderr can now vary between runs.
 4. **Loader (about 0.1 to 0.2 s).** Converting libopenapi's model into the generator's model is 0.5 s of CPU and 8% of allocation. Convert lazily, or in parallel by path.
 5. **Allocation in the schema walk, and canonical IDs (steps 7 and 10).** Leave until the profile after steps 1 to 4 shows them as the largest remaining part.
 

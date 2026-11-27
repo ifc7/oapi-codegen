@@ -140,17 +140,25 @@ func (s Schema) generatesMarshalJSON() bool {
 	// the rest of the run: generating the schema again is what made this
 	// the second largest cost of a large document.
 	key := marshalKey{s.OAPISchema, s.TypeDecl()}
-	if known, ok := globalState.marshalJSON[key]; ok {
+	stateMu.Lock()
+	known, ok := globalState.marshalJSON[key]
+	stateMu.Unlock()
+	if ok {
 		return known
 	}
+	// Not under the lock: generating the schema asks this again for the
+	// schemas inside it. Two passes can work out the same answer, which is
+	// the same either way.
 	generates := false
 	if target, err := GenerateGoSchema(&model.SchemaRef{Value: s.OAPISchema}, []string{s.TypeDecl()}); err == nil {
 		generates = target.aliasGeneratesMarshalJSON(s.TypeDecl())
 	}
+	stateMu.Lock()
 	if globalState.marshalJSON == nil {
 		globalState.marshalJSON = make(map[marshalKey]bool)
 	}
 	globalState.marshalJSON[key] = generates
+	stateMu.Unlock()
 	return generates
 }
 

@@ -206,6 +206,8 @@ func (g *structTagGenerator) render(info StructTagInfo) []renderedTag {
 // Generate itself constructs the generator eagerly so configuration errors are
 // reported.
 func fieldTagGenerator() *structTagGenerator {
+	stateMu.Lock()
+	defer stateMu.Unlock()
 	if globalState.fieldTagGenerator == nil {
 		g, err := newStructTagGenerator(defaultStructTagsConfig().Merge(globalState.options.OutputOptions.StructTags))
 		if err != nil {
